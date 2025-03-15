@@ -55,13 +55,13 @@ document.body.appendChild(instructionsElement);
 const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
 scene.add(ambientLight);
 
-const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-directionalLight.position.set(5, 10, 5);
+const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+directionalLight.position.set(0, 10, 5);
 scene.add(directionalLight);
 
-const fillLight = new THREE.DirectionalLight(0xffffff, 0.5);
-fillLight.position.set(-5, 8, -5);
-scene.add(fillLight);
+const frontLight = new THREE.DirectionalLight(0xffffff, 0.5);
+frontLight.position.set(0, 2, 8);
+scene.add(frontLight);
 
 // Ground
 const groundGeometry = new THREE.PlaneGeometry(10, 10);
@@ -164,7 +164,7 @@ window.addEventListener('click', (event) => {
 });
 
 // Camera Position
-camera.position.set(0, 5, 5);
+camera.position.set(0, 4, 6);
 camera.lookAt(0, 0, 0);
 
 // Animation Loop
@@ -174,7 +174,7 @@ function animate() {
 }
 animate();
 
-// Modify the mole creation function to include text
+// Modify the mole creation function
 function createMole() {
     const moleGroup = new THREE.Group();
     
@@ -189,46 +189,60 @@ function createMole() {
     const canvas = document.createElement('canvas');
     const context = canvas.getContext('2d');
     canvas.width = 256;
-    canvas.height = 256;
+    canvas.height = 128; // Reduced height for better text fit
     
     // Create text texture
     const textTexture = new THREE.Texture(canvas);
     const textMaterial = new THREE.MeshBasicMaterial({
         map: textTexture,
-        transparent: true
+        transparent: true,
+        side: THREE.DoubleSide // Make text visible from both sides
     });
     
-    // Create text plane
+    // Create text plane (wider and taller)
     const textPlane = new THREE.Mesh(
-        new THREE.PlaneGeometry(0.6, 0.3),
+        new THREE.PlaneGeometry(0.8, 0.4),
         textMaterial
     );
-    textPlane.position.set(0, 0, 0.52); // Position slightly in front of body
+    // Position text higher on the mole's chest and tilted for better visibility
+    textPlane.position.set(0, 0.1, 0.45);
+    textPlane.rotation.x = -0.2; // Tilt slightly upward
     moleGroup.add(textPlane);
     
     // Store texture and context for updating
     moleGroup.userData.textTexture = textTexture;
     moleGroup.userData.textContext = context;
     
-    // Rest of mole features (eyes, nose, etc.)
-    const nose = new THREE.Mesh(
-        new THREE.SphereGeometry(0.08, 16, 16),
-        new THREE.MeshLambertMaterial({ color: 0x000000 })
+    // Add a background plate for better text visibility
+    const plateMaterial = new THREE.MeshLambertMaterial({ color: 0x8B4513 }); // Slightly lighter than body
+    const plate = new THREE.Mesh(
+        new THREE.PlaneGeometry(0.85, 0.45),
+        plateMaterial
     );
-    nose.position.set(0, 0.2, 0.6);
-    moleGroup.add(nose);
+    plate.position.copy(textPlane.position);
+    plate.rotation.copy(textPlane.rotation);
+    plate.position.z -= 0.01; // Slightly behind text
+    moleGroup.add(plate);
 
-    // Eyes
+    // Eyes (moved higher)
     const eyeGeometry = new THREE.SphereGeometry(0.08, 16, 16);
     const eyeMaterial = new THREE.MeshLambertMaterial({ color: 0x000000 });
     
     const leftEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
-    leftEye.position.set(-0.2, 0.3, 0.4);
+    leftEye.position.set(-0.2, 0.35, 0.35);
     moleGroup.add(leftEye);
     
     const rightEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
-    rightEye.position.set(0.2, 0.3, 0.4);
+    rightEye.position.set(0.2, 0.35, 0.35);
     moleGroup.add(rightEye);
+
+    // Nose (moved higher)
+    const nose = new THREE.Mesh(
+        new THREE.SphereGeometry(0.08, 16, 16),
+        new THREE.MeshLambertMaterial({ color: 0x000000 })
+    );
+    nose.position.set(0, 0.25, 0.45);
+    moleGroup.add(nose);
 
     return moleGroup;
 }
@@ -239,16 +253,16 @@ function updateMoleText(mole, word) {
     const texture = mole.userData.textTexture;
     
     // Clear the canvas
-    context.clearRect(0, 0, 256, 256);
+    context.clearRect(0, 0, 256, 128);
     
     // Set text properties
     context.fillStyle = 'white';
-    context.font = 'bold 72px Arial';
+    context.font = 'bold 64px Arial'; // Slightly smaller font
     context.textAlign = 'center';
     context.textBaseline = 'middle';
     
     // Draw text
-    context.fillText(word, 128, 128);
+    context.fillText(word, 128, 64);
     
     // Update the texture
     texture.needsUpdate = true;
