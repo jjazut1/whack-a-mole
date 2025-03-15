@@ -158,7 +158,7 @@ function animate() {
 }
 animate();
 
-// Modify the mole creation function
+// Modify mole creation function for a more cartoon-like appearance
 function createMole() {
     const moleGroup = new THREE.Group();
     
@@ -268,7 +268,7 @@ function createMole() {
     return moleGroup;
 }
 
-// Function to update mole's text
+// Update the text rendering function for a more cartoon-like style
 function updateMoleText(mole, word) {
     const context = mole.userData.textContext;
     const texture = mole.userData.textTexture;
