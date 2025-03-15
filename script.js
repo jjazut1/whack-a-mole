@@ -52,11 +52,11 @@ instructionsElement.innerHTML = 'Hit the mole when you see a word with the short
 document.body.appendChild(instructionsElement);
 
 // Improved Lighting - using multiple lights for better illumination
-const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
 scene.add(ambientLight);
 
-const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
-directionalLight.position.set(0, 10, 5);
+const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+directionalLight.position.set(5, 10, 5);
 scene.add(directionalLight);
 
 const frontLight = new THREE.DirectionalLight(0xffffff, 0.5);
@@ -162,14 +162,14 @@ animate();
 function createMole() {
     const moleGroup = new THREE.Group();
     
-    // Body
-    const body = new THREE.Mesh(
-        new THREE.SphereGeometry(0.5, 32, 32),
-        new THREE.MeshLambertMaterial({ color: 0xA0522D })
-    );
+    // Body - make it more oval and lighter colored
+    const bodyGeometry = new THREE.SphereGeometry(0.5, 32, 32);
+    bodyGeometry.scale(1, 1.2, 0.8); // Make it more oval shaped
+    const bodyMaterial = new THREE.MeshLambertMaterial({ color: 0xFFD280 }); // Lighter, more cartoonish color
+    const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
     moleGroup.add(body);
 
-    // Create text canvas
+    // Create text canvas with rounded background
     const canvas = document.createElement('canvas');
     const context = canvas.getContext('2d');
     canvas.width = 256;
@@ -183,50 +183,87 @@ function createMole() {
         side: THREE.DoubleSide
     });
     
-    // Create text plane
+    // Create slightly larger text plane for better visibility
     const textPlane = new THREE.Mesh(
-        new THREE.PlaneGeometry(0.8, 0.4),
+        new THREE.PlaneGeometry(0.9, 0.5),
         textMaterial
     );
-    // Position text on upper chest
-    textPlane.position.set(0, 0.2, 0.45);
+    textPlane.position.set(0, 0.1, 0.42);
     textPlane.rotation.x = -0.2;
     moleGroup.add(textPlane);
     
     // Store texture and context for updating
     moleGroup.userData.textTexture = textTexture;
     moleGroup.userData.textContext = context;
+
+    // Eyes - larger and more cartoon-like
+    const eyeGeometry = new THREE.SphereGeometry(0.12, 16, 16);
+    const eyeWhiteMaterial = new THREE.MeshLambertMaterial({ color: 0xFFFFFF });
+    const eyePupilMaterial = new THREE.MeshLambertMaterial({ color: 0x000000 });
     
-    // Background plate for text
-    const plateMaterial = new THREE.MeshLambertMaterial({ color: 0x8B4513 });
-    const plate = new THREE.Mesh(
-        new THREE.PlaneGeometry(0.85, 0.45),
-        plateMaterial
+    // Left eye white
+    const leftEyeWhite = new THREE.Mesh(eyeGeometry, eyeWhiteMaterial);
+    leftEyeWhite.position.set(-0.2, 0.5, 0.35);
+    moleGroup.add(leftEyeWhite);
+    
+    // Left eye pupil (smaller black sphere)
+    const leftEyePupil = new THREE.Mesh(
+        new THREE.SphereGeometry(0.06, 16, 16),
+        eyePupilMaterial
     );
-    plate.position.copy(textPlane.position);
-    plate.rotation.copy(textPlane.rotation);
-    plate.position.z -= 0.01;
-    moleGroup.add(plate);
-
-    // Eyes (moved higher)
-    const eyeGeometry = new THREE.SphereGeometry(0.08, 16, 16);
-    const eyeMaterial = new THREE.MeshLambertMaterial({ color: 0x000000 });
+    leftEyePupil.position.set(-0.2, 0.5, 0.45);
+    moleGroup.add(leftEyePupil);
     
-    const leftEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
-    leftEye.position.set(-0.2, 0.45, 0.35);
-    moleGroup.add(leftEye);
+    // Right eye white
+    const rightEyeWhite = new THREE.Mesh(eyeGeometry, eyeWhiteMaterial);
+    rightEyeWhite.position.set(0.2, 0.5, 0.35);
+    moleGroup.add(rightEyeWhite);
     
-    const rightEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
-    rightEye.position.set(0.2, 0.45, 0.35);
-    moleGroup.add(rightEye);
+    // Right eye pupil
+    const rightEyePupil = new THREE.Mesh(
+        new THREE.SphereGeometry(0.06, 16, 16),
+        eyePupilMaterial
+    );
+    rightEyePupil.position.set(0.2, 0.5, 0.45);
+    moleGroup.add(rightEyePupil);
 
-    // Nose (moved higher)
+    // Nose - small and round
     const nose = new THREE.Mesh(
         new THREE.SphereGeometry(0.08, 16, 16),
         new THREE.MeshLambertMaterial({ color: 0x000000 })
     );
-    nose.position.set(0, 0.35, 0.45);
+    nose.position.set(0, 0.35, 0.48);
     moleGroup.add(nose);
+
+    // Add whiskers using thin cylinders
+    const whiskerMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
+    const whiskerGeometry = new THREE.CylinderGeometry(0.005, 0.005, 0.3);
+    
+    // Left whiskers
+    const leftWhisker1 = new THREE.Mesh(whiskerGeometry, whiskerMaterial);
+    leftWhisker1.position.set(-0.3, 0.35, 0.3);
+    leftWhisker1.rotation.z = Math.PI / 4;
+    leftWhisker1.rotation.y = -Math.PI / 6;
+    moleGroup.add(leftWhisker1);
+
+    const leftWhisker2 = new THREE.Mesh(whiskerGeometry, whiskerMaterial);
+    leftWhisker2.position.set(-0.3, 0.25, 0.3);
+    leftWhisker2.rotation.z = Math.PI / 6;
+    leftWhisker2.rotation.y = -Math.PI / 6;
+    moleGroup.add(leftWhisker2);
+
+    // Right whiskers
+    const rightWhisker1 = new THREE.Mesh(whiskerGeometry, whiskerMaterial);
+    rightWhisker1.position.set(0.3, 0.35, 0.3);
+    rightWhisker1.rotation.z = -Math.PI / 4;
+    rightWhisker1.rotation.y = Math.PI / 6;
+    moleGroup.add(rightWhisker1);
+
+    const rightWhisker2 = new THREE.Mesh(whiskerGeometry, whiskerMaterial);
+    rightWhisker2.position.set(0.3, 0.25, 0.3);
+    rightWhisker2.rotation.z = -Math.PI / 6;
+    rightWhisker2.rotation.y = Math.PI / 6;
+    moleGroup.add(rightWhisker2);
 
     return moleGroup;
 }
@@ -240,8 +277,8 @@ function updateMoleText(mole, word) {
     context.clearRect(0, 0, 256, 128);
     
     // Set text properties
-    context.fillStyle = 'white';
-    context.font = 'bold 64px Arial'; // Slightly smaller font
+    context.fillStyle = 'black';
+    context.font = 'bold 72px Arial';
     context.textAlign = 'center';
     context.textBaseline = 'middle';
     
