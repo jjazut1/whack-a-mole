@@ -150,7 +150,7 @@ window.addEventListener('click', (event) => {
 });
 
 // Camera Position
-camera.position.set(0, 6, 8);
+camera.position.set(0, 4, 8);
 camera.lookAt(0, 0, 0);
 
 // Animation Loop
@@ -221,39 +221,83 @@ function createSuccessIndicator(position) {
     }
 }
 
-// Modify the text rendering function
-function updateMoleText(mole, word) {
-    const context = mole.userData.textContext;
-    const texture = mole.userData.textTexture;
+// Add wooden sign for rules
+function createWoodenSign() {
+    const signGroup = new THREE.Group();
     
-    // Clear the canvas
-    context.clearRect(0, 0, 256, 128);
-    
-    // Set text properties with larger, bolder font
-    context.fillStyle = 'black';
-    context.font = 'bold 84px Arial'; // Increased font size
-    context.textAlign = 'center';
-    context.textBaseline = 'middle';
-    
-    // Draw text
-    context.fillText(word, 128, 64);
-    
-    // Update the texture
-    texture.needsUpdate = true;
+    // Post
+    const postGeometry = new THREE.BoxGeometry(0.2, 2, 0.2);
+    const woodMaterial = new THREE.MeshLambertMaterial({ color: 0x4A3219 });
+    const post = new THREE.Mesh(postGeometry, woodMaterial);
+    post.position.set(0, 1, 0);
+    signGroup.add(post);
+
+    // Sign boards
+    const createBoard = (text, y) => {
+        const boardGeometry = new THREE.BoxGeometry(2, 0.4, 0.1);
+        const board = new THREE.Mesh(boardGeometry, woodMaterial);
+        board.position.set(0, y, 0);
+
+        // Text on board
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d');
+        canvas.width = 512;
+        canvas.height = 128;
+        
+        context.fillStyle = 'white';
+        context.font = 'bold 48px Arial';
+        context.textAlign = 'center';
+        context.textBaseline = 'middle';
+        context.fillText(text, 256, 64);
+
+        const texture = new THREE.Texture(canvas);
+        texture.needsUpdate = true;
+
+        const textGeometry = new THREE.PlaneGeometry(1.8, 0.3);
+        const textMaterial = new THREE.MeshBasicMaterial({
+            map: texture,
+            transparent: true,
+            side: THREE.DoubleSide
+        });
+        const textMesh = new THREE.Mesh(textGeometry, textMaterial);
+        textMesh.position.set(0, y, 0.06);
+        
+        signGroup.add(board);
+        signGroup.add(textMesh);
+    };
+
+    createBoard('The Rules', 1.5);
+    createBoard('Hit words', 1.0);
+    createBoard('with letter b', 0.5);
+    createBoard('Hit mole to start', 0);
+
+    signGroup.position.set(0, 1, -2);
+    return signGroup;
 }
 
-// Modify mole creation function
+// Modified mole creation function
 function createMole() {
     const moleGroup = new THREE.Group();
     
-    // Body
-    const bodyGeometry = new THREE.SphereGeometry(0.8, 32, 32);
-    bodyGeometry.scale(1, 1.2, 0.8);
+    // Body - more rectangular shape
+    const bodyGeometry = new THREE.BoxGeometry(1.2, 1.4, 0.8);
     const bodyMaterial = new THREE.MeshLambertMaterial({ color: 0xFFD280 });
     const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+    bodyGeometry.vertices.forEach(v => {
+        if (v.y > 0) {
+            v.y += Math.random() * 0.1; // Slight randomness at top
+        }
+    });
     moleGroup.add(body);
 
-    // Text plane setup remains the same
+    // Text background - rectangular card
+    const cardGeometry = new THREE.BoxGeometry(1, 0.8, 0.05);
+    const cardMaterial = new THREE.MeshLambertMaterial({ color: 0xFFF5E1 }); // Light cream color
+    const card = new THREE.Mesh(cardGeometry, cardMaterial);
+    card.position.set(0, 0, 0.43);
+    moleGroup.add(card);
+
+    // Text setup
     const canvas = document.createElement('canvas');
     const context = canvas.getContext('2d');
     canvas.width = 512;
@@ -267,99 +311,74 @@ function createMole() {
     });
     
     const textPlane = new THREE.Mesh(
-        new THREE.PlaneGeometry(1.4, 0.7),
+        new THREE.PlaneGeometry(0.95, 0.75),
         textMaterial
     );
-    textPlane.position.set(0, -0.1, 0.65);
-    textPlane.rotation.x = -0.3;
+    textPlane.position.set(0, 0, 0.46);
     moleGroup.add(textPlane);
     
     moleGroup.userData.textTexture = textTexture;
     moleGroup.userData.textContext = context;
 
-    // Eyes
-    const eyeGeometry = new THREE.SphereGeometry(0.15, 16, 16);
-    const eyeWhiteMaterial = new THREE.MeshLambertMaterial({ color: 0xFFFFFF });
-    const eyePupilMaterial = new THREE.MeshLambertMaterial({ color: 0x000000 });
+    // Eyes - more cartoon style
+    const eyeGeometry = new THREE.SphereGeometry(0.12, 16, 16);
+    const eyeMaterial = new THREE.MeshLambertMaterial({ color: 0x000000 });
     
-    // Left eye
-    const leftEyeWhite = new THREE.Mesh(eyeGeometry, eyeWhiteMaterial);
-    leftEyeWhite.position.set(-0.3, 0.6, 0.45);
-    moleGroup.add(leftEyeWhite);
+    const leftEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+    leftEye.position.set(-0.25, 0.5, 0.4);
+    leftEye.scale.y = 0.5; // Make eyes more oval
+    moleGroup.add(leftEye);
     
-    const leftEyePupil = new THREE.Mesh(
-        new THREE.SphereGeometry(0.08, 16, 16),
-        eyePupilMaterial
-    );
-    leftEyePupil.position.set(-0.3, 0.6, 0.58);
-    moleGroup.add(leftEyePupil);
-    
-    // Right eye
-    const rightEyeWhite = new THREE.Mesh(eyeGeometry, eyeWhiteMaterial);
-    rightEyeWhite.position.set(0.3, 0.6, 0.45);
-    moleGroup.add(rightEyeWhite);
-    
-    const rightEyePupil = new THREE.Mesh(
-        new THREE.SphereGeometry(0.08, 16, 16),
-        eyePupilMaterial
-    );
-    rightEyePupil.position.set(0.3, 0.6, 0.58);
-    moleGroup.add(rightEyePupil);
+    const rightEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+    rightEye.position.set(0.25, 0.5, 0.4);
+    rightEye.scale.y = 0.5; // Make eyes more oval
+    moleGroup.add(rightEye);
 
-    // Nose
-    const nose = new THREE.Mesh(
-        new THREE.SphereGeometry(0.12, 16, 16),
-        new THREE.MeshLambertMaterial({ color: 0x000000 })
-    );
-    nose.position.set(0, 0.45, 0.65);
-    moleGroup.add(nose);
-
-    // New cartoon-style mouth
-    // Create mouth background (white area)
-    const mouthBgGeometry = new THREE.CircleGeometry(0.25, 32);
-    const mouthBgMaterial = new THREE.MeshLambertMaterial({ color: 0xFFFFFF });
-    const mouthBg = new THREE.Mesh(mouthBgGeometry, mouthBgMaterial);
-    mouthBg.position.set(0, 0.25, 0.65);
-    mouthBg.rotation.y = Math.PI;
-    moleGroup.add(mouthBg);
-
-    // Create smile line
-    const smileShape = new THREE.Shape();
-    smileShape.moveTo(-0.2, 0);
-    smileShape.quadraticCurveTo(0, -0.15, 0.2, 0);
+    // Whiskers using curves
+    const whiskerMaterial = new THREE.LineBasicMaterial({ color: 0x000000 });
     
-    const smileGeometry = new THREE.ShapeGeometry(smileShape);
-    const smileMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
-    const smile = new THREE.Mesh(smileGeometry, smileMaterial);
-    smile.position.set(0, 0.25, 0.66);
-    smile.rotation.y = Math.PI;
-    moleGroup.add(smile);
-
-    // Integrated whiskers with curved geometry
-    const whiskerMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
-    
-    // Create curved whiskers using custom geometry
-    const createWhisker = (side, height, angle) => {
-        const curve = new THREE.QuadraticBezierCurve3(
-            new THREE.Vector3(0, height, 0.65),
-            new THREE.Vector3(side * 0.3, height, 0.75),
-            new THREE.Vector3(side * 0.6, height + 0.1, 0.65)
-        );
-
-        const points = curve.getPoints(10);
-        const whiskerGeometry = new THREE.BufferGeometry().setFromPoints(points);
-        const whisker = new THREE.Line(whiskerGeometry, whiskerMaterial);
+    const createWhisker = (side, height) => {
+        const points = [];
+        points.push(new THREE.Vector3(side * 0.2, height, 0.4));
+        points.push(new THREE.Vector3(side * 0.6, height + 0.1, 0.3));
+        
+        const geometry = new THREE.BufferGeometry().setFromPoints(points);
+        const whisker = new THREE.Line(geometry, whiskerMaterial);
         moleGroup.add(whisker);
     };
 
-    // Add whiskers on both sides
-    createWhisker(-1, 0.3, Math.PI / 6);  // Upper left
-    createWhisker(-1, 0.2, Math.PI / 8);  // Lower left
-    createWhisker(1, 0.3, -Math.PI / 6);  // Upper right
-    createWhisker(1, 0.2, -Math.PI / 8);  // Lower right
+    // Add multiple whiskers
+    createWhisker(-1, 0.3);
+    createWhisker(-1, 0.2);
+    createWhisker(1, 0.3);
+    createWhisker(1, 0.2);
 
     return moleGroup;
 }
+
+// Update text rendering function
+function updateMoleText(mole, word) {
+    const context = mole.userData.textContext;
+    const texture = mole.userData.textTexture;
+    
+    // Clear the canvas
+    context.clearRect(0, 0, 512, 256);
+    
+    // Set text properties
+    context.fillStyle = 'black';
+    context.font = 'bold 96px Arial';
+    context.textAlign = 'center';
+    context.textBaseline = 'middle';
+    
+    // Draw text
+    context.fillText(word, 256, 128);
+    
+    // Update the texture
+    texture.needsUpdate = true;
+}
+
+// Add sign to scene
+scene.add(createWoodenSign());
 
 // Modify the assignNewWord function
 function assignNewWord(mole) {
