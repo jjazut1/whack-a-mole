@@ -209,16 +209,6 @@ function createSuccessIndicator(position) {
     }
     
     animateParticles();
-
-    // Add a quick smile animation
-    const mole = moles.find(m => m.position.equals(position));
-    if (mole) {
-        const originalY = mole.scale.y;
-        mole.scale.y *= 1.2; // Stretch up slightly
-        setTimeout(() => {
-            mole.scale.y = originalY;
-        }, 200);
-    }
 }
 
 // Modify the text rendering function
@@ -253,11 +243,11 @@ function createMole() {
     const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
     moleGroup.add(body);
 
-    // Text plane setup remains the same
+    // Text plane - adjusted position and size
     const canvas = document.createElement('canvas');
     const context = canvas.getContext('2d');
-    canvas.width = 512;
-    canvas.height = 256;
+    canvas.width = 512; // Increased canvas size
+    canvas.height = 256; // Increased canvas size
     
     const textTexture = new THREE.Texture(canvas);
     const textMaterial = new THREE.MeshBasicMaterial({
@@ -267,11 +257,11 @@ function createMole() {
     });
     
     const textPlane = new THREE.Mesh(
-        new THREE.PlaneGeometry(1.4, 0.7),
+        new THREE.PlaneGeometry(1.4, 0.7), // Larger text area
         textMaterial
     );
-    textPlane.position.set(0, -0.1, 0.65);
-    textPlane.rotation.x = -0.3;
+    textPlane.position.set(0, 0, 0.65); // Moved forward
+    textPlane.rotation.x = -0.3; // Adjusted rotation
     moleGroup.add(textPlane);
     
     moleGroup.userData.textTexture = textTexture;
@@ -306,57 +296,36 @@ function createMole() {
     rightEyePupil.position.set(0.3, 0.6, 0.58);
     moleGroup.add(rightEyePupil);
 
+    // Improved smile - made larger and more visible
+    const smileGeometry = new THREE.TorusGeometry(0.3, 0.06, 16, 32, Math.PI);
+    const smileMaterial = new THREE.MeshLambertMaterial({ color: 0x000000 });
+    const smile = new THREE.Mesh(smileGeometry, smileMaterial);
+    smile.position.set(0, 0.3, 0.65); // Moved forward and adjusted height
+    smile.rotation.x = Math.PI / 2; // Corrected rotation
+    moleGroup.add(smile);
+
     // Nose
     const nose = new THREE.Mesh(
         new THREE.SphereGeometry(0.12, 16, 16),
         new THREE.MeshLambertMaterial({ color: 0x000000 })
     );
-    nose.position.set(0, 0.45, 0.65);
+    nose.position.set(0, 0.45, 0.65); // Adjusted position
     moleGroup.add(nose);
 
-    // New cartoon-style mouth
-    // Create mouth background (white area)
-    const mouthBgGeometry = new THREE.CircleGeometry(0.25, 32);
-    const mouthBgMaterial = new THREE.MeshLambertMaterial({ color: 0xFFFFFF });
-    const mouthBg = new THREE.Mesh(mouthBgGeometry, mouthBgMaterial);
-    mouthBg.position.set(0, 0.25, 0.65);
-    mouthBg.rotation.y = Math.PI;
-    moleGroup.add(mouthBg);
-
-    // Create smile line
-    const smileShape = new THREE.Shape();
-    smileShape.moveTo(-0.2, 0);
-    smileShape.quadraticCurveTo(0, -0.15, 0.2, 0);
-    
-    const smileGeometry = new THREE.ShapeGeometry(smileShape);
-    const smileMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
-    const smile = new THREE.Mesh(smileGeometry, smileMaterial);
-    smile.position.set(0, 0.25, 0.66);
-    smile.rotation.y = Math.PI;
-    moleGroup.add(smile);
-
-    // Integrated whiskers with curved geometry
+    // Whiskers
     const whiskerMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
+    const whiskerGeometry = new THREE.CylinderGeometry(0.005, 0.005, 0.4);
     
-    // Create curved whiskers using custom geometry
-    const createWhisker = (side, height, angle) => {
-        const curve = new THREE.QuadraticBezierCurve3(
-            new THREE.Vector3(0, height, 0.65),
-            new THREE.Vector3(side * 0.3, height, 0.75),
-            new THREE.Vector3(side * 0.6, height + 0.1, 0.65)
-        );
-
-        const points = curve.getPoints(10);
-        const whiskerGeometry = new THREE.BufferGeometry().setFromPoints(points);
-        const whisker = new THREE.Line(whiskerGeometry, whiskerMaterial);
-        moleGroup.add(whisker);
-    };
-
-    // Add whiskers on both sides
-    createWhisker(-1, 0.3, Math.PI / 6);  // Upper left
-    createWhisker(-1, 0.2, Math.PI / 8);  // Lower left
-    createWhisker(1, 0.3, -Math.PI / 6);  // Upper right
-    createWhisker(1, 0.2, -Math.PI / 8);  // Lower right
+    // Left whiskers
+    [-1, 1].forEach(side => {
+        [0.35, 0.25].forEach(height => {
+            const whisker = new THREE.Mesh(whiskerGeometry, whiskerMaterial);
+            whisker.position.set(0.4 * side, height, 0.5);
+            whisker.rotation.z = Math.PI / 6 * -side;
+            whisker.rotation.y = Math.PI / 6 * side;
+            moleGroup.add(whisker);
+        });
+    });
 
     return moleGroup;
 }
