@@ -221,12 +221,12 @@ function updateMoleText(mole, word) {
     
     // Set text properties
     context.fillStyle = 'black';
-    context.font = 'bold 200px Arial'; // Larger, bolder font
+    context.font = 'bold 160px Arial'; // Adjusted size
     context.textAlign = 'center';
     context.textBaseline = 'middle';
     
-    // Draw text lower in the canvas
-    context.fillText(word, 256, 350); // Positioned lower
+    // Draw text
+    context.fillText(word, 256, 256);
     
     // Update the texture
     texture.needsUpdate = true;
@@ -236,17 +236,17 @@ function updateMoleText(mole, word) {
 function createMole() {
     const moleGroup = new THREE.Group();
     
-    // Body - make it more round and lighter colored
+    // Body - pure white like the image
     const bodyGeometry = new THREE.SphereGeometry(0.8, 32, 32);
-    const bodyMaterial = new THREE.MeshLambertMaterial({ color: 0xFFF3E0 }); // Lighter, creamy color
+    const bodyMaterial = new THREE.MeshLambertMaterial({ color: 0xFFFFFF }); // Pure white
     const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
     moleGroup.add(body);
 
-    // Text plane - adjusted for better visibility
+    // Text plane - positioned in lower half of mole
     const canvas = document.createElement('canvas');
     const context = canvas.getContext('2d');
     canvas.width = 512;
-    canvas.height = 512; // Made square for better text control
+    canvas.height = 512;
     
     const textTexture = new THREE.Texture(canvas);
     const textMaterial = new THREE.MeshBasicMaterial({
@@ -256,45 +256,42 @@ function createMole() {
     });
     
     const textPlane = new THREE.Mesh(
-        new THREE.PlaneGeometry(1.2, 1.2), // Made square
+        new THREE.PlaneGeometry(1.2, 1.2),
         textMaterial
     );
-    // Position text to be more visible on the front
-    textPlane.position.set(0, 0, 0.7);
-    textPlane.rotation.x = 0; // Remove tilt to match image
+    // Position text on the front lower half
+    textPlane.position.set(0, -0.2, 0.75);
     moleGroup.add(textPlane);
     
     moleGroup.userData.textTexture = textTexture;
     moleGroup.userData.textContext = context;
 
-    // Simplified eyes - just black dots
-    const eyeGeometry = new THREE.CircleGeometry(0.08, 32);
+    // Eyes - small black dots positioned higher
+    const eyeGeometry = new THREE.CircleGeometry(0.06, 32);
     const eyeMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
     
-    // Left eye
+    // Left eye - moved higher
     const leftEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
-    leftEye.position.set(-0.25, 0.2, 0.8);
-    leftEye.rotation.y = -0.2; // Slight rotation to face forward
+    leftEye.position.set(-0.2, 0.4, 0.75);
     moleGroup.add(leftEye);
     
-    // Right eye
+    // Right eye - moved higher
     const rightEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
-    rightEye.position.set(0.25, 0.2, 0.8);
-    rightEye.rotation.y = 0.2; // Slight rotation to face forward
+    rightEye.position.set(0.2, 0.4, 0.75);
     moleGroup.add(rightEye);
 
-    // Simplified nose
+    // Nose - small black dot between and below eyes
     const nose = new THREE.Mesh(
-        new THREE.CircleGeometry(0.1, 32),
+        new THREE.CircleGeometry(0.06, 32),
         new THREE.MeshBasicMaterial({ color: 0x000000 })
     );
-    nose.position.set(0, 0, 0.82);
+    nose.position.set(0, 0.3, 0.78);
     moleGroup.add(nose);
 
-    // Simplified mouth - straight line with slight curve
+    // Simple straight mouth with slight curve
     const mouthGeometry = new THREE.Shape();
-    mouthGeometry.moveTo(-0.2, 0);
-    mouthGeometry.quadraticCurveTo(0, -0.05, 0.2, 0); // Slight downward curve
+    mouthGeometry.moveTo(-0.15, 0);
+    mouthGeometry.quadraticCurveTo(0, -0.03, 0.15, 0); // Very slight curve down
     
     const mouthMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
     const mouth = new THREE.Mesh(
@@ -302,7 +299,7 @@ function createMole() {
         mouthMaterial
     );
     
-    mouth.position.set(0, -0.1, 0.82);
+    mouth.position.set(0, 0.2, 0.78); // Positioned between nose and text area
     moleGroup.add(mouth);
 
     return moleGroup;
@@ -321,7 +318,7 @@ function animateMole(mole, goingUp) {
     if (mole.userData.isMoving) return;
     
     mole.userData.isMoving = true;
-    const targetY = goingUp ? 0.7 : -1.0; // Adjusted up position
+    const targetY = goingUp ? 0.9 : -1.0; // Raised up position
     const duration = 200;
     const startY = mole.position.y;
     const startTime = Date.now();
