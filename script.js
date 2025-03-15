@@ -6,7 +6,8 @@ const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.setClearColor(0x87CEEB); // Add sky blue background
+renderer.setClearColor(0x87CEEB); // Sky blue background
+renderer.outputEncoding = THREE.sRGBEncoding; // Add proper color encoding
 document.body.appendChild(renderer.domElement);
 
 // Game state
@@ -32,23 +33,18 @@ timerElement.style.fontSize = '24px';
 document.body.appendChild(timerElement);
 
 // Improved Lighting
-const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
 scene.add(ambientLight);
 
-const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-directionalLight.position.set(5, 5, 5);
+const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+directionalLight.position.set(5, 10, 5);
 scene.add(directionalLight);
 
 // Ground with better material
 const groundGeometry = new THREE.PlaneGeometry(10, 10);
-const groundTexture = new THREE.TextureLoader().load('https://threejs.org/examples/textures/grass.jpg');
-groundTexture.wrapS = groundTexture.wrapT = THREE.RepeatWrapping;
-groundTexture.repeat.set(4, 4);
-const groundMaterial = new THREE.MeshStandardMaterial({ 
-    map: groundTexture,
-    side: THREE.DoubleSide,
-    roughness: 0.8,
-    metalness: 0.2
+const groundMaterial = new THREE.MeshPhongMaterial({ 
+    color: 0x3c8f3c,  // Green color instead of texture
+    side: THREE.DoubleSide
 });
 const ground = new THREE.Mesh(groundGeometry, groundMaterial);
 ground.rotation.x = -Math.PI / 2;
@@ -56,7 +52,7 @@ scene.add(ground);
 
 // Hole creation
 const holeGeometry = new THREE.CircleGeometry(0.7, 32);
-const holeMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
+const holeMaterial = new THREE.MeshPhongMaterial({ color: 0x1a1a1a }); // Dark gray instead of pure black
 const holes = [
     { x: -2, z: -2 }, { x: 2, z: -2 },
     { x: -2, z: 2 }, { x: 2, z: 2 }
@@ -73,9 +69,9 @@ holes.forEach(pos => {
 const moleBodyGeometry = new THREE.SphereGeometry(0.5, 32, 32);
 const moleNoseGeometry = new THREE.SphereGeometry(0.15, 16, 16);
 const moleEyeGeometry = new THREE.SphereGeometry(0.1, 16, 16);
-const moleMaterial = new THREE.MeshStandardMaterial({ color: 0x8B4513 });
-const moleNoseMaterial = new THREE.MeshStandardMaterial({ color: 0x000000 });
-const moleEyeMaterial = new THREE.MeshStandardMaterial({ color: 0x000000 });
+const moleMaterial = new THREE.MeshPhongMaterial({ color: 0x8B4513 }); // Changed to MeshPhongMaterial
+const moleNoseMaterial = new THREE.MeshPhongMaterial({ color: 0x000000 });
+const moleEyeMaterial = new THREE.MeshPhongMaterial({ color: 0x000000 });
 
 const moles = [];
 holes.forEach(pos => {
