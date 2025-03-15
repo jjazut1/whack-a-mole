@@ -273,24 +273,19 @@ function createWoodenSign() {
     return signGroup;
 }
 
-// Modified mole creation function
+// Modified mole creation function without geometry.vertices
 function createMole() {
     const moleGroup = new THREE.Group();
     
-    // Body - more rectangular shape
+    // Body - rectangular shape
     const bodyGeometry = new THREE.BoxGeometry(1.2, 1.4, 0.8);
     const bodyMaterial = new THREE.MeshLambertMaterial({ color: 0xFFD280 });
     const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
-    bodyGeometry.vertices.forEach(v => {
-        if (v.y > 0) {
-            v.y += Math.random() * 0.1; // Slight randomness at top
-        }
-    });
     moleGroup.add(body);
 
     // Text background - rectangular card
     const cardGeometry = new THREE.BoxGeometry(1, 0.8, 0.05);
-    const cardMaterial = new THREE.MeshLambertMaterial({ color: 0xFFF5E1 }); // Light cream color
+    const cardMaterial = new THREE.MeshLambertMaterial({ color: 0xFFF5E1 });
     const card = new THREE.Mesh(cardGeometry, cardMaterial);
     card.position.set(0, 0, 0.43);
     moleGroup.add(card);
@@ -318,34 +313,36 @@ function createMole() {
     moleGroup.userData.textTexture = textTexture;
     moleGroup.userData.textContext = context;
 
-    // Eyes - more cartoon style
+    // Eyes
     const eyeGeometry = new THREE.SphereGeometry(0.12, 16, 16);
     const eyeMaterial = new THREE.MeshLambertMaterial({ color: 0x000000 });
     
     const leftEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
     leftEye.position.set(-0.25, 0.5, 0.4);
-    leftEye.scale.y = 0.5; // Make eyes more oval
+    leftEye.scale.y = 0.5;
     moleGroup.add(leftEye);
     
     const rightEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
     rightEye.position.set(0.25, 0.5, 0.4);
-    rightEye.scale.y = 0.5; // Make eyes more oval
+    rightEye.scale.y = 0.5;
     moleGroup.add(rightEye);
 
-    // Whiskers using curves
+    // Whiskers
     const whiskerMaterial = new THREE.LineBasicMaterial({ color: 0x000000 });
     
+    // Create whiskers using lines
     const createWhisker = (side, height) => {
-        const points = [];
-        points.push(new THREE.Vector3(side * 0.2, height, 0.4));
-        points.push(new THREE.Vector3(side * 0.6, height + 0.1, 0.3));
-        
-        const geometry = new THREE.BufferGeometry().setFromPoints(points);
-        const whisker = new THREE.Line(geometry, whiskerMaterial);
+        const whiskerGeometry = new THREE.BufferGeometry();
+        const points = [
+            new THREE.Vector3(side * 0.2, height, 0.4),
+            new THREE.Vector3(side * 0.6, height + 0.1, 0.3)
+        ];
+        whiskerGeometry.setFromPoints(points);
+        const whisker = new THREE.Line(whiskerGeometry, whiskerMaterial);
         moleGroup.add(whisker);
     };
 
-    // Add multiple whiskers
+    // Add whiskers
     createWhisker(-1, 0.3);
     createWhisker(-1, 0.2);
     createWhisker(1, 0.3);
