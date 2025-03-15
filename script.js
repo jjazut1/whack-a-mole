@@ -39,18 +39,6 @@ timerElement.style.color = 'white';
 timerElement.style.fontSize = '24px';
 document.body.appendChild(timerElement);
 
-// Add word display element
-const wordElement = document.createElement('div');
-wordElement.style.position = 'absolute';
-wordElement.style.top = '50%';
-wordElement.style.left = '50%';
-wordElement.style.transform = 'translate(-50%, -50%)';
-wordElement.style.color = 'white';
-wordElement.style.fontSize = '48px';
-wordElement.style.fontWeight = 'bold';
-wordElement.style.textShadow = '2px 2px 4px rgba(0,0,0,0.5)';
-document.body.appendChild(wordElement);
-
 // Add instructions element
 const instructionsElement = document.createElement('div');
 instructionsElement.style.position = 'absolute';
@@ -141,19 +129,165 @@ holes.forEach(pos => {
     moles.push(moleGroup);
 });
 
-// Improved mole animation
+// Modified click handler
+window.addEventListener('click', (event) => {
+    if (!gameActive) {
+        startGame();
+        instructionsElement.style.display = 'none';
+        return;
+    }
+    
+    const mouse = new THREE.Vector2(
+        (event.clientX / window.innerWidth) * 2 - 1,
+        -(event.clientY / window.innerHeight) * 2 + 1
+    );
+    
+    const raycaster = new THREE.Raycaster();
+    raycaster.setFromCamera(mouse, camera);
+    
+    const intersects = raycaster.intersectObjects(
+        moles.map(moleGroup => moleGroup.children[0])
+    );
+    
+    if (intersects.length > 0) {
+        const hitMole = intersects[0].object.parent;
+        if (hitMole.userData.isUp && !hitMole.userData.isMoving) {
+            if (isShortAWord) {
+                score += 10;
+            } else {
+                score = Math.max(0, score - 5);
+            }
+            updateUI();
+            animateMole(hitMole, false);
+        }
+    }
+});
+
+// Camera Position
+camera.position.set(0, 5, 5);
+camera.lookAt(0, 0, 0);
+
+// Animation Loop
+function animate() {
+    requestAnimationFrame(animate);
+    renderer.render(scene, camera);
+}
+animate();
+
+// Modify the mole creation function to include text
+function createMole() {
+    const moleGroup = new THREE.Group();
+    
+    // Body
+    const body = new THREE.Mesh(
+        new THREE.SphereGeometry(0.5, 32, 32),
+        new THREE.MeshLambertMaterial({ color: 0xA0522D })
+    );
+    moleGroup.add(body);
+
+    // Create text canvas
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d');
+    canvas.width = 256;
+    canvas.height = 256;
+    
+    // Create text texture
+    const textTexture = new THREE.Texture(canvas);
+    const textMaterial = new THREE.MeshBasicMaterial({
+        map: textTexture,
+        transparent: true
+    });
+    
+    // Create text plane
+    const textPlane = new THREE.Mesh(
+        new THREE.PlaneGeometry(0.6, 0.3),
+        textMaterial
+    );
+    textPlane.position.set(0, 0, 0.52); // Position slightly in front of body
+    moleGroup.add(textPlane);
+    
+    // Store texture and context for updating
+    moleGroup.userData.textTexture = textTexture;
+    moleGroup.userData.textContext = context;
+    
+    // Rest of mole features (eyes, nose, etc.)
+    const nose = new THREE.Mesh(
+        new THREE.SphereGeometry(0.08, 16, 16),
+        new THREE.MeshLambertMaterial({ color: 0x000000 })
+    );
+    nose.position.set(0, 0.2, 0.6);
+    moleGroup.add(nose);
+
+    // Eyes
+    const eyeGeometry = new THREE.SphereGeometry(0.08, 16, 16);
+    const eyeMaterial = new THREE.MeshLambertMaterial({ color: 0x000000 });
+    
+    const leftEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+    leftEye.position.set(-0.2, 0.3, 0.4);
+    moleGroup.add(leftEye);
+    
+    const rightEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+    rightEye.position.set(0.2, 0.3, 0.4);
+    moleGroup.add(rightEye);
+
+    return moleGroup;
+}
+
+// Function to update mole's text
+function updateMoleText(mole, word) {
+    const context = mole.userData.textContext;
+    const texture = mole.userData.textTexture;
+    
+    // Clear the canvas
+    context.clearRect(0, 0, 256, 256);
+    
+    // Set text properties
+    context.fillStyle = 'white';
+    context.font = 'bold 72px Arial';
+    context.textAlign = 'center';
+    context.textBaseline = 'middle';
+    
+    // Draw text
+    context.fillText(word, 128, 128);
+    
+    // Update the texture
+    texture.needsUpdate = true;
+}
+
+// Replace existing moles creation with new detailed moles
+moles.length = 0;
+holes.forEach(pos => {
+    const mole = createMole();
+    mole.position.set(pos.x, -1.5, pos.z);
+    mole.userData.isUp = false;
+    mole.userData.isMoving = false;
+    scene.add(mole);
+    moles.push(mole);
+});
+
+// Modify the assignNewWord function
+function assignNewWord(mole) {
+    isShortAWord = Math.random() < 0.7;
+    const wordList = isShortAWord ? shortAWords : otherWords;
+    currentWord = wordList[Math.floor(Math.random() * wordList.length)];
+    updateMoleText(mole, currentWord);
+}
+
+// Modify the animateMole function
 function animateMole(mole, goingUp) {
     if (mole.userData.isMoving) return;
-    
-    if (goingUp) {
-        assignNewWord();
-    }
     
     mole.userData.isMoving = true;
     const targetY = goingUp ? 0 : -1.5;
     const duration = 200;
     const startY = mole.position.y;
     const startTime = Date.now();
+    
+    if (goingUp) {
+        assignNewWord(mole);
+    } else {
+        updateMoleText(mole, ''); // Clear text when going down
+    }
     
     function update() {
         const elapsed = Date.now() - startTime;
@@ -196,16 +330,6 @@ function startGame() {
     }, 1000);
 }
 
-function assignNewWord() {
-    // 70% chance of short 'a' word
-    isShortAWord = Math.random() < 0.7;
-    const wordList = isShortAWord ? shortAWords : otherWords;
-    currentWord = wordList[Math.floor(Math.random() * wordList.length)];
-    wordElement.textContent = currentWord;
-    // Change color based on word type
-    wordElement.style.color = isShortAWord ? '#FFD700' : 'white';
-}
-
 function updateUI() {
     scoreElement.textContent = `Score: ${score}`;
     timerElement.textContent = `Time: ${timeRemaining}s`;
@@ -229,59 +353,3 @@ function gameLoop() {
     
     setTimeout(gameLoop, 2000); // Slightly slower pace for reading
 }
-
-// Modified click handler
-window.addEventListener('click', (event) => {
-    if (!gameActive) {
-        startGame();
-        instructionsElement.style.display = 'none';
-        return;
-    }
-    
-    const mouse = new THREE.Vector2(
-        (event.clientX / window.innerWidth) * 2 - 1,
-        -(event.clientY / window.innerHeight) * 2 + 1
-    );
-    
-    const raycaster = new THREE.Raycaster();
-    raycaster.setFromCamera(mouse, camera);
-    
-    const intersects = raycaster.intersectObjects(
-        moles.map(moleGroup => moleGroup.children[0])
-    );
-    
-    if (intersects.length > 0) {
-        const hitMole = intersects[0].object.parent;
-        if (hitMole.userData.isUp && !hitMole.userData.isMoving) {
-            if (isShortAWord) {
-                score += 10;
-                // Add success feedback
-                wordElement.style.color = '#00FF00';
-                setTimeout(() => {
-                    wordElement.style.color = 'white';
-                }, 200);
-            } else {
-                score = Math.max(0, score - 5);
-                // Add error feedback
-                wordElement.style.color = '#FF0000';
-                setTimeout(() => {
-                    wordElement.style.color = 'white';
-                }, 200);
-            }
-            updateUI();
-            animateMole(hitMole, false);
-            wordElement.textContent = '';
-        }
-    }
-});
-
-// Camera Position
-camera.position.set(0, 5, 5);
-camera.lookAt(0, 0, 0);
-
-// Animation Loop
-function animate() {
-    requestAnimationFrame(animate);
-    renderer.render(scene, camera);
-}
-animate();
