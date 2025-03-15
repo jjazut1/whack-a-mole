@@ -296,14 +296,6 @@ function createMole() {
     rightEyePupil.position.set(0.3, 0.6, 0.58);
     moleGroup.add(rightEyePupil);
 
-    // Improved smile - made larger and more visible
-    const smileGeometry = new THREE.TorusGeometry(0.3, 0.06, 16, 32, Math.PI);
-    const smileMaterial = new THREE.MeshLambertMaterial({ color: 0x000000 });
-    const smile = new THREE.Mesh(smileGeometry, smileMaterial);
-    smile.position.set(0, 0.3, 0.65); // Moved forward and adjusted height
-    smile.rotation.x = Math.PI / 2; // Corrected rotation
-    moleGroup.add(smile);
-
     // Nose
     const nose = new THREE.Mesh(
         new THREE.SphereGeometry(0.12, 16, 16),
@@ -326,6 +318,42 @@ function createMole() {
             moleGroup.add(whisker);
         });
     });
+
+    // Remove the old smile (TorusGeometry) and add new cartoon mouth
+    const mouthGeometry = new THREE.Shape();
+    
+    // Draw a cartoon mouth shape
+    mouthGeometry.moveTo(-0.25, 0);
+    mouthGeometry.quadraticCurveTo(0, 0.2, 0.25, 0); // Upper curve
+    mouthGeometry.quadraticCurveTo(0, -0.1, -0.25, 0); // Lower curve
+    
+    const mouthMaterial = new THREE.MeshLambertMaterial({ color: 0x000000 });
+    const mouth = new THREE.Mesh(
+        new THREE.ShapeGeometry(mouthGeometry),
+        mouthMaterial
+    );
+    
+    // Position and rotate the mouth
+    mouth.position.set(0, 0.25, 0.66);
+    mouth.rotation.x = -Math.PI / 2;
+    moleGroup.add(mouth);
+
+    // Add a red inner mouth
+    const innerMouthGeometry = new THREE.Shape();
+    innerMouthGeometry.moveTo(-0.2, -0.02);
+    innerMouthGeometry.quadraticCurveTo(0, 0.1, 0.2, -0.02);
+    innerMouthGeometry.quadraticCurveTo(0, -0.08, -0.2, -0.02);
+    
+    const innerMouthMaterial = new THREE.MeshLambertMaterial({ color: 0xFF9999 }); // Pink-red color
+    const innerMouth = new THREE.Mesh(
+        new THREE.ShapeGeometry(innerMouthGeometry),
+        innerMouthMaterial
+    );
+    
+    // Position slightly in front of the black mouth outline
+    innerMouth.position.set(0, 0.25, 0.67);
+    innerMouth.rotation.x = -Math.PI / 2;
+    moleGroup.add(innerMouth);
 
     return moleGroup;
 }
