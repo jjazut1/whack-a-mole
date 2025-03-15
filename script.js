@@ -3,11 +3,12 @@ import * as THREE from 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/thr
 
 // Scene setup
 const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x87CEEB); // Sky blue background
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.setClearColor(0x87CEEB); // Sky blue background
-renderer.outputEncoding = THREE.sRGBEncoding; // Add proper color encoding
+renderer.outputEncoding = THREE.sRGBEncoding;
+renderer.physicallyCorrectLights = true;
 document.body.appendChild(renderer.domElement);
 
 // Game state
@@ -32,19 +33,22 @@ timerElement.style.color = 'white';
 timerElement.style.fontSize = '24px';
 document.body.appendChild(timerElement);
 
-// Improved Lighting
-const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+// Improved Lighting - using multiple lights for better illumination
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
 scene.add(ambientLight);
 
-const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
 directionalLight.position.set(5, 10, 5);
 scene.add(directionalLight);
 
-// Ground with better material
+const fillLight = new THREE.DirectionalLight(0xffffff, 0.5);
+fillLight.position.set(-5, 8, -5);
+scene.add(fillLight);
+
+// Ground
 const groundGeometry = new THREE.PlaneGeometry(10, 10);
-const groundMaterial = new THREE.MeshPhongMaterial({ 
-    color: 0x3c8f3c,  // Green color instead of texture
-    side: THREE.DoubleSide
+const groundMaterial = new THREE.MeshLambertMaterial({ 
+    color: 0x4CAF50  // Brighter green color
 });
 const ground = new THREE.Mesh(groundGeometry, groundMaterial);
 ground.rotation.x = -Math.PI / 2;
@@ -52,7 +56,9 @@ scene.add(ground);
 
 // Hole creation
 const holeGeometry = new THREE.CircleGeometry(0.7, 32);
-const holeMaterial = new THREE.MeshPhongMaterial({ color: 0x1a1a1a }); // Dark gray instead of pure black
+const holeMaterial = new THREE.MeshLambertMaterial({ 
+    color: 0x2C2C2C  // Dark gray for holes
+});
 const holes = [
     { x: -2, z: -2 }, { x: 2, z: -2 },
     { x: -2, z: 2 }, { x: 2, z: 2 }
@@ -65,13 +71,19 @@ holes.forEach(pos => {
     scene.add(hole);
 });
 
-// Improved mole appearance
+// Mole materials with brighter colors
 const moleBodyGeometry = new THREE.SphereGeometry(0.5, 32, 32);
 const moleNoseGeometry = new THREE.SphereGeometry(0.15, 16, 16);
 const moleEyeGeometry = new THREE.SphereGeometry(0.1, 16, 16);
-const moleMaterial = new THREE.MeshPhongMaterial({ color: 0x8B4513 }); // Changed to MeshPhongMaterial
-const moleNoseMaterial = new THREE.MeshPhongMaterial({ color: 0x000000 });
-const moleEyeMaterial = new THREE.MeshPhongMaterial({ color: 0x000000 });
+const moleMaterial = new THREE.MeshLambertMaterial({ 
+    color: 0xA0522D  // Warmer brown color
+});
+const moleNoseMaterial = new THREE.MeshLambertMaterial({ 
+    color: 0x1A1A1A  // Dark gray for nose
+});
+const moleEyeMaterial = new THREE.MeshLambertMaterial({ 
+    color: 0x1A1A1A  // Dark gray for eyes
+});
 
 const moles = [];
 holes.forEach(pos => {
