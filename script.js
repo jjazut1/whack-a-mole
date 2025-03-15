@@ -1,6 +1,15 @@
 // Import Three.js (Make sure you include Three.js in your HTML)
 import * as THREE from 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.module.min.js';
 
+// Initialize variables first
+const shortAWords = ['hat', 'cat', 'bat', 'mad', 'sad', 'bad', 'dad', 'had', 'lap', 'map', 'nap', 'rap'];
+const otherWords = ['hit', 'hot', 'but', 'set', 'sit', 'let', 'pot', 'put', 'met'];
+let currentWord = '';
+let isShortAWord = false;
+let score = 0;
+let gameActive = false;
+let timeRemaining = 30;
+
 // Scene setup
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x87CEEB); // Sky blue background
@@ -15,17 +24,6 @@ const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.outputEncoding = THREE.sRGBEncoding;
 document.body.appendChild(renderer.domElement);
-
-// Game state
-let score = 0;
-let gameActive = false;
-let timeRemaining = 30; // 30 seconds game duration
-
-// Add word lists
-const shortAWords = ['hat', 'cat', 'bat', 'mad', 'sad', 'bad', 'dad', 'had', 'lap', 'map', 'nap', 'rap'];
-const otherWords = ['hit', 'hot', 'but', 'set', 'sit', 'let', 'pot', 'put', 'met'];
-let currentWord = '';
-let isShortAWord = false;
 
 // UI Setup
 const scoreElement = document.createElement('div');
@@ -86,6 +84,7 @@ const holes = [
     { x: -3, z: 2 }, { x: 3, z: 2 }
 ];
 
+// Create holes
 holes.forEach(pos => {
     const hole = new THREE.Mesh(holeGeometry, holeMaterial);
     hole.rotation.x = -Math.PI / 2;
@@ -93,10 +92,8 @@ holes.forEach(pos => {
     scene.add(hole);
 });
 
-// Create moles array
+// Create moles
 const moles = [];
-
-// Initialize moles
 holes.forEach(pos => {
     const mole = createMole();
     mole.position.set(pos.x, -1.0, pos.z);
@@ -434,7 +431,6 @@ function startGame() {
         if (timeRemaining <= 0) {
             gameActive = false;
             clearInterval(gameTimer);
-            wordElement.textContent = '';
             instructionsElement.innerHTML = `Game Over! Final Score: ${score}<br>Click anywhere to play again`;
         }
     }, 1000);
@@ -456,7 +452,6 @@ function gameLoop() {
         setTimeout(() => {
             if (randomMole.userData.isUp) {
                 animateMole(randomMole, false);
-                wordElement.textContent = '';
             }
         }, 1500); // Increased time to read the word
     }
