@@ -59,8 +59,8 @@ const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
 directionalLight.position.set(5, 10, 5);
 scene.add(directionalLight);
 
-const frontLight = new THREE.DirectionalLight(0xffffff, 0.5);
-frontLight.position.set(0, 2, 8);
+const frontLight = new THREE.DirectionalLight(0xffffff, 0.8);
+frontLight.position.set(0, 0, 5);
 scene.add(frontLight);
 
 // Ground
@@ -217,16 +217,34 @@ function updateMoleText(mole, word) {
     const texture = mole.userData.textTexture;
     
     // Clear the canvas
-    context.clearRect(0, 0, 512, 512);
+    context.clearRect(0, 0, 1024, 1024);
+    
+    // Add subtle background for better contrast
+    context.fillStyle = 'rgba(255, 255, 255, 0.9)';
+    context.fillRect(0, 0, 1024, 1024);
     
     // Set text properties
     context.fillStyle = 'black';
-    context.font = 'bold 160px Arial'; // Adjusted size
+    context.font = 'bold 280px Arial'; // Larger font
     context.textAlign = 'center';
     context.textBaseline = 'middle';
     
+    // Add text shadow for better visibility
+    context.shadowColor = 'rgba(0, 0, 0, 0.3)';
+    context.shadowBlur = 4;
+    context.shadowOffsetX = 2;
+    context.shadowOffsetY = 2;
+    
     // Draw text
-    context.fillText(word, 256, 256);
+    context.fillText(word, 512, 512);
+    
+    // Add stroke to the text
+    context.strokeStyle = 'rgba(0, 0, 0, 0.5)';
+    context.lineWidth = 8;
+    context.strokeText(word, 512, 512);
+    
+    // Reset shadow
+    context.shadowColor = 'transparent';
     
     // Update the texture
     texture.needsUpdate = true;
@@ -242,26 +260,40 @@ function createMole() {
     const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
     moleGroup.add(body);
 
-    // Text plane - positioned in lower half of mole
+    // Text plane - improved for better visibility
     const canvas = document.createElement('canvas');
     const context = canvas.getContext('2d');
-    canvas.width = 512;
-    canvas.height = 512;
+    canvas.width = 1024; // Increased resolution
+    canvas.height = 1024; // Increased resolution
     
     const textTexture = new THREE.Texture(canvas);
+    textTexture.minFilter = THREE.LinearFilter; // Improve text sharpness
+    textTexture.magFilter = THREE.LinearFilter; // Improve text sharpness
+    
     const textMaterial = new THREE.MeshBasicMaterial({
         map: textTexture,
         transparent: true,
-        side: THREE.DoubleSide
+        side: THREE.DoubleSide,
     });
     
     const textPlane = new THREE.Mesh(
-        new THREE.PlaneGeometry(1.2, 1.2),
+        new THREE.PlaneGeometry(1.4, 1.4), // Slightly larger text area
         textMaterial
     );
-    // Position text on the front lower half
-    textPlane.position.set(0, -0.2, 0.75);
+    // Adjusted position for better visibility
+    textPlane.position.set(0, -0.15, 0.82); // Moved slightly forward
     moleGroup.add(textPlane);
+    
+    // Add a background plane behind text for better contrast
+    const textBgGeometry = new THREE.PlaneGeometry(1.3, 0.7);
+    const textBgMaterial = new THREE.MeshBasicMaterial({
+        color: 0xFFFFFF, // White background
+        transparent: true,
+        opacity: 0.8
+    });
+    const textBackground = new THREE.Mesh(textBgGeometry, textBgMaterial);
+    textBackground.position.set(0, -0.15, 0.81); // Slightly behind text
+    moleGroup.add(textBackground);
     
     moleGroup.userData.textTexture = textTexture;
     moleGroup.userData.textContext = context;
