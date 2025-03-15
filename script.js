@@ -389,8 +389,8 @@ function startGame() {
         if (timeRemaining <= 0) {
             gameActive = false;
             clearInterval(gameTimer);
-            wordElement.textContent = '';
             instructionsElement.innerHTML = `Game Over! Final Score: ${score}<br>Click anywhere to play again`;
+            instructionsElement.style.display = 'block';
         }
     }, 1000);
 }
@@ -411,10 +411,9 @@ function gameLoop() {
         setTimeout(() => {
             if (randomMole.userData.isUp) {
                 animateMole(randomMole, false);
-                wordElement.textContent = '';
             }
-        }, 1500); // Increased time to read the word
+        }, 1500);
     }
     
-    setTimeout(gameLoop, 2000); // Slightly slower pace for reading
+    setTimeout(gameLoop, 2000);
 }
