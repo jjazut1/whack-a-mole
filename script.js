@@ -4,8 +4,9 @@ import * as THREE from 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/thr
 // Scene setup
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-const renderer = new THREE.WebGLRenderer();
+const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setClearColor(0x87CEEB); // Add sky blue background
 document.body.appendChild(renderer.domElement);
 
 // Game state
@@ -30,9 +31,13 @@ timerElement.style.color = 'white';
 timerElement.style.fontSize = '24px';
 document.body.appendChild(timerElement);
 
-// Lighting
-const light = new THREE.AmbientLight(0xffffff, 1);
-scene.add(light);
+// Improved Lighting
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+scene.add(ambientLight);
+
+const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+directionalLight.position.set(5, 5, 5);
+scene.add(directionalLight);
 
 // Ground with better material
 const groundGeometry = new THREE.PlaneGeometry(10, 10);
@@ -41,7 +46,9 @@ groundTexture.wrapS = groundTexture.wrapT = THREE.RepeatWrapping;
 groundTexture.repeat.set(4, 4);
 const groundMaterial = new THREE.MeshStandardMaterial({ 
     map: groundTexture,
-    side: THREE.DoubleSide 
+    side: THREE.DoubleSide,
+    roughness: 0.8,
+    metalness: 0.2
 });
 const ground = new THREE.Mesh(groundGeometry, groundMaterial);
 ground.rotation.x = -Math.PI / 2;
