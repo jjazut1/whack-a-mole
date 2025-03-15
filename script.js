@@ -73,7 +73,7 @@ ground.rotation.x = -Math.PI / 2;
 scene.add(ground);
 
 // Hole creation
-const holeGeometry = new THREE.CircleGeometry(0.7, 32);
+const holeGeometry = new THREE.CircleGeometry(1.0, 32);
 const holeMaterial = new THREE.MeshLambertMaterial({ 
     color: 0x2C2C2C  // Dark gray for holes
 });
@@ -85,7 +85,7 @@ const holes = [
 holes.forEach(pos => {
     const hole = new THREE.Mesh(holeGeometry, holeMaterial);
     hole.rotation.x = -Math.PI / 2;
-    hole.position.set(pos.x, 0.01, pos.z);
+    hole.position.set(pos.x * 1.5, 0.01, pos.z * 1.5);
     scene.add(hole);
 });
 
@@ -106,7 +106,7 @@ const moleEyeMaterial = new THREE.MeshLambertMaterial({
 const moles = [];
 holes.forEach(pos => {
     const mole = createMole();
-    mole.position.set(pos.x, -1.0, pos.z);
+    mole.position.set(pos.x * 1.5, -1.5, pos.z * 1.5);
     mole.userData.isUp = false;
     mole.userData.isMoving = false;
     scene.add(mole);
@@ -138,6 +138,8 @@ window.addEventListener('click', (event) => {
         if (hitMole.userData.isUp && !hitMole.userData.isMoving) {
             if (isShortAWord) {
                 score += 10;
+                // Add success indicator at hit position
+                createSuccessIndicator(hitMole.position.clone().add(new THREE.Vector3(0, 1, 0)));
             } else {
                 score = Math.max(0, score - 5);
             }
@@ -148,7 +150,7 @@ window.addEventListener('click', (event) => {
 });
 
 // Camera Position
-camera.position.set(0, 4.5, 6.5);
+camera.position.set(0, 6, 8);
 camera.lookAt(0, 0, 0);
 
 // Animation Loop
@@ -158,24 +160,74 @@ function animate() {
 }
 animate();
 
-// Modify mole creation function for a more cartoon-like appearance
+// Add success indicator function
+function createSuccessIndicator(position) {
+    const particles = [];
+    const particleCount = 20;
+    const colors = [0xFFFF00, 0x00FF00, 0xFF00FF]; // Yellow, green, and pink particles
+    
+    for (let i = 0; i < particleCount; i++) {
+        const geometry = new THREE.SphereGeometry(0.1, 8, 8);
+        const material = new THREE.MeshBasicMaterial({ 
+            color: colors[Math.floor(Math.random() * colors.length)],
+            transparent: true 
+        });
+        const particle = new THREE.Mesh(geometry, material);
+        
+        // Set initial position at hit point
+        particle.position.copy(position);
+        
+        // Random velocity
+        particle.velocity = new THREE.Vector3(
+            (Math.random() - 0.5) * 0.3,
+            Math.random() * 0.2,
+            (Math.random() - 0.5) * 0.3
+        );
+        
+        scene.add(particle);
+        particles.push(particle);
+    }
+    
+    // Animate particles
+    let elapsed = 0;
+    function animateParticles() {
+        elapsed += 0.016; // Approximate for 60fps
+        
+        particles.forEach((particle, i) => {
+            particle.position.add(particle.velocity);
+            particle.velocity.y -= 0.01; // Gravity
+            particle.material.opacity = 1 - (elapsed * 2);
+            particle.scale.multiplyScalar(0.98); // Shrink particles
+        });
+        
+        if (elapsed < 0.5) { // Animation duration
+            requestAnimationFrame(animateParticles);
+        } else {
+            // Clean up particles
+            particles.forEach(particle => scene.remove(particle));
+        }
+    }
+    
+    animateParticles();
+}
+
+// Modify mole creation function
 function createMole() {
     const moleGroup = new THREE.Group();
     
-    // Body - make it more oval and lighter colored
-    const bodyGeometry = new THREE.SphereGeometry(0.5, 32, 32);
-    bodyGeometry.scale(1, 1.2, 0.8); // Make it more oval shaped
-    const bodyMaterial = new THREE.MeshLambertMaterial({ color: 0xFFD280 }); // Lighter, more cartoonish color
+    // Body - make it larger
+    const bodyGeometry = new THREE.SphereGeometry(0.8, 32, 32);
+    bodyGeometry.scale(1, 1.2, 0.8);
+    const bodyMaterial = new THREE.MeshLambertMaterial({ color: 0xFFD280 });
     const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
     moleGroup.add(body);
 
-    // Create text canvas with rounded background
+    // Text plane - moved lower
     const canvas = document.createElement('canvas');
     const context = canvas.getContext('2d');
     canvas.width = 256;
     canvas.height = 128;
     
-    // Create text texture
     const textTexture = new THREE.Texture(canvas);
     const textMaterial = new THREE.MeshBasicMaterial({
         map: textTexture,
@@ -183,87 +235,76 @@ function createMole() {
         side: THREE.DoubleSide
     });
     
-    // Create slightly larger text plane for better visibility
     const textPlane = new THREE.Mesh(
-        new THREE.PlaneGeometry(0.9, 0.5),
+        new THREE.PlaneGeometry(1.2, 0.6), // Larger text area
         textMaterial
     );
-    textPlane.position.set(0, 0.1, 0.42);
+    textPlane.position.set(0, -0.1, 0.42); // Moved down
     textPlane.rotation.x = -0.2;
     moleGroup.add(textPlane);
     
-    // Store texture and context for updating
     moleGroup.userData.textTexture = textTexture;
     moleGroup.userData.textContext = context;
 
-    // Eyes - larger and more cartoon-like
-    const eyeGeometry = new THREE.SphereGeometry(0.12, 16, 16);
+    // Larger eyes
+    const eyeGeometry = new THREE.SphereGeometry(0.15, 16, 16);
     const eyeWhiteMaterial = new THREE.MeshLambertMaterial({ color: 0xFFFFFF });
     const eyePupilMaterial = new THREE.MeshLambertMaterial({ color: 0x000000 });
     
-    // Left eye white
+    // Eyes with pupils
     const leftEyeWhite = new THREE.Mesh(eyeGeometry, eyeWhiteMaterial);
-    leftEyeWhite.position.set(-0.2, 0.5, 0.35);
+    leftEyeWhite.position.set(-0.3, 0.6, 0.35);
     moleGroup.add(leftEyeWhite);
     
-    // Left eye pupil (smaller black sphere)
     const leftEyePupil = new THREE.Mesh(
-        new THREE.SphereGeometry(0.06, 16, 16),
+        new THREE.SphereGeometry(0.08, 16, 16),
         eyePupilMaterial
     );
-    leftEyePupil.position.set(-0.2, 0.5, 0.45);
+    leftEyePupil.position.set(-0.3, 0.6, 0.48);
     moleGroup.add(leftEyePupil);
     
-    // Right eye white
     const rightEyeWhite = new THREE.Mesh(eyeGeometry, eyeWhiteMaterial);
-    rightEyeWhite.position.set(0.2, 0.5, 0.35);
+    rightEyeWhite.position.set(0.3, 0.6, 0.35);
     moleGroup.add(rightEyeWhite);
     
-    // Right eye pupil
     const rightEyePupil = new THREE.Mesh(
-        new THREE.SphereGeometry(0.06, 16, 16),
+        new THREE.SphereGeometry(0.08, 16, 16),
         eyePupilMaterial
     );
-    rightEyePupil.position.set(0.2, 0.5, 0.45);
+    rightEyePupil.position.set(0.3, 0.6, 0.48);
     moleGroup.add(rightEyePupil);
 
-    // Nose - small and round
-    const nose = new THREE.Mesh(
-        new THREE.SphereGeometry(0.08, 16, 16),
+    // Add smile
+    const smile = new THREE.Mesh(
+        new THREE.TorusGeometry(0.2, 0.05, 16, 32, Math.PI),
         new THREE.MeshLambertMaterial({ color: 0x000000 })
     );
-    nose.position.set(0, 0.35, 0.48);
+    smile.position.set(0, 0.2, 0.6);
+    smile.rotation.x = -Math.PI / 2;
+    moleGroup.add(smile);
+
+    // Nose
+    const nose = new THREE.Mesh(
+        new THREE.SphereGeometry(0.12, 16, 16),
+        new THREE.MeshLambertMaterial({ color: 0x000000 })
+    );
+    nose.position.set(0, 0.4, 0.6);
     moleGroup.add(nose);
 
-    // Add whiskers using thin cylinders
+    // Updated whisker positions
     const whiskerMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
-    const whiskerGeometry = new THREE.CylinderGeometry(0.005, 0.005, 0.3);
+    const whiskerGeometry = new THREE.CylinderGeometry(0.005, 0.005, 0.4);
     
-    // Left whiskers
-    const leftWhisker1 = new THREE.Mesh(whiskerGeometry, whiskerMaterial);
-    leftWhisker1.position.set(-0.3, 0.35, 0.3);
-    leftWhisker1.rotation.z = Math.PI / 4;
-    leftWhisker1.rotation.y = -Math.PI / 6;
-    moleGroup.add(leftWhisker1);
-
-    const leftWhisker2 = new THREE.Mesh(whiskerGeometry, whiskerMaterial);
-    leftWhisker2.position.set(-0.3, 0.25, 0.3);
-    leftWhisker2.rotation.z = Math.PI / 6;
-    leftWhisker2.rotation.y = -Math.PI / 6;
-    moleGroup.add(leftWhisker2);
-
-    // Right whiskers
-    const rightWhisker1 = new THREE.Mesh(whiskerGeometry, whiskerMaterial);
-    rightWhisker1.position.set(0.3, 0.35, 0.3);
-    rightWhisker1.rotation.z = -Math.PI / 4;
-    rightWhisker1.rotation.y = Math.PI / 6;
-    moleGroup.add(rightWhisker1);
-
-    const rightWhisker2 = new THREE.Mesh(whiskerGeometry, whiskerMaterial);
-    rightWhisker2.position.set(0.3, 0.25, 0.3);
-    rightWhisker2.rotation.z = -Math.PI / 6;
-    rightWhisker2.rotation.y = Math.PI / 6;
-    moleGroup.add(rightWhisker2);
+    // Whiskers adjusted for larger mole
+    [-1, 1].forEach(side => {
+        [0.4, 0.2].forEach(height => {
+            const whisker = new THREE.Mesh(whiskerGeometry, whiskerMaterial);
+            whisker.position.set(0.4 * side, height, 0.4);
+            whisker.rotation.z = Math.PI / 6 * -side;
+            whisker.rotation.y = Math.PI / 6 * side;
+            moleGroup.add(whisker);
+        });
+    });
 
     return moleGroup;
 }
