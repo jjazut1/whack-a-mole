@@ -4,11 +4,16 @@ import * as THREE from 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/thr
 // Scene setup
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x87CEEB); // Sky blue background
+
+// Camera setup
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+camera.position.set(0, 4, 8);
+camera.lookAt(0, 0, 0);
+
+// Renderer setup
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.outputEncoding = THREE.sRGBEncoding;
-renderer.physicallyCorrectLights = true;
 document.body.appendChild(renderer.domElement);
 
 // Game state
@@ -51,25 +56,22 @@ instructionsElement.style.textAlign = 'center';
 instructionsElement.innerHTML = 'Hit the mole when you see a word with the short "a" sound!<br>Click anywhere to start';
 document.body.appendChild(instructionsElement);
 
-// Improved Lighting - using multiple lights for better illumination
-const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+// Lighting
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
 scene.add(ambientLight);
 
 const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
 directionalLight.position.set(5, 10, 5);
 scene.add(directionalLight);
 
-const frontLight = new THREE.DirectionalLight(0xffffff, 0.5);
-frontLight.position.set(0, 2, 8);
-scene.add(frontLight);
-
 // Ground
-const groundGeometry = new THREE.PlaneGeometry(10, 10);
+const groundGeometry = new THREE.PlaneGeometry(20, 20);
 const groundMaterial = new THREE.MeshLambertMaterial({ 
-    color: 0x4CAF50  // Brighter green color
+    color: 0xC2B280  // Sandy/dirt color
 });
 const ground = new THREE.Mesh(groundGeometry, groundMaterial);
 ground.rotation.x = -Math.PI / 2;
+ground.position.y = -0.5;
 scene.add(ground);
 
 // Hole creation
@@ -77,36 +79,27 @@ const holeGeometry = new THREE.CircleGeometry(1.0, 32);
 const holeMaterial = new THREE.MeshLambertMaterial({ 
     color: 0x2C2C2C  // Dark gray for holes
 });
+
+// Hole positions
 const holes = [
-    { x: -2, z: -2 }, { x: 2, z: -2 },
-    { x: -2, z: 2 }, { x: 2, z: 2 }
+    { x: -3, z: -1 }, { x: 3, z: -1 },
+    { x: -3, z: 2 }, { x: 3, z: 2 }
 ];
 
 holes.forEach(pos => {
     const hole = new THREE.Mesh(holeGeometry, holeMaterial);
     hole.rotation.x = -Math.PI / 2;
-    hole.position.set(pos.x * 1.5, 0.01, pos.z * 1.5);
+    hole.position.set(pos.x, 0.01, pos.z);
     scene.add(hole);
 });
 
-// Mole materials with brighter colors
-const moleBodyGeometry = new THREE.SphereGeometry(0.5, 32, 32);
-const moleNoseGeometry = new THREE.SphereGeometry(0.15, 16, 16);
-const moleEyeGeometry = new THREE.SphereGeometry(0.1, 16, 16);
-const moleMaterial = new THREE.MeshLambertMaterial({ 
-    color: 0xA0522D  // Warmer brown color
-});
-const moleNoseMaterial = new THREE.MeshLambertMaterial({ 
-    color: 0x1A1A1A  // Dark gray for nose
-});
-const moleEyeMaterial = new THREE.MeshLambertMaterial({ 
-    color: 0x1A1A1A  // Dark gray for eyes
-});
-
+// Create moles array
 const moles = [];
+
+// Initialize moles
 holes.forEach(pos => {
     const mole = createMole();
-    mole.position.set(pos.x * 1.5, -1.5, pos.z * 1.5);
+    mole.position.set(pos.x, -1.0, pos.z);
     mole.userData.isUp = false;
     mole.userData.isMoving = false;
     scene.add(mole);
@@ -149,16 +142,21 @@ window.addEventListener('click', (event) => {
     }
 });
 
-// Camera Position
-camera.position.set(0, 4, 8);
-camera.lookAt(0, 0, 0);
-
 // Animation Loop
 function animate() {
     requestAnimationFrame(animate);
     renderer.render(scene, camera);
 }
 animate();
+
+// Handle window resize
+window.addEventListener('resize', onWindowResize, false);
+
+function onWindowResize() {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+}
 
 // Add success indicator function
 function createSuccessIndicator(position) {
