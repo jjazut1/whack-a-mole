@@ -16,6 +16,12 @@ let score = 0;
 let gameActive = false;
 let timeRemaining = 30; // 30 seconds game duration
 
+// Add word lists
+const shortAWords = ['hat', 'cat', 'bat', 'mad', 'sad', 'bad', 'dad', 'had', 'lap', 'map', 'nap', 'rap'];
+const otherWords = ['hit', 'hot', 'but', 'set', 'sit', 'let', 'pot', 'put', 'met'];
+let currentWord = '';
+let isShortAWord = false;
+
 // UI Setup
 const scoreElement = document.createElement('div');
 scoreElement.style.position = 'absolute';
@@ -32,6 +38,30 @@ timerElement.style.right = '20px';
 timerElement.style.color = 'white';
 timerElement.style.fontSize = '24px';
 document.body.appendChild(timerElement);
+
+// Add word display element
+const wordElement = document.createElement('div');
+wordElement.style.position = 'absolute';
+wordElement.style.top = '50%';
+wordElement.style.left = '50%';
+wordElement.style.transform = 'translate(-50%, -50%)';
+wordElement.style.color = 'white';
+wordElement.style.fontSize = '48px';
+wordElement.style.fontWeight = 'bold';
+wordElement.style.textShadow = '2px 2px 4px rgba(0,0,0,0.5)';
+document.body.appendChild(wordElement);
+
+// Add instructions element
+const instructionsElement = document.createElement('div');
+instructionsElement.style.position = 'absolute';
+instructionsElement.style.bottom = '20px';
+instructionsElement.style.left = '50%';
+instructionsElement.style.transform = 'translateX(-50%)';
+instructionsElement.style.color = 'white';
+instructionsElement.style.fontSize = '24px';
+instructionsElement.style.textAlign = 'center';
+instructionsElement.innerHTML = 'Hit the mole when you see a word with the short "a" sound!<br>Click anywhere to start';
+document.body.appendChild(instructionsElement);
 
 // Improved Lighting - using multiple lights for better illumination
 const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
@@ -115,6 +145,10 @@ holes.forEach(pos => {
 function animateMole(mole, goingUp) {
     if (mole.userData.isMoving) return;
     
+    if (goingUp) {
+        assignNewWord();
+    }
+    
     mole.userData.isMoving = true;
     const targetY = goingUp ? 0 : -1.5;
     const duration = 200;
@@ -156,9 +190,20 @@ function startGame() {
         if (timeRemaining <= 0) {
             gameActive = false;
             clearInterval(gameTimer);
-            alert(`Game Over! Final Score: ${score}`);
+            wordElement.textContent = '';
+            instructionsElement.innerHTML = `Game Over! Final Score: ${score}<br>Click anywhere to play again`;
         }
     }, 1000);
+}
+
+function assignNewWord() {
+    // 70% chance of short 'a' word
+    isShortAWord = Math.random() < 0.7;
+    const wordList = isShortAWord ? shortAWords : otherWords;
+    currentWord = wordList[Math.floor(Math.random() * wordList.length)];
+    wordElement.textContent = currentWord;
+    // Change color based on word type
+    wordElement.style.color = isShortAWord ? '#FFD700' : 'white';
 }
 
 function updateUI() {
@@ -174,21 +219,22 @@ function gameLoop() {
         const randomMole = availableMoles[Math.floor(Math.random() * availableMoles.length)];
         animateMole(randomMole, true);
         
-        // Hide mole after random time
         setTimeout(() => {
             if (randomMole.userData.isUp) {
                 animateMole(randomMole, false);
+                wordElement.textContent = '';
             }
-        }, 800 + Math.random() * 500);
+        }, 1500); // Increased time to read the word
     }
     
-    setTimeout(gameLoop, 1000 + Math.random() * 500);
+    setTimeout(gameLoop, 2000); // Slightly slower pace for reading
 }
 
-// Enhanced click detection
+// Modified click handler
 window.addEventListener('click', (event) => {
     if (!gameActive) {
         startGame();
+        instructionsElement.style.display = 'none';
         return;
     }
     
@@ -207,9 +253,24 @@ window.addEventListener('click', (event) => {
     if (intersects.length > 0) {
         const hitMole = intersects[0].object.parent;
         if (hitMole.userData.isUp && !hitMole.userData.isMoving) {
-            score += 10;
+            if (isShortAWord) {
+                score += 10;
+                // Add success feedback
+                wordElement.style.color = '#00FF00';
+                setTimeout(() => {
+                    wordElement.style.color = 'white';
+                }, 200);
+            } else {
+                score = Math.max(0, score - 5);
+                // Add error feedback
+                wordElement.style.color = '#FF0000';
+                setTimeout(() => {
+                    wordElement.style.color = 'white';
+                }, 200);
+            }
             updateUI();
             animateMole(hitMole, false);
+            wordElement.textContent = '';
         }
     }
 });
