@@ -1,29 +1,26 @@
 // Import Three.js (Make sure you include Three.js in your HTML)
 import * as THREE from 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.module.min.js';
 
-// Initialize variables first
+// Scene setup
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x87CEEB); // Sky blue background
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.outputEncoding = THREE.sRGBEncoding;
+renderer.physicallyCorrectLights = true;
+document.body.appendChild(renderer.domElement);
+
+// Game state
+let score = 0;
+let gameActive = false;
+let timeRemaining = 30; // 30 seconds game duration
+
+// Add word lists
 const shortAWords = ['hat', 'cat', 'bat', 'mad', 'sad', 'bad', 'dad', 'had', 'lap', 'map', 'nap', 'rap'];
 const otherWords = ['hit', 'hot', 'but', 'set', 'sit', 'let', 'pot', 'put', 'met'];
 let currentWord = '';
 let isShortAWord = false;
-let score = 0;
-let gameActive = false;
-let timeRemaining = 30;
-
-// Scene setup
-const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x87CEEB); // Sky blue background
-
-// Camera setup
-const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-camera.position.set(0, 4, 8);
-camera.lookAt(0, 0, 0);
-
-// Renderer setup
-const renderer = new THREE.WebGLRenderer({ antialias: true });
-renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.outputEncoding = THREE.sRGBEncoding;
-document.body.appendChild(renderer.domElement);
 
 // UI Setup
 const scoreElement = document.createElement('div');
@@ -54,22 +51,25 @@ instructionsElement.style.textAlign = 'center';
 instructionsElement.innerHTML = 'Hit the mole when you see a word with the short "a" sound!<br>Click anywhere to start';
 document.body.appendChild(instructionsElement);
 
-// Lighting
-const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+// Improved Lighting - using multiple lights for better illumination
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
 scene.add(ambientLight);
 
 const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
 directionalLight.position.set(5, 10, 5);
 scene.add(directionalLight);
 
+const frontLight = new THREE.DirectionalLight(0xffffff, 0.5);
+frontLight.position.set(0, 2, 8);
+scene.add(frontLight);
+
 // Ground
-const groundGeometry = new THREE.PlaneGeometry(20, 20);
+const groundGeometry = new THREE.PlaneGeometry(10, 10);
 const groundMaterial = new THREE.MeshLambertMaterial({ 
-    color: 0xC2B280  // Sandy/dirt color
+    color: 0x4CAF50  // Brighter green color
 });
 const ground = new THREE.Mesh(groundGeometry, groundMaterial);
 ground.rotation.x = -Math.PI / 2;
-ground.position.y = -0.5;
 scene.add(ground);
 
 // Hole creation
@@ -77,26 +77,36 @@ const holeGeometry = new THREE.CircleGeometry(1.0, 32);
 const holeMaterial = new THREE.MeshLambertMaterial({ 
     color: 0x2C2C2C  // Dark gray for holes
 });
-
-// Hole positions
 const holes = [
-    { x: -3, z: -1 }, { x: 3, z: -1 },
-    { x: -3, z: 2 }, { x: 3, z: 2 }
+    { x: -2, z: -2 }, { x: 2, z: -2 },
+    { x: -2, z: 2 }, { x: 2, z: 2 }
 ];
 
-// Create holes
 holes.forEach(pos => {
     const hole = new THREE.Mesh(holeGeometry, holeMaterial);
     hole.rotation.x = -Math.PI / 2;
-    hole.position.set(pos.x, 0.01, pos.z);
+    hole.position.set(pos.x * 1.5, 0.01, pos.z * 1.5);
     scene.add(hole);
 });
 
-// Create moles
+// Mole materials with brighter colors
+const moleBodyGeometry = new THREE.SphereGeometry(0.5, 32, 32);
+const moleNoseGeometry = new THREE.SphereGeometry(0.15, 16, 16);
+const moleEyeGeometry = new THREE.SphereGeometry(0.1, 16, 16);
+const moleMaterial = new THREE.MeshLambertMaterial({ 
+    color: 0xA0522D  // Warmer brown color
+});
+const moleNoseMaterial = new THREE.MeshLambertMaterial({ 
+    color: 0x1A1A1A  // Dark gray for nose
+});
+const moleEyeMaterial = new THREE.MeshLambertMaterial({ 
+    color: 0x1A1A1A  // Dark gray for eyes
+});
+
 const moles = [];
 holes.forEach(pos => {
     const mole = createMole();
-    mole.position.set(pos.x, -1.0, pos.z);
+    mole.position.set(pos.x * 1.5, -1.5, pos.z * 1.5);
     mole.userData.isUp = false;
     mole.userData.isMoving = false;
     scene.add(mole);
@@ -139,21 +149,16 @@ window.addEventListener('click', (event) => {
     }
 });
 
+// Camera Position
+camera.position.set(0, 6, 8);
+camera.lookAt(0, 0, 0);
+
 // Animation Loop
 function animate() {
     requestAnimationFrame(animate);
     renderer.render(scene, camera);
 }
 animate();
-
-// Handle window resize
-window.addEventListener('resize', onWindowResize, false);
-
-function onWindowResize() {
-    camera.aspect = window.innerWidth / window.innerHeight;
-    camera.updateProjectionMatrix();
-    renderer.setSize(window.innerWidth, window.innerHeight);
-}
 
 // Add success indicator function
 function createSuccessIndicator(position) {
@@ -216,78 +221,39 @@ function createSuccessIndicator(position) {
     }
 }
 
-// Add wooden sign for rules
-function createWoodenSign() {
-    const signGroup = new THREE.Group();
+// Modify the text rendering function
+function updateMoleText(mole, word) {
+    const context = mole.userData.textContext;
+    const texture = mole.userData.textTexture;
     
-    // Post
-    const postGeometry = new THREE.BoxGeometry(0.2, 2, 0.2);
-    const woodMaterial = new THREE.MeshLambertMaterial({ color: 0x4A3219 });
-    const post = new THREE.Mesh(postGeometry, woodMaterial);
-    post.position.set(0, 1, 0);
-    signGroup.add(post);
-
-    // Sign boards
-    const createBoard = (text, y) => {
-        const boardGeometry = new THREE.BoxGeometry(2, 0.4, 0.1);
-        const board = new THREE.Mesh(boardGeometry, woodMaterial);
-        board.position.set(0, y, 0);
-
-        // Text on board
-        const canvas = document.createElement('canvas');
-        const context = canvas.getContext('2d');
-        canvas.width = 512;
-        canvas.height = 128;
-        
-        context.fillStyle = 'white';
-        context.font = 'bold 48px Arial';
-        context.textAlign = 'center';
-        context.textBaseline = 'middle';
-        context.fillText(text, 256, 64);
-
-        const texture = new THREE.Texture(canvas);
-        texture.needsUpdate = true;
-
-        const textGeometry = new THREE.PlaneGeometry(1.8, 0.3);
-        const textMaterial = new THREE.MeshBasicMaterial({
-            map: texture,
-            transparent: true,
-            side: THREE.DoubleSide
-        });
-        const textMesh = new THREE.Mesh(textGeometry, textMaterial);
-        textMesh.position.set(0, y, 0.06);
-        
-        signGroup.add(board);
-        signGroup.add(textMesh);
-    };
-
-    createBoard('The Rules', 1.5);
-    createBoard('Hit words', 1.0);
-    createBoard('with letter b', 0.5);
-    createBoard('Hit mole to start', 0);
-
-    signGroup.position.set(0, 1, -2);
-    return signGroup;
+    // Clear the canvas
+    context.clearRect(0, 0, 256, 128);
+    
+    // Set text properties with larger, bolder font
+    context.fillStyle = 'black';
+    context.font = 'bold 84px Arial'; // Increased font size
+    context.textAlign = 'center';
+    context.textBaseline = 'middle';
+    
+    // Draw text
+    context.fillText(word, 128, 64);
+    
+    // Update the texture
+    texture.needsUpdate = true;
 }
 
-// Modified mole creation function without geometry.vertices
+// Modify mole creation function
 function createMole() {
     const moleGroup = new THREE.Group();
     
-    // Body - rectangular shape
-    const bodyGeometry = new THREE.BoxGeometry(1.2, 1.4, 0.8);
+    // Body
+    const bodyGeometry = new THREE.SphereGeometry(0.8, 32, 32);
+    bodyGeometry.scale(1, 1.2, 0.8);
     const bodyMaterial = new THREE.MeshLambertMaterial({ color: 0xFFD280 });
     const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
     moleGroup.add(body);
 
-    // Text background - rectangular card
-    const cardGeometry = new THREE.BoxGeometry(1, 0.8, 0.05);
-    const cardMaterial = new THREE.MeshLambertMaterial({ color: 0xFFF5E1 });
-    const card = new THREE.Mesh(cardGeometry, cardMaterial);
-    card.position.set(0, 0, 0.43);
-    moleGroup.add(card);
-
-    // Text setup
+    // Text plane setup remains the same
     const canvas = document.createElement('canvas');
     const context = canvas.getContext('2d');
     canvas.width = 512;
@@ -301,76 +267,99 @@ function createMole() {
     });
     
     const textPlane = new THREE.Mesh(
-        new THREE.PlaneGeometry(0.95, 0.75),
+        new THREE.PlaneGeometry(1.4, 0.7),
         textMaterial
     );
-    textPlane.position.set(0, 0, 0.46);
+    textPlane.position.set(0, -0.1, 0.65);
+    textPlane.rotation.x = -0.3;
     moleGroup.add(textPlane);
     
     moleGroup.userData.textTexture = textTexture;
     moleGroup.userData.textContext = context;
 
     // Eyes
-    const eyeGeometry = new THREE.SphereGeometry(0.12, 16, 16);
-    const eyeMaterial = new THREE.MeshLambertMaterial({ color: 0x000000 });
+    const eyeGeometry = new THREE.SphereGeometry(0.15, 16, 16);
+    const eyeWhiteMaterial = new THREE.MeshLambertMaterial({ color: 0xFFFFFF });
+    const eyePupilMaterial = new THREE.MeshLambertMaterial({ color: 0x000000 });
     
-    const leftEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
-    leftEye.position.set(-0.25, 0.5, 0.4);
-    leftEye.scale.y = 0.5;
-    moleGroup.add(leftEye);
+    // Left eye
+    const leftEyeWhite = new THREE.Mesh(eyeGeometry, eyeWhiteMaterial);
+    leftEyeWhite.position.set(-0.3, 0.6, 0.45);
+    moleGroup.add(leftEyeWhite);
     
-    const rightEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
-    rightEye.position.set(0.25, 0.5, 0.4);
-    rightEye.scale.y = 0.5;
-    moleGroup.add(rightEye);
+    const leftEyePupil = new THREE.Mesh(
+        new THREE.SphereGeometry(0.08, 16, 16),
+        eyePupilMaterial
+    );
+    leftEyePupil.position.set(-0.3, 0.6, 0.58);
+    moleGroup.add(leftEyePupil);
+    
+    // Right eye
+    const rightEyeWhite = new THREE.Mesh(eyeGeometry, eyeWhiteMaterial);
+    rightEyeWhite.position.set(0.3, 0.6, 0.45);
+    moleGroup.add(rightEyeWhite);
+    
+    const rightEyePupil = new THREE.Mesh(
+        new THREE.SphereGeometry(0.08, 16, 16),
+        eyePupilMaterial
+    );
+    rightEyePupil.position.set(0.3, 0.6, 0.58);
+    moleGroup.add(rightEyePupil);
 
-    // Whiskers
-    const whiskerMaterial = new THREE.LineBasicMaterial({ color: 0x000000 });
+    // Nose
+    const nose = new THREE.Mesh(
+        new THREE.SphereGeometry(0.12, 16, 16),
+        new THREE.MeshLambertMaterial({ color: 0x000000 })
+    );
+    nose.position.set(0, 0.45, 0.65);
+    moleGroup.add(nose);
+
+    // New cartoon-style mouth
+    // Create mouth background (white area)
+    const mouthBgGeometry = new THREE.CircleGeometry(0.25, 32);
+    const mouthBgMaterial = new THREE.MeshLambertMaterial({ color: 0xFFFFFF });
+    const mouthBg = new THREE.Mesh(mouthBgGeometry, mouthBgMaterial);
+    mouthBg.position.set(0, 0.25, 0.65);
+    mouthBg.rotation.y = Math.PI;
+    moleGroup.add(mouthBg);
+
+    // Create smile line
+    const smileShape = new THREE.Shape();
+    smileShape.moveTo(-0.2, 0);
+    smileShape.quadraticCurveTo(0, -0.15, 0.2, 0);
     
-    // Create whiskers using lines
-    const createWhisker = (side, height) => {
-        const whiskerGeometry = new THREE.BufferGeometry();
-        const points = [
-            new THREE.Vector3(side * 0.2, height, 0.4),
-            new THREE.Vector3(side * 0.6, height + 0.1, 0.3)
-        ];
-        whiskerGeometry.setFromPoints(points);
+    const smileGeometry = new THREE.ShapeGeometry(smileShape);
+    const smileMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
+    const smile = new THREE.Mesh(smileGeometry, smileMaterial);
+    smile.position.set(0, 0.25, 0.66);
+    smile.rotation.y = Math.PI;
+    moleGroup.add(smile);
+
+    // Integrated whiskers with curved geometry
+    const whiskerMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
+    
+    // Create curved whiskers using custom geometry
+    const createWhisker = (side, height, angle) => {
+        const curve = new THREE.QuadraticBezierCurve3(
+            new THREE.Vector3(0, height, 0.65),
+            new THREE.Vector3(side * 0.3, height, 0.75),
+            new THREE.Vector3(side * 0.6, height + 0.1, 0.65)
+        );
+
+        const points = curve.getPoints(10);
+        const whiskerGeometry = new THREE.BufferGeometry().setFromPoints(points);
         const whisker = new THREE.Line(whiskerGeometry, whiskerMaterial);
         moleGroup.add(whisker);
     };
 
-    // Add whiskers
-    createWhisker(-1, 0.3);
-    createWhisker(-1, 0.2);
-    createWhisker(1, 0.3);
-    createWhisker(1, 0.2);
+    // Add whiskers on both sides
+    createWhisker(-1, 0.3, Math.PI / 6);  // Upper left
+    createWhisker(-1, 0.2, Math.PI / 8);  // Lower left
+    createWhisker(1, 0.3, -Math.PI / 6);  // Upper right
+    createWhisker(1, 0.2, -Math.PI / 8);  // Lower right
 
     return moleGroup;
 }
-
-// Update text rendering function
-function updateMoleText(mole, word) {
-    const context = mole.userData.textContext;
-    const texture = mole.userData.textTexture;
-    
-    // Clear the canvas
-    context.clearRect(0, 0, 512, 256);
-    
-    // Set text properties
-    context.fillStyle = 'black';
-    context.font = 'bold 96px Arial';
-    context.textAlign = 'center';
-    context.textBaseline = 'middle';
-    
-    // Draw text
-    context.fillText(word, 256, 128);
-    
-    // Update the texture
-    texture.needsUpdate = true;
-}
-
-// Add sign to scene
-scene.add(createWoodenSign());
 
 // Modify the assignNewWord function
 function assignNewWord(mole) {
@@ -431,6 +420,7 @@ function startGame() {
         if (timeRemaining <= 0) {
             gameActive = false;
             clearInterval(gameTimer);
+            wordElement.textContent = '';
             instructionsElement.innerHTML = `Game Over! Final Score: ${score}<br>Click anywhere to play again`;
         }
     }, 1000);
@@ -452,6 +442,7 @@ function gameLoop() {
         setTimeout(() => {
             if (randomMole.userData.isUp) {
                 animateMole(randomMole, false);
+                wordElement.textContent = '';
             }
         }, 1500); // Increased time to read the word
     }
