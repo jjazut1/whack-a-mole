@@ -236,9 +236,14 @@ function updateMoleText(mole, word) {
 function createMole() {
     const moleGroup = new THREE.Group();
     
-    // Body - pure white like the image
+    // Body - changed to light brown
     const bodyGeometry = new THREE.SphereGeometry(0.8, 32, 32);
-    const bodyMaterial = new THREE.MeshLambertMaterial({ color: 0xFFFFFF }); // Pure white
+    const bodyMaterial = new THREE.MeshLambertMaterial({ 
+        color: 0xDEB887 // Light brown/burlywood color
+        // Alternative light brown options if you want to try:
+        // 0xD2B48C (tan)
+        // 0xF4A460 (sandy brown)
+    }); 
     const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
     moleGroup.add(body);
 
