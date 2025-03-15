@@ -106,9 +106,16 @@ const moleEyeMaterial = new THREE.MeshLambertMaterial({
 const moles = [];
 holes.forEach(pos => {
     const mole = createMole();
-    mole.position.set(pos.x * 1.5, -1.5, pos.z * 1.5);
+    mole.position.set(pos.x * 1.5, -1.0, pos.z * 1.5);
+    
+    // Calculate angle to center
+    const angleToCenter = Math.atan2(-pos.x, -pos.z);
+    mole.rotation.y = angleToCenter; // Rotate mole to face center
+    
     mole.userData.isUp = false;
     mole.userData.isMoving = false;
+    mole.userData.originalPosition = mole.position.clone();
+    mole.userData.rotation = angleToCenter;
     scene.add(mole);
     moles.push(mole);
 });
@@ -150,7 +157,7 @@ window.addEventListener('click', (event) => {
 });
 
 // Camera Position
-camera.position.set(0, 6, 8);
+camera.position.set(0, 7, 9);
 camera.lookAt(0, 0, 0);
 
 // Animation Loop
@@ -236,13 +243,13 @@ function updateMoleText(mole, word) {
 function createMole() {
     const moleGroup = new THREE.Group();
     
-    // Body - pure white like the image
+    // Body
     const bodyGeometry = new THREE.SphereGeometry(0.8, 32, 32);
-    const bodyMaterial = new THREE.MeshLambertMaterial({ color: 0xFFFFFF }); // Pure white
+    const bodyMaterial = new THREE.MeshLambertMaterial({ color: 0xFFFFFF });
     const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
     moleGroup.add(body);
 
-    // Text plane - positioned in lower half of mole
+    // Text plane
     const canvas = document.createElement('canvas');
     const context = canvas.getContext('2d');
     canvas.width = 512;
@@ -255,52 +262,54 @@ function createMole() {
         side: THREE.DoubleSide
     });
     
+    // Adjust text plane to be slightly curved around the body
     const textPlane = new THREE.Mesh(
         new THREE.PlaneGeometry(1.2, 1.2),
         textMaterial
     );
-    // Position text on the front lower half
     textPlane.position.set(0, -0.2, 0.75);
     moleGroup.add(textPlane);
     
     moleGroup.userData.textTexture = textTexture;
     moleGroup.userData.textContext = context;
 
-    // Eyes - small black dots positioned higher
+    // Facial features container - to keep features grouped
+    const faceGroup = new THREE.Group();
+    
+    // Eyes
     const eyeGeometry = new THREE.CircleGeometry(0.06, 32);
     const eyeMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
     
-    // Left eye - moved higher
     const leftEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
     leftEye.position.set(-0.2, 0.4, 0.75);
-    moleGroup.add(leftEye);
+    faceGroup.add(leftEye);
     
-    // Right eye - moved higher
     const rightEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
     rightEye.position.set(0.2, 0.4, 0.75);
-    moleGroup.add(rightEye);
+    faceGroup.add(rightEye);
 
-    // Nose - small black dot between and below eyes
+    // Nose
     const nose = new THREE.Mesh(
         new THREE.CircleGeometry(0.06, 32),
         new THREE.MeshBasicMaterial({ color: 0x000000 })
     );
     nose.position.set(0, 0.3, 0.78);
-    moleGroup.add(nose);
+    faceGroup.add(nose);
 
-    // Simple straight mouth with slight curve
+    // Mouth
     const mouthGeometry = new THREE.Shape();
     mouthGeometry.moveTo(-0.15, 0);
-    mouthGeometry.quadraticCurveTo(0, -0.03, 0.15, 0); // Very slight curve down
+    mouthGeometry.quadraticCurveTo(0, -0.03, 0.15, 0);
     
-    const mouthMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
     const mouth = new THREE.Mesh(
         new THREE.ShapeGeometry(mouthGeometry),
-        mouthMaterial
+        new THREE.MeshBasicMaterial({ color: 0x000000 })
     );
-    
-    mouth.position.set(0, 0.2, 0.78); // Positioned between nose and text area
-    moleGroup.add(mouth);
+    mouth.position.set(0, 0.2, 0.78);
+    faceGroup.add(mouth);
+
+    // Add face group to mole
+    moleGroup.add(faceGroup);
 
     return moleGroup;
 }
@@ -318,7 +327,7 @@ function animateMole(mole, goingUp) {
     if (mole.userData.isMoving) return;
     
     mole.userData.isMoving = true;
-    const targetY = goingUp ? 0.9 : -1.0; // Raised up position
+    const targetY = goingUp ? 0.9 : -1.0;
     const duration = 200;
     const startY = mole.position.y;
     const startTime = Date.now();
@@ -333,12 +342,14 @@ function animateMole(mole, goingUp) {
         const elapsed = Date.now() - startTime;
         const progress = Math.min(elapsed / duration, 1);
         
-        // Easing function for smooth animation
         const ease = progress < 0.5 
             ? 2 * progress * progress 
             : -1 + (4 - 2 * progress) * progress;
             
         mole.position.y = startY + (targetY - startY) * ease;
+        
+        // Maintain rotation during animation
+        mole.rotation.y = mole.userData.rotation;
         
         if (progress < 1) {
             requestAnimationFrame(update);
