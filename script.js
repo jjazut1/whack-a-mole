@@ -211,22 +211,43 @@ function createSuccessIndicator(position) {
     animateParticles();
 }
 
+// Modify the text rendering function
+function updateMoleText(mole, word) {
+    const context = mole.userData.textContext;
+    const texture = mole.userData.textTexture;
+    
+    // Clear the canvas
+    context.clearRect(0, 0, 256, 128);
+    
+    // Set text properties with larger, bolder font
+    context.fillStyle = 'black';
+    context.font = 'bold 84px Arial'; // Increased font size
+    context.textAlign = 'center';
+    context.textBaseline = 'middle';
+    
+    // Draw text
+    context.fillText(word, 128, 64);
+    
+    // Update the texture
+    texture.needsUpdate = true;
+}
+
 // Modify mole creation function
 function createMole() {
     const moleGroup = new THREE.Group();
     
-    // Body - make it larger
+    // Body
     const bodyGeometry = new THREE.SphereGeometry(0.8, 32, 32);
     bodyGeometry.scale(1, 1.2, 0.8);
     const bodyMaterial = new THREE.MeshLambertMaterial({ color: 0xFFD280 });
     const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
     moleGroup.add(body);
 
-    // Text plane - moved lower
+    // Text plane - adjusted position and size
     const canvas = document.createElement('canvas');
     const context = canvas.getContext('2d');
-    canvas.width = 256;
-    canvas.height = 128;
+    canvas.width = 512; // Increased canvas size
+    canvas.height = 256; // Increased canvas size
     
     const textTexture = new THREE.Texture(canvas);
     const textMaterial = new THREE.MeshBasicMaterial({
@@ -236,51 +257,51 @@ function createMole() {
     });
     
     const textPlane = new THREE.Mesh(
-        new THREE.PlaneGeometry(1.2, 0.6), // Larger text area
+        new THREE.PlaneGeometry(1.4, 0.7), // Larger text area
         textMaterial
     );
-    textPlane.position.set(0, -0.1, 0.42); // Moved down
-    textPlane.rotation.x = -0.2;
+    textPlane.position.set(0, 0, 0.65); // Moved forward
+    textPlane.rotation.x = -0.3; // Adjusted rotation
     moleGroup.add(textPlane);
     
     moleGroup.userData.textTexture = textTexture;
     moleGroup.userData.textContext = context;
 
-    // Larger eyes
+    // Eyes
     const eyeGeometry = new THREE.SphereGeometry(0.15, 16, 16);
     const eyeWhiteMaterial = new THREE.MeshLambertMaterial({ color: 0xFFFFFF });
     const eyePupilMaterial = new THREE.MeshLambertMaterial({ color: 0x000000 });
     
-    // Eyes with pupils
+    // Left eye
     const leftEyeWhite = new THREE.Mesh(eyeGeometry, eyeWhiteMaterial);
-    leftEyeWhite.position.set(-0.3, 0.6, 0.35);
+    leftEyeWhite.position.set(-0.3, 0.6, 0.45);
     moleGroup.add(leftEyeWhite);
     
     const leftEyePupil = new THREE.Mesh(
         new THREE.SphereGeometry(0.08, 16, 16),
         eyePupilMaterial
     );
-    leftEyePupil.position.set(-0.3, 0.6, 0.48);
+    leftEyePupil.position.set(-0.3, 0.6, 0.58);
     moleGroup.add(leftEyePupil);
     
+    // Right eye
     const rightEyeWhite = new THREE.Mesh(eyeGeometry, eyeWhiteMaterial);
-    rightEyeWhite.position.set(0.3, 0.6, 0.35);
+    rightEyeWhite.position.set(0.3, 0.6, 0.45);
     moleGroup.add(rightEyeWhite);
     
     const rightEyePupil = new THREE.Mesh(
         new THREE.SphereGeometry(0.08, 16, 16),
         eyePupilMaterial
     );
-    rightEyePupil.position.set(0.3, 0.6, 0.48);
+    rightEyePupil.position.set(0.3, 0.6, 0.58);
     moleGroup.add(rightEyePupil);
 
-    // Add smile
-    const smile = new THREE.Mesh(
-        new THREE.TorusGeometry(0.2, 0.05, 16, 32, Math.PI),
-        new THREE.MeshLambertMaterial({ color: 0x000000 })
-    );
-    smile.position.set(0, 0.2, 0.6);
-    smile.rotation.x = -Math.PI / 2;
+    // Improved smile - made larger and more visible
+    const smileGeometry = new THREE.TorusGeometry(0.3, 0.06, 16, 32, Math.PI);
+    const smileMaterial = new THREE.MeshLambertMaterial({ color: 0x000000 });
+    const smile = new THREE.Mesh(smileGeometry, smileMaterial);
+    smile.position.set(0, 0.3, 0.65); // Moved forward and adjusted height
+    smile.rotation.x = Math.PI / 2; // Corrected rotation
     moleGroup.add(smile);
 
     // Nose
@@ -288,18 +309,18 @@ function createMole() {
         new THREE.SphereGeometry(0.12, 16, 16),
         new THREE.MeshLambertMaterial({ color: 0x000000 })
     );
-    nose.position.set(0, 0.4, 0.6);
+    nose.position.set(0, 0.45, 0.65); // Adjusted position
     moleGroup.add(nose);
 
-    // Updated whisker positions
+    // Whiskers
     const whiskerMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
     const whiskerGeometry = new THREE.CylinderGeometry(0.005, 0.005, 0.4);
     
-    // Whiskers adjusted for larger mole
+    // Left whiskers
     [-1, 1].forEach(side => {
-        [0.4, 0.2].forEach(height => {
+        [0.35, 0.25].forEach(height => {
             const whisker = new THREE.Mesh(whiskerGeometry, whiskerMaterial);
-            whisker.position.set(0.4 * side, height, 0.4);
+            whisker.position.set(0.4 * side, height, 0.5);
             whisker.rotation.z = Math.PI / 6 * -side;
             whisker.rotation.y = Math.PI / 6 * side;
             moleGroup.add(whisker);
@@ -307,27 +328,6 @@ function createMole() {
     });
 
     return moleGroup;
-}
-
-// Update the text rendering function for a more cartoon-like style
-function updateMoleText(mole, word) {
-    const context = mole.userData.textContext;
-    const texture = mole.userData.textTexture;
-    
-    // Clear the canvas
-    context.clearRect(0, 0, 256, 128);
-    
-    // Set text properties
-    context.fillStyle = 'black';
-    context.font = 'bold 72px Arial';
-    context.textAlign = 'center';
-    context.textBaseline = 'middle';
-    
-    // Draw text
-    context.fillText(word, 128, 64);
-    
-    // Update the texture
-    texture.needsUpdate = true;
 }
 
 // Modify the assignNewWord function
@@ -343,7 +343,7 @@ function animateMole(mole, goingUp) {
     if (mole.userData.isMoving) return;
     
     mole.userData.isMoving = true;
-    const targetY = goingUp ? 0.5 : -1.0; // Adjusted up position to be higher, down position to be less deep
+    const targetY = goingUp ? 0.7 : -1.0; // Adjusted up position
     const duration = 200;
     const startY = mole.position.y;
     const startTime = Date.now();
