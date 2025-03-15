@@ -105,28 +105,12 @@ const moleEyeMaterial = new THREE.MeshLambertMaterial({
 
 const moles = [];
 holes.forEach(pos => {
-    const moleGroup = new THREE.Group();
-    
-    const moleBody = new THREE.Mesh(moleBodyGeometry, moleMaterial);
-    const moleNose = new THREE.Mesh(moleNoseGeometry, moleNoseMaterial);
-    const moleEyeLeft = new THREE.Mesh(moleEyeGeometry, moleEyeMaterial);
-    const moleEyeRight = new THREE.Mesh(moleEyeGeometry, moleEyeMaterial);
-    
-    moleNose.position.z = 0.5;
-    moleEyeLeft.position.set(-0.2, 0.2, 0.4);
-    moleEyeRight.position.set(0.2, 0.2, 0.4);
-    
-    moleGroup.add(moleBody);
-    moleGroup.add(moleNose);
-    moleGroup.add(moleEyeLeft);
-    moleGroup.add(moleEyeRight);
-    
-    moleGroup.position.set(pos.x, -1.5, pos.z);
-    moleGroup.userData.isUp = false;
-    moleGroup.userData.isMoving = false;
-    
-    scene.add(moleGroup);
-    moles.push(moleGroup);
+    const mole = createMole();
+    mole.position.set(pos.x, -1.0, pos.z);
+    mole.userData.isUp = false;
+    mole.userData.isMoving = false;
+    scene.add(mole);
+    moles.push(mole);
 });
 
 // Modified click handler
@@ -164,7 +148,7 @@ window.addEventListener('click', (event) => {
 });
 
 // Camera Position
-camera.position.set(0, 4, 6);
+camera.position.set(0, 4.5, 6.5);
 camera.lookAt(0, 0, 0);
 
 // Animation Loop
@@ -189,39 +173,39 @@ function createMole() {
     const canvas = document.createElement('canvas');
     const context = canvas.getContext('2d');
     canvas.width = 256;
-    canvas.height = 128; // Reduced height for better text fit
+    canvas.height = 128;
     
     // Create text texture
     const textTexture = new THREE.Texture(canvas);
     const textMaterial = new THREE.MeshBasicMaterial({
         map: textTexture,
         transparent: true,
-        side: THREE.DoubleSide // Make text visible from both sides
+        side: THREE.DoubleSide
     });
     
-    // Create text plane (wider and taller)
+    // Create text plane
     const textPlane = new THREE.Mesh(
         new THREE.PlaneGeometry(0.8, 0.4),
         textMaterial
     );
-    // Position text higher on the mole's chest and tilted for better visibility
-    textPlane.position.set(0, 0.1, 0.45);
-    textPlane.rotation.x = -0.2; // Tilt slightly upward
+    // Position text on upper chest
+    textPlane.position.set(0, 0.2, 0.45);
+    textPlane.rotation.x = -0.2;
     moleGroup.add(textPlane);
     
     // Store texture and context for updating
     moleGroup.userData.textTexture = textTexture;
     moleGroup.userData.textContext = context;
     
-    // Add a background plate for better text visibility
-    const plateMaterial = new THREE.MeshLambertMaterial({ color: 0x8B4513 }); // Slightly lighter than body
+    // Background plate for text
+    const plateMaterial = new THREE.MeshLambertMaterial({ color: 0x8B4513 });
     const plate = new THREE.Mesh(
         new THREE.PlaneGeometry(0.85, 0.45),
         plateMaterial
     );
     plate.position.copy(textPlane.position);
     plate.rotation.copy(textPlane.rotation);
-    plate.position.z -= 0.01; // Slightly behind text
+    plate.position.z -= 0.01;
     moleGroup.add(plate);
 
     // Eyes (moved higher)
@@ -229,11 +213,11 @@ function createMole() {
     const eyeMaterial = new THREE.MeshLambertMaterial({ color: 0x000000 });
     
     const leftEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
-    leftEye.position.set(-0.2, 0.35, 0.35);
+    leftEye.position.set(-0.2, 0.45, 0.35);
     moleGroup.add(leftEye);
     
     const rightEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
-    rightEye.position.set(0.2, 0.35, 0.35);
+    rightEye.position.set(0.2, 0.45, 0.35);
     moleGroup.add(rightEye);
 
     // Nose (moved higher)
@@ -241,7 +225,7 @@ function createMole() {
         new THREE.SphereGeometry(0.08, 16, 16),
         new THREE.MeshLambertMaterial({ color: 0x000000 })
     );
-    nose.position.set(0, 0.25, 0.45);
+    nose.position.set(0, 0.35, 0.45);
     moleGroup.add(nose);
 
     return moleGroup;
@@ -268,17 +252,6 @@ function updateMoleText(mole, word) {
     texture.needsUpdate = true;
 }
 
-// Replace existing moles creation with new detailed moles
-moles.length = 0;
-holes.forEach(pos => {
-    const mole = createMole();
-    mole.position.set(pos.x, -1.5, pos.z);
-    mole.userData.isUp = false;
-    mole.userData.isMoving = false;
-    scene.add(mole);
-    moles.push(mole);
-});
-
 // Modify the assignNewWord function
 function assignNewWord(mole) {
     isShortAWord = Math.random() < 0.7;
@@ -292,7 +265,7 @@ function animateMole(mole, goingUp) {
     if (mole.userData.isMoving) return;
     
     mole.userData.isMoving = true;
-    const targetY = goingUp ? 0 : -1.5;
+    const targetY = goingUp ? 0.5 : -1.0; // Adjusted up position to be higher, down position to be less deep
     const duration = 200;
     const startY = mole.position.y;
     const startTime = Date.now();
@@ -300,7 +273,7 @@ function animateMole(mole, goingUp) {
     if (goingUp) {
         assignNewWord(mole);
     } else {
-        updateMoleText(mole, ''); // Clear text when going down
+        updateMoleText(mole, '');
     }
     
     function update() {
