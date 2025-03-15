@@ -108,14 +108,18 @@ holes.forEach(pos => {
     const mole = createMole();
     mole.position.set(pos.x * 1.5, -1.0, pos.z * 1.5);
     
-    // Calculate angle to center
-    const angleToCenter = Math.atan2(-pos.x, -pos.z);
-    mole.rotation.y = angleToCenter; // Rotate mole to face center
+    // Set 15 degree rotation (convert to radians)
+    const fifteenDegrees = (15 * Math.PI) / 180; // Convert 15 degrees to radians
     
+    // If mole is on the left side, rotate positive 15 degrees
+    // If mole is on the right side, rotate negative 15 degrees
+    const rotation = pos.x < 0 ? fifteenDegrees : -fifteenDegrees;
+    
+    mole.rotation.y = rotation;
     mole.userData.isUp = false;
     mole.userData.isMoving = false;
     mole.userData.originalPosition = mole.position.clone();
-    mole.userData.rotation = angleToCenter;
+    mole.userData.rotation = rotation;
     scene.add(mole);
     moles.push(mole);
 });
