@@ -217,16 +217,16 @@ function updateMoleText(mole, word) {
     const texture = mole.userData.textTexture;
     
     // Clear the canvas
-    context.clearRect(0, 0, 256, 128);
+    context.clearRect(0, 0, 512, 256);
     
-    // Set text properties with larger, bolder font
+    // Set text properties
     context.fillStyle = 'black';
-    context.font = 'bold 84px Arial'; // Increased font size
+    context.font = 'bold 120px Arial'; // Increased font size
     context.textAlign = 'center';
     context.textBaseline = 'middle';
     
-    // Draw text
-    context.fillText(word, 128, 64);
+    // Draw text in the center of the canvas
+    context.fillText(word, 256, 128);
     
     // Update the texture
     texture.needsUpdate = true;
@@ -243,11 +243,11 @@ function createMole() {
     const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
     moleGroup.add(body);
 
-    // Text plane - adjusted position and size
+    // Text plane - moved lower and adjusted size
     const canvas = document.createElement('canvas');
     const context = canvas.getContext('2d');
-    canvas.width = 512; // Increased canvas size
-    canvas.height = 256; // Increased canvas size
+    canvas.width = 512;
+    canvas.height = 256;
     
     const textTexture = new THREE.Texture(canvas);
     const textMaterial = new THREE.MeshBasicMaterial({
@@ -257,11 +257,12 @@ function createMole() {
     });
     
     const textPlane = new THREE.Mesh(
-        new THREE.PlaneGeometry(1.4, 0.7), // Larger text area
+        new THREE.PlaneGeometry(1.4, 0.7),
         textMaterial
     );
-    textPlane.position.set(0, 0, 0.65); // Moved forward
-    textPlane.rotation.x = -0.3; // Adjusted rotation
+    // Move text plane lower on the mole's body
+    textPlane.position.set(0, -0.2, 0.65);
+    textPlane.rotation.x = -0.3;
     moleGroup.add(textPlane);
     
     moleGroup.userData.textTexture = textTexture;
@@ -319,13 +320,11 @@ function createMole() {
         });
     });
 
-    // Remove the old smile (TorusGeometry) and add new cartoon mouth
+    // Cartoon mouth - moved higher
     const mouthGeometry = new THREE.Shape();
-    
-    // Draw a cartoon mouth shape
     mouthGeometry.moveTo(-0.25, 0);
-    mouthGeometry.quadraticCurveTo(0, 0.2, 0.25, 0); // Upper curve
-    mouthGeometry.quadraticCurveTo(0, -0.1, -0.25, 0); // Lower curve
+    mouthGeometry.quadraticCurveTo(0, 0.2, 0.25, 0);
+    mouthGeometry.quadraticCurveTo(0, -0.1, -0.25, 0);
     
     const mouthMaterial = new THREE.MeshLambertMaterial({ color: 0x000000 });
     const mouth = new THREE.Mesh(
@@ -333,25 +332,24 @@ function createMole() {
         mouthMaterial
     );
     
-    // Position and rotate the mouth
-    mouth.position.set(0, 0.25, 0.66);
+    // Position mouth higher
+    mouth.position.set(0, 0.3, 0.66);
     mouth.rotation.x = -Math.PI / 2;
     moleGroup.add(mouth);
 
-    // Add a red inner mouth
+    // Inner mouth - adjusted to match new mouth position
     const innerMouthGeometry = new THREE.Shape();
     innerMouthGeometry.moveTo(-0.2, -0.02);
     innerMouthGeometry.quadraticCurveTo(0, 0.1, 0.2, -0.02);
     innerMouthGeometry.quadraticCurveTo(0, -0.08, -0.2, -0.02);
     
-    const innerMouthMaterial = new THREE.MeshLambertMaterial({ color: 0xFF9999 }); // Pink-red color
+    const innerMouthMaterial = new THREE.MeshLambertMaterial({ color: 0xFF9999 });
     const innerMouth = new THREE.Mesh(
         new THREE.ShapeGeometry(innerMouthGeometry),
         innerMouthMaterial
     );
     
-    // Position slightly in front of the black mouth outline
-    innerMouth.position.set(0, 0.25, 0.67);
+    innerMouth.position.set(0, 0.3, 0.67);
     innerMouth.rotation.x = -Math.PI / 2;
     moleGroup.add(innerMouth);
 
