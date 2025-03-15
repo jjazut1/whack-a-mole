@@ -217,16 +217,16 @@ function updateMoleText(mole, word) {
     const texture = mole.userData.textTexture;
     
     // Clear the canvas
-    context.clearRect(0, 0, 512, 256);
+    context.clearRect(0, 0, 512, 512);
     
     // Set text properties
     context.fillStyle = 'black';
-    context.font = 'bold 120px Arial'; // Increased font size
+    context.font = 'bold 200px Arial'; // Larger, bolder font
     context.textAlign = 'center';
     context.textBaseline = 'middle';
     
-    // Draw text in the center of the canvas
-    context.fillText(word, 256, 128);
+    // Draw text lower in the canvas
+    context.fillText(word, 256, 350); // Positioned lower
     
     // Update the texture
     texture.needsUpdate = true;
@@ -236,18 +236,17 @@ function updateMoleText(mole, word) {
 function createMole() {
     const moleGroup = new THREE.Group();
     
-    // Body
+    // Body - make it more round and lighter colored
     const bodyGeometry = new THREE.SphereGeometry(0.8, 32, 32);
-    bodyGeometry.scale(1, 1.2, 0.8);
-    const bodyMaterial = new THREE.MeshLambertMaterial({ color: 0xFFD280 });
+    const bodyMaterial = new THREE.MeshLambertMaterial({ color: 0xFFF3E0 }); // Lighter, creamy color
     const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
     moleGroup.add(body);
 
-    // Text plane - moved lower and adjusted size
+    // Text plane - adjusted for better visibility
     const canvas = document.createElement('canvas');
     const context = canvas.getContext('2d');
     canvas.width = 512;
-    canvas.height = 256;
+    canvas.height = 512; // Made square for better text control
     
     const textTexture = new THREE.Texture(canvas);
     const textMaterial = new THREE.MeshBasicMaterial({
@@ -257,101 +256,54 @@ function createMole() {
     });
     
     const textPlane = new THREE.Mesh(
-        new THREE.PlaneGeometry(1.4, 0.7),
+        new THREE.PlaneGeometry(1.2, 1.2), // Made square
         textMaterial
     );
-    // Move text plane lower on the mole's body
-    textPlane.position.set(0, -0.2, 0.65);
-    textPlane.rotation.x = -0.3;
+    // Position text to be more visible on the front
+    textPlane.position.set(0, 0, 0.7);
+    textPlane.rotation.x = 0; // Remove tilt to match image
     moleGroup.add(textPlane);
     
     moleGroup.userData.textTexture = textTexture;
     moleGroup.userData.textContext = context;
 
-    // Eyes
-    const eyeGeometry = new THREE.SphereGeometry(0.15, 16, 16);
-    const eyeWhiteMaterial = new THREE.MeshLambertMaterial({ color: 0xFFFFFF });
-    const eyePupilMaterial = new THREE.MeshLambertMaterial({ color: 0x000000 });
+    // Simplified eyes - just black dots
+    const eyeGeometry = new THREE.CircleGeometry(0.08, 32);
+    const eyeMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
     
     // Left eye
-    const leftEyeWhite = new THREE.Mesh(eyeGeometry, eyeWhiteMaterial);
-    leftEyeWhite.position.set(-0.3, 0.6, 0.45);
-    moleGroup.add(leftEyeWhite);
-    
-    const leftEyePupil = new THREE.Mesh(
-        new THREE.SphereGeometry(0.08, 16, 16),
-        eyePupilMaterial
-    );
-    leftEyePupil.position.set(-0.3, 0.6, 0.58);
-    moleGroup.add(leftEyePupil);
+    const leftEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+    leftEye.position.set(-0.25, 0.2, 0.8);
+    leftEye.rotation.y = -0.2; // Slight rotation to face forward
+    moleGroup.add(leftEye);
     
     // Right eye
-    const rightEyeWhite = new THREE.Mesh(eyeGeometry, eyeWhiteMaterial);
-    rightEyeWhite.position.set(0.3, 0.6, 0.45);
-    moleGroup.add(rightEyeWhite);
-    
-    const rightEyePupil = new THREE.Mesh(
-        new THREE.SphereGeometry(0.08, 16, 16),
-        eyePupilMaterial
-    );
-    rightEyePupil.position.set(0.3, 0.6, 0.58);
-    moleGroup.add(rightEyePupil);
+    const rightEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+    rightEye.position.set(0.25, 0.2, 0.8);
+    rightEye.rotation.y = 0.2; // Slight rotation to face forward
+    moleGroup.add(rightEye);
 
-    // Nose
+    // Simplified nose
     const nose = new THREE.Mesh(
-        new THREE.SphereGeometry(0.12, 16, 16),
-        new THREE.MeshLambertMaterial({ color: 0x000000 })
+        new THREE.CircleGeometry(0.1, 32),
+        new THREE.MeshBasicMaterial({ color: 0x000000 })
     );
-    nose.position.set(0, 0.45, 0.65); // Adjusted position
+    nose.position.set(0, 0, 0.82);
     moleGroup.add(nose);
 
-    // Whiskers
-    const whiskerMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
-    const whiskerGeometry = new THREE.CylinderGeometry(0.005, 0.005, 0.4);
-    
-    // Left whiskers
-    [-1, 1].forEach(side => {
-        [0.35, 0.25].forEach(height => {
-            const whisker = new THREE.Mesh(whiskerGeometry, whiskerMaterial);
-            whisker.position.set(0.4 * side, height, 0.5);
-            whisker.rotation.z = Math.PI / 6 * -side;
-            whisker.rotation.y = Math.PI / 6 * side;
-            moleGroup.add(whisker);
-        });
-    });
-
-    // Cartoon mouth - moved higher
+    // Simplified mouth - straight line with slight curve
     const mouthGeometry = new THREE.Shape();
-    mouthGeometry.moveTo(-0.25, 0);
-    mouthGeometry.quadraticCurveTo(0, 0.2, 0.25, 0);
-    mouthGeometry.quadraticCurveTo(0, -0.1, -0.25, 0);
+    mouthGeometry.moveTo(-0.2, 0);
+    mouthGeometry.quadraticCurveTo(0, -0.05, 0.2, 0); // Slight downward curve
     
-    const mouthMaterial = new THREE.MeshLambertMaterial({ color: 0x000000 });
+    const mouthMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
     const mouth = new THREE.Mesh(
         new THREE.ShapeGeometry(mouthGeometry),
         mouthMaterial
     );
     
-    // Position mouth higher
-    mouth.position.set(0, 0.3, 0.66);
-    mouth.rotation.x = -Math.PI / 2;
+    mouth.position.set(0, -0.1, 0.82);
     moleGroup.add(mouth);
-
-    // Inner mouth - adjusted to match new mouth position
-    const innerMouthGeometry = new THREE.Shape();
-    innerMouthGeometry.moveTo(-0.2, -0.02);
-    innerMouthGeometry.quadraticCurveTo(0, 0.1, 0.2, -0.02);
-    innerMouthGeometry.quadraticCurveTo(0, -0.08, -0.2, -0.02);
-    
-    const innerMouthMaterial = new THREE.MeshLambertMaterial({ color: 0xFF9999 });
-    const innerMouth = new THREE.Mesh(
-        new THREE.ShapeGeometry(innerMouthGeometry),
-        innerMouthMaterial
-    );
-    
-    innerMouth.position.set(0, 0.3, 0.67);
-    innerMouth.rotation.x = -Math.PI / 2;
-    moleGroup.add(innerMouth);
 
     return moleGroup;
 }
