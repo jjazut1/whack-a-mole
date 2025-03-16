@@ -159,8 +159,8 @@ window.addEventListener('click', (event) => {
 });
 
 // Set camera position
-camera.position.set(0, 7, 9);
-camera.lookAt(0, 0, -1);
+camera.position.set(0, 8, 12);
+camera.lookAt(0, 0, 0);
 
 // Add ground (green hill)
 const groundGeometry = new THREE.PlaneGeometry(20, 20);
@@ -173,24 +173,43 @@ ground.rotation.x = -Math.PI / 2;
 ground.position.y = 0;
 scene.add(ground);
 
-// Create rounded hill shape
+// Create a more natural hill shape
 function createHill() {
-    const hillShape = new THREE.Shape();
+    // Create base platform
+    const hillGeometry = new THREE.PlaneGeometry(20, 20, 32, 32); // More segments for better curves
+    const vertices = hillGeometry.attributes.position.array;
     
-    // Create a rounded hill curve
-    hillShape.moveTo(-15, -15);
-    hillShape.quadraticCurveTo(-10, 2, 0, 2); // Left side curve
-    hillShape.quadraticCurveTo(10, 2, 15, -15); // Right side curve
-    hillShape.lineTo(-15, -15); // Bottom line
-    
-    const geometry = new THREE.ShapeGeometry(hillShape);
-    const material = new THREE.MeshLambertMaterial({ 
-        color: 0x90EE90 // Light green
+    // Modify vertices to create natural slopes at corners
+    for (let i = 0; i < vertices.length; i += 3) {
+        const x = vertices[i];
+        const z = vertices[i + 2];
+        
+        // Calculate distance from center
+        const distanceFromCenter = Math.sqrt(x * x + z * z);
+        
+        // Create slope that increases toward the back corners
+        const backFactor = (z + 10) / 20; // 0 at front, 1 at back
+        const sideFactor = Math.abs(x) / 10; // 0 at center, 1 at sides
+        
+        // Combine factors to affect height
+        const heightFactor = Math.max(backFactor * sideFactor, 0);
+        
+        // Apply height modification
+        vertices[i + 1] = -heightFactor * 2; // Adjust multiplier for steeper/gentler slope
+    }
+
+    hillGeometry.attributes.position.needsUpdate = true;
+    hillGeometry.computeVertexNormals(); // Update normals for proper lighting
+
+    const hillMaterial = new THREE.MeshLambertMaterial({ 
+        color: 0x90EE90, // Light green
+        side: THREE.DoubleSide
     });
     
-    const hill = new THREE.Mesh(geometry, material);
+    const hill = new THREE.Mesh(hillGeometry, hillMaterial);
     hill.rotation.x = -Math.PI / 2;
     hill.position.y = 0;
+    
     return hill;
 }
 
@@ -494,3 +513,8 @@ function createCloud() {
 
     return cloudGroup;
 }
+
+// Add a second directional light to better show the slopes
+const backLight = new THREE.DirectionalLight(0xffffff, 0.3);
+backLight.position.set(-5, 5, -5);
+scene.add(backLight);
