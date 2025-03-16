@@ -116,9 +116,9 @@ function updateHoles() {
     scene.children.forEach(child => {
         if (child.geometry && child.geometry.type === 'CircleGeometry') {
             child.material = new THREE.MeshLambertMaterial({
-                color: 0x555555, // Lighter gray
-                emissive: 0x222222, // Slight glow
-                emissiveIntensity: 0.2
+                color: 0x666666, // Slightly darker gray
+                emissive: 0x222222,
+                emissiveIntensity: 0.1
             });
         }
     });
@@ -164,7 +164,7 @@ function setupHolesAndMoles() {
         color: 0x404040  // Dark gray
     });
 
-    const holes = [
+const holes = [
         { x: -2, z: -2, rotation: Math.PI * 0.25 + 0.175 },
         { x: 2, z: -2, rotation: -Math.PI * 0.25 - 0.175 },
         { x: -2, z: 2, rotation: Math.PI * 0.75 + 0.175 },
@@ -195,9 +195,9 @@ function setupHolesAndMoles() {
         
         mole.userData.isUp = false;
         mole.userData.isMoving = false;
-        scene.add(mole);
-        moles.push(mole);
-    });
+    scene.add(mole);
+    moles.push(mole);
+});
 }
 
 // Initialize scene
@@ -416,41 +416,20 @@ function assignNewWord(mole) {
 }
 
 // Modify the animateMole function
-function animateMole(mole, goingUp) {
-    if (mole.userData.isMoving) return;
+const originalAnimateMole = animateMole;
+animateMole = function(mole, goingUp) {
+    // Call original animation
+    originalAnimateMole(mole, goingUp);
     
-    mole.userData.isMoving = true;
-    const targetY = goingUp ? 1.0 : -1.0; // Higher up position
-    const duration = 200;
-    const startY = mole.position.y;
-    const startTime = Date.now();
-    
-    if (goingUp) {
-        assignNewWord(mole);
-    } else {
-        updateMoleText(mole, '');
-    }
-    
-    function update() {
-        const elapsed = Date.now() - startTime;
-        const progress = Math.min(elapsed / duration, 1);
-        
-        // Easing function for smooth animation
-        const ease = progress < 0.5 
-            ? 2 * progress * progress 
-            : -1 + (4 - 2 * progress) * progress;
-            
-        mole.position.y = startY + (targetY - startY) * ease;
-        
-        if (progress < 1) {
-            requestAnimationFrame(update);
+    // Also animate shadow opacity
+    if (mole.userData.shadow) {
+        if (goingUp) {
+            mole.userData.shadow.material.opacity = 0.2;
         } else {
-            mole.userData.isMoving = false;
-            mole.userData.isUp = goingUp;
+            mole.userData.shadow.material.opacity = 0;
         }
     }
-    update();
-}
+};
 
 // Game logic
 function startGame() {
@@ -569,3 +548,67 @@ if (existingTerrain) {
     scene.remove(existingTerrain);
 }
 scene.add(createTerrain());
+
+// Add subtle shadow under moles
+function addMoleShadows() {
+    moles.forEach(mole => {
+        // Create a simple shadow (dark circle)
+        const shadowGeometry = new THREE.CircleGeometry(0.6, 32);
+        const shadowMaterial = new THREE.MeshBasicMaterial({
+            color: 0x000000,
+            transparent: true,
+            opacity: 0.2
+        });
+        
+        const shadow = new THREE.Mesh(shadowGeometry, shadowMaterial);
+        shadow.rotation.x = -Math.PI / 2;
+        shadow.position.copy(mole.position);
+        shadow.position.y = 0.02; // Just above the ground
+        scene.add(shadow);
+        
+        // Link shadow to mole for animation
+        mole.userData.shadow = shadow;
+    });
+}
+
+// Add subtle terrain texture
+function addTerrainTexture() {
+    const existingTerrain = scene.children.find(
+        child => child.geometry && child.geometry.type === 'PlaneGeometry'
+    );
+    
+    if (existingTerrain) {
+        // Create noise texture
+        const canvas = document.createElement('canvas');
+        canvas.width = 512;
+        canvas.height = 512;
+        const ctx = canvas.getContext('2d');
+        
+        // Fill with base color
+        ctx.fillStyle = '#90EE90';
+        ctx.fillRect(0, 0, 512, 512);
+        
+        // Add noise pattern
+        for (let i = 0; i < 5000; i++) {
+            const x = Math.random() * 512;
+            const y = Math.random() * 512;
+            const size = Math.random() * 3 + 1;
+            const brightness = 0.95 + Math.random() * 0.1; // Subtle variation
+            
+            ctx.fillStyle = `rgba(144, 238, 144, ${brightness})`;
+            ctx.fillRect(x, y, size, size);
+        }
+        
+        const texture = new THREE.CanvasTexture(canvas);
+        texture.wrapS = THREE.RepeatWrapping;
+        texture.wrapT = THREE.RepeatWrapping;
+        texture.repeat.set(4, 4);
+        
+        existingTerrain.material.map = texture;
+        existingTerrain.material.needsUpdate = true;
+    }
+}
+
+// Call these enhancement functions
+addMoleShadows();
+addTerrainTexture();
