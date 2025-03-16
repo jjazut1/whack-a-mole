@@ -88,10 +88,27 @@ const holes = [
 ];
 
 holes.forEach(pos => {
-    const hole = new THREE.Mesh(holeGeometry, holeMaterial);
-    hole.rotation.x = -Math.PI / 2;
-    hole.position.set(pos.x * 1.5, 0.01, pos.z * 1.5);
-    scene.add(hole);
+    const mole = createMole();
+    mole.position.set(pos.x * 1.5, -1.0, pos.z * 1.5);
+    
+    // Base rotation toward center
+    const targetPoint = new THREE.Vector3(0, 0, -3);
+    mole.lookAt(targetPoint);
+    mole.rotateX(Math.PI / 2);
+    
+    // Additional rotation based on side
+    if (pos.x < 0) {
+        // Left side moles rotate counter-clockwise
+        mole.rotateY(0.175);
+    } else {
+        // Right side moles rotate clockwise
+        mole.rotateY(-0.175);
+    }
+    
+    mole.userData.isUp = false;
+    mole.userData.isMoving = false;
+    scene.add(mole);
+    moles.push(mole);
 });
 
 // Mole materials with brighter colors
@@ -106,36 +123,6 @@ const moleNoseMaterial = new THREE.MeshLambertMaterial({
 });
 const moleEyeMaterial = new THREE.MeshLambertMaterial({ 
     color: 0x1A1A1A  // Dark gray for eyes
-});
-
-const moles = [];
-holes.forEach(pos => {
-    const mole = createMole();
-    mole.position.set(pos.x * 1.5, -1.0, pos.z * 1.5);
-    
-    // Calculate direction to center front point (0, 0, -3)
-    const targetPoint = new THREE.Vector3(0, 0, -3);
-    const molePosition = new THREE.Vector3(pos.x * 1.5, 0, pos.z * 1.5);
-    const direction = new THREE.Vector3().subVectors(targetPoint, molePosition);
-    
-    // Make the mole face the target point
-    mole.lookAt(targetPoint);
-    // Adjust the up vector to keep moles upright
-    mole.rotateX(Math.PI / 2);
-    
-    // Add the additional rotation based on side
-    if (pos.x < 0) {
-        // Left side moles rotate counter-clockwise
-        mole.rotateY(0.175);
-    } else {
-        // Right side moles rotate clockwise
-        mole.rotateY(-0.175);
-    }
-    
-    mole.userData.isUp = false;
-    mole.userData.isMoving = false;
-    scene.add(mole);
-    moles.push(mole);
 });
 
 // Modified click handler
@@ -181,6 +168,15 @@ camera.lookAt(0, 0, -1); // Look slightly toward the front
 // Animation Loop
 function animate() {
     requestAnimationFrame(animate);
+    
+    // Update all moles to face camera
+    moles.forEach(mole => {
+        if (mole.userData.facingGroup) {
+            // Make the facing group look at the camera
+            mole.userData.facingGroup.lookAt(camera.position);
+        }
+    });
+    
     renderer.render(scene, camera);
 }
 animate();
@@ -267,7 +263,11 @@ function createMole() {
     const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
     moleGroup.add(body);
 
-    // Text plane
+    // Create a front-facing group that will always face the camera
+    const facingGroup = new THREE.Group();
+    moleGroup.add(facingGroup);
+
+    // Text plane - attached to facing group
     const canvas = document.createElement('canvas');
     const context = canvas.getContext('2d');
     canvas.width = 512;
@@ -287,23 +287,24 @@ function createMole() {
         new THREE.PlaneGeometry(0.8, 0.4),
         textMaterial
     );
-    textPlane.position.set(0, 0, 0.8);
-    moleGroup.add(textPlane);
+    textPlane.position.set(0, 0, 0.81);
+    facingGroup.add(textPlane);
     
-    moleGroup.userData.textTexture = textTexture;
-    moleGroup.userData.textContext = context;
-
-    // Eyes
+    // Eyes - attached to facing group
     const eyeGeometry = new THREE.CircleGeometry(0.03, 32);
     const eyeMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
     
     const leftEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
-    leftEye.position.set(-0.15, 0.4, 0.75);
-    moleGroup.add(leftEye);
+    leftEye.position.set(-0.15, 0.4, 0.81);
+    facingGroup.add(leftEye);
     
     const rightEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
-    rightEye.position.set(0.15, 0.4, 0.75);
-    moleGroup.add(rightEye);
+    rightEye.position.set(0.15, 0.4, 0.81);
+    facingGroup.add(rightEye);
+    
+    moleGroup.userData.textTexture = textTexture;
+    moleGroup.userData.textContext = context;
+    moleGroup.userData.facingGroup = facingGroup; // Store reference to facing group
 
     return moleGroup;
 }
