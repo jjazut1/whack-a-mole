@@ -78,7 +78,7 @@ holes.forEach(pos => {
 });
 
 // Add lighting
-const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
 scene.add(ambientLight);
 
 const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
@@ -173,42 +173,53 @@ ground.rotation.x = -Math.PI / 2;
 ground.position.y = 0;
 scene.add(ground);
 
-// Create a more natural hill shape
+// Create a more natural hill shape with curved edges
 function createHill() {
-    // Create base platform
-    const hillGeometry = new THREE.PlaneGeometry(20, 20, 32, 32); // More segments for better curves
-    const vertices = hillGeometry.attributes.position.array;
+    // Create a custom shape for the hill
+    const shape = new THREE.Shape();
     
-    // Modify vertices to create natural slopes at corners
-    for (let i = 0; i < vertices.length; i += 3) {
-        const x = vertices[i];
-        const z = vertices[i + 2];
-        
-        // Calculate distance from center
-        const distanceFromCenter = Math.sqrt(x * x + z * z);
-        
-        // Create slope that increases toward the back corners
-        const backFactor = (z + 10) / 20; // 0 at front, 1 at back
-        const sideFactor = Math.abs(x) / 10; // 0 at center, 1 at sides
-        
-        // Combine factors to affect height
-        const heightFactor = Math.max(backFactor * sideFactor, 0);
-        
-        // Apply height modification
-        vertices[i + 1] = -heightFactor * 2; // Adjust multiplier for steeper/gentler slope
-    }
-
-    hillGeometry.attributes.position.needsUpdate = true;
-    hillGeometry.computeVertexNormals(); // Update normals for proper lighting
-
-    const hillMaterial = new THREE.MeshLambertMaterial({ 
-        color: 0x90EE90, // Light green
+    // Start from bottom left
+    shape.moveTo(-10, -10);
+    
+    // Create curved front edge
+    shape.quadraticCurveTo(-5, -8, 0, -8);
+    shape.quadraticCurveTo(5, -8, 10, -10);
+    
+    // Create curved right edge
+    shape.quadraticCurveTo(8, -5, 8, 0);
+    shape.quadraticCurveTo(8, 5, 10, 10);
+    
+    // Create curved back edge
+    shape.quadraticCurveTo(5, 8, 0, 8);
+    shape.quadraticCurveTo(-5, 8, -10, 10);
+    
+    // Create curved left edge
+    shape.quadraticCurveTo(-8, 5, -8, 0);
+    shape.quadraticCurveTo(-8, -5, -10, -10);
+    
+    // Create geometry from shape
+    const geometry = new THREE.ShapeGeometry(shape);
+    const material = new THREE.MeshLambertMaterial({
+        color: 0x90EE90,
         side: THREE.DoubleSide
     });
     
-    const hill = new THREE.Mesh(hillGeometry, hillMaterial);
+    // Create mesh and rotate to horizontal position
+    const hill = new THREE.Mesh(geometry, material);
     hill.rotation.x = -Math.PI / 2;
     hill.position.y = 0;
+    
+    // Add subtle elevation variation
+    const vertices = geometry.attributes.position.array;
+    for (let i = 0; i < vertices.length; i += 3) {
+        const x = vertices[i];
+        const z = vertices[i + 2];
+        const distanceFromCenter = Math.sqrt(x * x + z * z);
+        const elevation = Math.max(0, (distanceFromCenter - 5) * 0.1);
+        vertices[i + 1] = -elevation;
+    }
+    geometry.attributes.position.needsUpdate = true;
+    geometry.computeVertexNormals();
     
     return hill;
 }
@@ -220,9 +231,9 @@ scene.add(hill);
 // Add clouds to the scene
 const clouds = [];
 const cloudPositions = [
-    { x: -5, y: 5, z: -3 },  // Lowered height
-    { x: 5, y: 6, z: -2 },   // Lowered height
-    { x: 0, y: 4.5, z: -4 }  // Lowered height
+    { x: -4, y: 5, z: -3 },
+    { x: 4, y: 6, z: -2 },
+    { x: 0, y: 4.5, z: -4 }
 ];
 
 // Clear existing clouds and add new ones
