@@ -11,7 +11,8 @@ renderer.outputEncoding = THREE.sRGBEncoding;
 renderer.physicallyCorrectLights = true;
 document.body.appendChild(renderer.domElement);
 
-// Game state
+// Initialize arrays and game state
+const moles = []; // Define moles array globally
 let score = 0;
 let gameActive = false;
 let timeRemaining = 30; // 30 seconds game duration
@@ -51,32 +52,13 @@ instructionsElement.style.textAlign = 'center';
 instructionsElement.innerHTML = 'Hit the mole when you see a word with the short "a" sound!<br>Click anywhere to start';
 document.body.appendChild(instructionsElement);
 
-// Improved Lighting - using multiple lights for better illumination
-const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
-scene.add(ambientLight);
-
-const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-directionalLight.position.set(5, 10, 5);
-scene.add(directionalLight);
-
-const frontLight = new THREE.DirectionalLight(0xffffff, 0.8);
-frontLight.position.set(0, 0, 5);
-scene.add(frontLight);
-
-// Ground
-const groundGeometry = new THREE.PlaneGeometry(10, 10);
-const groundMaterial = new THREE.MeshLambertMaterial({ 
-    color: 0x4CAF50  // Brighter green color
-});
-const ground = new THREE.Mesh(groundGeometry, groundMaterial);
-ground.rotation.x = -Math.PI / 2;
-scene.add(ground);
-
-// Hole creation
-const holeGeometry = new THREE.CircleGeometry(1.4, 32); // Larger hole
+// Hole setup
+const holeGeometry = new THREE.CircleGeometry(1.4, 32);
 const holeMaterial = new THREE.MeshLambertMaterial({ 
-    color: 0xC0C0C0  // Lighter gray
+    color: 0xC0C0C0
 });
+
+// Define hole positions
 const holes = [
     // Left side moles rotate counter-clockwise (+10 degrees = +0.175 radians)
     { x: -2, z: -2, rotation: Math.PI * 0.25 + 0.175 }, // Front left
@@ -87,6 +69,23 @@ const holes = [
     { x: 2, z: 2, rotation: -Math.PI * 0.75 - 0.175 }   // Back right
 ];
 
+// Create holes
+holes.forEach(pos => {
+    const hole = new THREE.Mesh(holeGeometry, holeMaterial);
+    hole.rotation.x = -Math.PI / 2;
+    hole.position.set(pos.x * 1.5, 0.01, pos.z * 1.5);
+    scene.add(hole);
+});
+
+// Add lighting
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+scene.add(ambientLight);
+
+const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+directionalLight.position.set(5, 10, 5);
+scene.add(directionalLight);
+
+// Create moles
 holes.forEach(pos => {
     const mole = createMole();
     mole.position.set(pos.x * 1.5, -1.0, pos.z * 1.5);
@@ -98,10 +97,8 @@ holes.forEach(pos => {
     
     // Additional rotation based on side
     if (pos.x < 0) {
-        // Left side moles rotate counter-clockwise
         mole.rotateY(0.175);
     } else {
-        // Right side moles rotate clockwise
         mole.rotateY(-0.175);
     }
     
@@ -161,24 +158,25 @@ window.addEventListener('click', (event) => {
     }
 });
 
-// Camera Position
+// Set camera position
 camera.position.set(0, 6, 8);
-camera.lookAt(0, 0, -1); // Look slightly toward the front
+camera.lookAt(0, 0, -1);
 
-// Animation Loop
+// Animation loop
 function animate() {
     requestAnimationFrame(animate);
     
     // Update all moles to face camera
     moles.forEach(mole => {
         if (mole.userData.facingGroup) {
-            // Make the facing group look at the camera
             mole.userData.facingGroup.lookAt(camera.position);
         }
     });
     
     renderer.render(scene, camera);
 }
+
+// Start animation
 animate();
 
 // Add success indicator function
