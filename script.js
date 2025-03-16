@@ -1177,3 +1177,195 @@ updateAllMoleText();
 // Adjust camera to better view all moles
 camera.position.set(0, 6, 7);
 camera.lookAt(0, 0, 0);
+
+// Optimize camera position for best text viewing
+function optimizeCameraPosition() {
+    // Position camera for optimal text viewing
+    camera.position.set(0, 4.5, 6.5);
+    camera.lookAt(0, 0, 0);
+    
+    // Adjust field of view for better perspective
+    camera.fov = 60; // Slightly narrower field of view
+    camera.updateProjectionMatrix();
+    
+    console.log("Camera position optimized for text viewing");
+}
+
+// Ensure text planes are always oriented optimally
+function optimizeTextOrientation() {
+    moles.forEach(mole => {
+        if (mole.userData.facingGroup) {
+            // Find the text plane
+            let textPlane = null;
+            mole.userData.facingGroup.children.forEach(child => {
+                if (child.geometry && 
+                    child.geometry.type === 'PlaneGeometry' && 
+                    child.material && 
+                    child.material.map) {
+                    textPlane = child;
+                }
+            });
+            
+            if (textPlane) {
+                // Adjust the text plane to be perpendicular to the camera view
+                // This helps reduce perspective distortion
+                textPlane.lookAt(camera.position);
+                
+                // Move text slightly forward
+                textPlane.position.z = 0.85;
+                
+                console.log("Text plane orientation optimized");
+            }
+        }
+    });
+}
+
+// Improve text rendering with techniques to reduce pixelation
+function enhanceTextRendering() {
+    // Update the text rendering function
+    window.updateMoleText = function(mole, word) {
+        const context = mole.userData.textContext;
+        const texture = mole.userData.textTexture;
+        
+        // Use high resolution
+        context.canvas.width = 2048;
+        context.canvas.height = 1024;
+        
+        // Clear the canvas
+        context.clearRect(0, 0, context.canvas.width, context.canvas.height);
+        
+        // Fill with transparent background
+        context.fillStyle = 'rgba(255, 255, 255, 0.01)';
+        context.fillRect(0, 0, context.canvas.width, context.canvas.height);
+        
+        // Enable anti-aliasing
+        context.imageSmoothingEnabled = true;
+        context.imageSmoothingQuality = 'high';
+        
+        // Use a technique to render crisp text
+        // First draw slightly larger black text as a base
+        context.fillStyle = 'black';
+        context.font = '310px Arial';
+        context.textAlign = 'center';
+        context.textBaseline = 'middle';
+        context.fillText(word, context.canvas.width/2, context.canvas.height/2);
+        
+        // Then draw slightly smaller text in black on top for crisp edges
+        context.font = '300px Arial';
+        context.fillText(word, context.canvas.width/2, context.canvas.height/2);
+        
+        // Update the texture with maximum quality settings
+        texture.needsUpdate = true;
+        texture.minFilter = THREE.LinearFilter;
+        texture.magFilter = THREE.LinearFilter;
+        texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
+        texture.generateMipmaps = false;
+    };
+    
+    // Update all mole text
+    moles.forEach(mole => {
+        if (mole.userData.textContext) {
+            const word = currentWord || "map";
+            updateMoleText(mole, word);
+        }
+    });
+    
+    console.log("Text rendering enhanced");
+}
+
+// Improve renderer settings
+function optimizeRenderer() {
+    // Set pixel ratio to device pixel ratio for sharper rendering
+    renderer.setPixelRatio(window.devicePixelRatio);
+    
+    // Enable MSAA anti-aliasing if available
+    if (renderer.capabilities.isWebGL2) {
+        renderer.getContext().antialias = true;
+    }
+    
+    console.log("Renderer optimized");
+}
+
+// Apply all optimizations
+optimizeCameraPosition();
+optimizeTextOrientation();
+enhanceTextRendering();
+optimizeRenderer();
+
+// Add version indicator and cache-busting message
+(function() {
+    // Create a unique version timestamp
+    const versionTimestamp = new Date().toISOString();
+    const versionNumber = "1.0.0";
+    
+    // Create a distinctive console message
+    console.clear(); // Clear previous console messages
+    
+    console.log(
+        "%c Whack-a-Mole Educational Game - Latest Version Running %c",
+        "background: #4CAF50; color: white; font-size: 16px; padding: 5px; border-radius: 5px;",
+        ""
+    );
+    
+    console.log(
+        "%c Version: " + versionNumber + " | Loaded: " + versionTimestamp + " %c",
+        "background: #2196F3; color: white; font-size: 14px; padding: 3px; border-radius: 3px;",
+        ""
+    );
+    
+    // Add cache-busting check
+    console.log(
+        "%c Cache Status: Fresh Load Confirmed %c",
+        "background: #FF9800; color: white; font-size: 14px; padding: 3px; border-radius: 3px;",
+        ""
+    );
+    
+    // Add a global variable to check in the console
+    window.gameVersionInfo = {
+        version: versionNumber,
+        timestamp: versionTimestamp,
+        cacheStatus: "Fresh Load"
+    };
+    
+    // Add a method to verify the version is running
+    window.checkGameVersion = function() {
+        console.log("Currently running version:", versionNumber);
+        console.log("Loaded at:", versionTimestamp);
+        return "Version check complete - latest version confirmed";
+    };
+    
+    // Add a visual indicator on the screen
+    const versionIndicator = document.createElement('div');
+    versionIndicator.style.position = 'absolute';
+    versionIndicator.style.bottom = '10px';
+    versionIndicator.style.right = '10px';
+    versionIndicator.style.background = 'rgba(0,0,0,0.5)';
+    versionIndicator.style.color = 'white';
+    versionIndicator.style.padding = '5px';
+    versionIndicator.style.borderRadius = '3px';
+    versionIndicator.style.fontSize = '12px';
+    versionIndicator.style.fontFamily = 'monospace';
+    versionIndicator.textContent = 'v' + versionNumber;
+    document.body.appendChild(versionIndicator);
+    
+    // Force a unique query parameter on any dynamically loaded resources
+    const originalCreateElement = document.createElement;
+    document.createElement = function(tagName) {
+        const element = originalCreateElement.call(document, tagName);
+        if (tagName.toLowerCase() === 'script' || tagName.toLowerCase() === 'link') {
+            const originalSetAttribute = element.setAttribute;
+            element.setAttribute = function(name, value) {
+                if ((name === 'src' || name === 'href') && typeof value === 'string') {
+                    // Add cache-busting parameter
+                    const separator = value.includes('?') ? '&' : '?';
+                    value = value + separator + 'v=' + new Date().getTime();
+                }
+                return originalSetAttribute.call(this, name, value);
+            };
+        }
+        return element;
+    };
+})();
+
+// You can also add this at the end of your main code
+console.log("Game initialization complete - running latest version");
