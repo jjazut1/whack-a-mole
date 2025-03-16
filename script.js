@@ -52,7 +52,30 @@ instructionsElement.style.textAlign = 'center';
 instructionsElement.innerHTML = 'Hit the mole when you see a word with the short "a" sound!<br>Click anywhere to start';
 document.body.appendChild(instructionsElement);
 
-// Create a more natural 3D terrain
+// First, set up better lighting
+function setupLighting() {
+    // Clear existing lights
+    scene.children.filter(child => child instanceof THREE.Light).forEach(light => scene.remove(light));
+
+    // Add stronger ambient light
+    const ambientLight = new THREE.AmbientLight(0xffffff, 1.0); // Increased intensity
+    scene.add(ambientLight);
+
+    // Add directional lights from multiple angles
+    const mainLight = new THREE.DirectionalLight(0xffffff, 1.0);
+    mainLight.position.set(5, 10, 5);
+    scene.add(mainLight);
+
+    const fillLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    fillLight.position.set(-5, 8, -5);
+    scene.add(fillLight);
+
+    const frontLight = new THREE.DirectionalLight(0xffffff, 0.6);
+    frontLight.position.set(0, 5, 10);
+    scene.add(frontLight);
+}
+
+// Update material settings for better visibility
 function createTerrain() {
     const geometry = new THREE.PlaneBufferGeometry(40, 40, 50, 50);
     const vertices = geometry.attributes.position.array;
@@ -77,9 +100,11 @@ function createTerrain() {
     geometry.attributes.position.needsUpdate = true;
     geometry.computeVertexNormals();
 
-    const material = new THREE.MeshLambertMaterial({
-        color: 0x90EE90, // Light green
-        side: THREE.DoubleSide
+    const material = new THREE.MeshPhongMaterial({ // Changed to PhongMaterial
+        color: 0x90EE90,
+        side: THREE.DoubleSide,
+        shininess: 0, // No shine for grass
+        emissive: 0x103810 // Slight emissive for better visibility
     });
 
     const terrain = new THREE.Mesh(geometry, material);
@@ -88,44 +113,42 @@ function createTerrain() {
     return terrain;
 }
 
-// Setup scene function
+// Modify setupScene to include lighting setup
 function setupScene() {
-    // Clear existing scene elements but keep lights
-    const lights = scene.children.filter(child => child instanceof THREE.Light);
+    // Clear scene
     scene.children.length = 0;
-    lights.forEach(light => scene.add(light));
-
-    // Add terrain first (so it's in the background)
+    
+    // Setup lighting first
+    setupLighting();
+    
+    // Add terrain
     const terrain = createTerrain();
-    terrain.position.y = -0.5; // Move terrain down slightly
     scene.add(terrain);
-
-    // Create and add clouds
+    
+    // Add clouds
     const cloudPositions = [
         { x: -5, y: 5, z: -5 },
         { x: 0, y: 6, z: -4 },
         { x: 5, y: 5, z: -5 }
     ];
-
+    
     cloudPositions.forEach(pos => {
         const cloud = createCloud();
         cloud.position.set(pos.x, pos.y, pos.z);
         scene.add(cloud);
     });
-
-    // Add holes and moles after terrain
+    
+    // Add holes and moles
     setupHolesAndMoles();
-
-    // Setup camera
-    camera.position.set(0, 8, 12);
-    camera.lookAt(0, 0, 0);
 }
 
 // Setup holes and moles
 function setupHolesAndMoles() {
     const holeGeometry = new THREE.CircleGeometry(1.4, 32);
-    const holeMaterial = new THREE.MeshLambertMaterial({ 
-        color: 0x404040  // Dark gray
+    const holeMaterial = new THREE.MeshPhongMaterial({ // Changed to PhongMaterial
+        color: 0x404040,
+        emissive: 0x101010,
+        shininess: 0
     });
 
     const holes = [
@@ -135,7 +158,7 @@ function setupHolesAndMoles() {
         { x: 2, z: 2, rotation: -Math.PI * 0.75 - 0.175 }
     ];
 
-    holes.forEach(pos => {
+holes.forEach(pos => {
         // Create hole
         const hole = new THREE.Mesh(holeGeometry, holeMaterial);
         hole.rotation.x = -Math.PI / 2;
@@ -159,12 +182,18 @@ function setupHolesAndMoles() {
         
         mole.userData.isUp = false;
         mole.userData.isMoving = false;
-        scene.add(mole);
-        moles.push(mole);
-    });
+    scene.add(mole);
+    moles.push(mole);
+});
 }
 
-// Initialize scene
+// Update renderer settings
+renderer.outputEncoding = THREE.sRGBEncoding;
+renderer.physicallyCorrectLights = true;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.0;
+
+// Call setup
 setupScene();
 
 // Animation loop
@@ -313,14 +342,16 @@ function updateMoleText(mole, word) {
     texture.needsUpdate = true;
 }
 
-// Modify mole creation function
+// Update mole creation
 function createMole() {
     const moleGroup = new THREE.Group();
     
-    // Body - now light brown
+    // Body with better material
     const bodyGeometry = new THREE.SphereGeometry(0.8, 32, 32);
-    const bodyMaterial = new THREE.MeshLambertMaterial({ 
-        color: 0xD2B48C  // Light brown (tan)
+    const bodyMaterial = new THREE.MeshPhongMaterial({ // Changed to PhongMaterial
+        color: 0xD2B48C, // Light brown
+        emissive: 0x1a1a1a, // Slight emissive
+        shininess: 30
     });
     const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
     moleGroup.add(body);
@@ -462,10 +493,11 @@ function gameLoop() {
 // Cloud creation function
 function createCloud() {
     const cloudGroup = new THREE.Group();
-    const cloudMaterial = new THREE.MeshLambertMaterial({
+    const cloudMaterial = new THREE.MeshPhongMaterial({ // Changed to PhongMaterial
         color: 0xFFFFFF,
         transparent: true,
-        opacity: 0.9
+        opacity: 0.9,
+        emissive: 0x333333 // Slight emissive for better visibility
     });
 
     // Create main cloud shapes
