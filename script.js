@@ -1,6 +1,9 @@
 // Import Three.js (Make sure you include Three.js in your HTML)
 import * as THREE from 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.module.min.js';
 
+// Add this at the beginning of your script to check Three.js version
+console.log("Three.js version:", THREE.REVISION);
+
 // Scene setup
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x87CEEB);
@@ -52,38 +55,37 @@ instructionsElement.style.textAlign = 'center';
 instructionsElement.innerHTML = 'Hit the mole when you see a word with the short "a" sound!<br>Click anywhere to start';
 document.body.appendChild(instructionsElement);
 
-// Create a more natural 3D terrain
+// Simplified terrain creation
 function createTerrain() {
-    const geometry = new THREE.PlaneBufferGeometry(40, 40, 50, 50);
-    const vertices = geometry.attributes.position.array;
-
-    for (let i = 0; i < vertices.length; i += 3) {
-        const x = vertices[i];
-        const z = vertices[i + 2];
-        const distanceFromCenter = Math.sqrt(x * x + z * z);
+    // Use PlaneGeometry instead of PlaneBufferGeometry (which is deprecated)
+    const geometry = new THREE.PlaneGeometry(40, 40, 50, 50);
+    
+    // Modify vertices for curved edges
+    const positionAttribute = geometry.getAttribute('position');
+    
+    for (let i = 0; i < positionAttribute.count; i++) {
+        const x = positionAttribute.getX(i);
+        const y = positionAttribute.getY(i);
+        const distance = Math.sqrt(x * x + y * y);
         
-        let height = 0;
-        const plateauRadius = 12; // Increased flat area
-        const falloffDistance = 10; // Increased falloff distance
-        
-        if (distanceFromCenter > plateauRadius) {
-            const falloff = Math.cos(Math.PI * Math.min(distanceFromCenter - plateauRadius, falloffDistance) / falloffDistance);
-            height = -8 * (1 - falloff); // Increased depth for more visible curve
+        if (distance > 10) {
+            // Create curved falloff
+            const z = -0.5 * Math.pow((distance - 10) / 10, 2);
+            positionAttribute.setZ(i, z);
         }
-        
-        vertices[i + 1] = height;
     }
-
-    geometry.attributes.position.needsUpdate = true;
+    
     geometry.computeVertexNormals();
-
+    
+    // Create material with solid color
     const material = new THREE.MeshLambertMaterial({
         color: 0x90EE90, // Light green
         side: THREE.DoubleSide
     });
-
+    
     const terrain = new THREE.Mesh(geometry, material);
-    terrain.rotation.x = -Math.PI / 2;
+    terrain.rotation.x = Math.PI / 2; // Rotate to be horizontal
+    terrain.position.y = -0.1; // Position slightly below holes
     
     return terrain;
 }
@@ -459,35 +461,62 @@ function gameLoop() {
     setTimeout(gameLoop, 2000);
 }
 
-// Cloud creation function
+// Simplified cloud creation
 function createCloud() {
-    const cloudGroup = new THREE.Group();
-    const cloudMaterial = new THREE.MeshLambertMaterial({
-        color: 0xFFFFFF,
-        transparent: true,
-        opacity: 0.9
-    });
-
-    // Create main cloud shapes
+    const group = new THREE.Group();
+    
+    // Create simple white spheres
+    const sphereGeometry = new THREE.SphereGeometry(1, 16, 16);
+    const material = new THREE.MeshBasicMaterial({ color: 0xFFFFFF });
+    
+    // Main sphere
+    const mainSphere = new THREE.Mesh(sphereGeometry, material);
+    group.add(mainSphere);
+    
+    // Add additional spheres
     const positions = [
-        { x: 0, y: 0, z: 0, scale: 1 },
-        { x: -1, y: 0, z: 0, scale: 0.8 },
-        { x: 1, y: 0, z: 0, scale: 0.8 },
-        { x: 0, y: 0.5, z: 0, scale: 0.7 }
+        { x: -1, y: 0.3, z: 0 },
+        { x: 1, y: 0.3, z: 0 },
+        { x: 0, y: 0.5, z: 0 }
     ];
-
+    
     positions.forEach(pos => {
-        const cloudPiece = new THREE.Mesh(
-            new THREE.SphereGeometry(1, 16, 16),
-            cloudMaterial
-        );
-        cloudPiece.position.set(pos.x, pos.y, pos.z);
-        cloudPiece.scale.set(pos.scale, pos.scale * 0.6, pos.scale);
-        cloudGroup.add(cloudPiece);
+        const sphere = new THREE.Mesh(sphereGeometry, material);
+        sphere.position.set(pos.x, pos.y, pos.z);
+        sphere.scale.set(0.7, 0.5, 0.7);
+        group.add(sphere);
     });
-
-    return cloudGroup;
+    
+    return group;
 }
+
+// Explicitly add terrain and clouds to scene
+function addTerrainAndClouds() {
+    // Add terrain
+    const terrain = createTerrain();
+    scene.add(terrain);
+    console.log("Terrain added:", terrain);
+    
+    // Add clouds
+    const cloudPositions = [
+        { x: -8, y: 5, z: -5 },
+        { x: 0, y: 6, z: -4 },
+        { x: 8, y: 5, z: -5 }
+    ];
+    
+    cloudPositions.forEach(pos => {
+        const cloud = createCloud();
+        cloud.position.set(pos.x, pos.y, pos.z);
+        scene.add(cloud);
+        console.log("Cloud added:", cloud);
+    });
+}
+
+// Call this function after scene initialization
+addTerrainAndClouds();
+
+// Add debug info to check what's in the scene
+console.log("Scene children:", scene.children);
 
 // Add a second directional light to better show the slopes
 const backLight = new THREE.DirectionalLight(0xffffff, 0.3);
