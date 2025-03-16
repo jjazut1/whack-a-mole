@@ -78,10 +78,13 @@ const holeMaterial = new THREE.MeshLambertMaterial({
     color: 0xC0C0C0  // Lighter gray
 });
 const holes = [
-    { x: -2, z: -2, rotation: Math.PI * 0.25 }, // Front left
-    { x: 2, z: -2, rotation: -Math.PI * 0.25 }, // Front right
-    { x: -2, z: 2, rotation: Math.PI * 0.75 }, // Back left
-    { x: 2, z: 2, rotation: -Math.PI * 0.75 }  // Back right
+    // Left side moles rotate counter-clockwise (+10 degrees = +0.175 radians)
+    { x: -2, z: -2, rotation: Math.PI * 0.25 + 0.175 }, // Front left
+    { x: -2, z: 2, rotation: Math.PI * 0.75 + 0.175 },  // Back left
+    
+    // Right side moles rotate clockwise (-10 degrees = -0.175 radians)
+    { x: 2, z: -2, rotation: -Math.PI * 0.25 - 0.175 }, // Front right
+    { x: 2, z: 2, rotation: -Math.PI * 0.75 - 0.175 }   // Back right
 ];
 
 holes.forEach(pos => {
@@ -119,6 +122,15 @@ holes.forEach(pos => {
     mole.lookAt(targetPoint);
     // Adjust the up vector to keep moles upright
     mole.rotateX(Math.PI / 2);
+    
+    // Add the additional rotation based on side
+    if (pos.x < 0) {
+        // Left side moles rotate counter-clockwise
+        mole.rotateY(0.175);
+    } else {
+        // Right side moles rotate clockwise
+        mole.rotateY(-0.175);
+    }
     
     mole.userData.isUp = false;
     mole.userData.isMoving = false;
