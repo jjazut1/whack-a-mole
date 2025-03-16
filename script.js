@@ -55,143 +55,73 @@ instructionsElement.style.textAlign = 'center';
 instructionsElement.innerHTML = 'Hit the mole when you see a word with the short "a" sound!<br>Click anywhere to start';
 document.body.appendChild(instructionsElement);
 
-// Remove any existing terrain elements
-function cleanupExistingTerrain() {
-    // Find and remove all green elements
-    const elementsToRemove = [];
-    scene.traverse(function(object) {
-        if (object.material && object.material.color) {
-            const color = object.material.color;
-            // Check if it's a green-ish color
-            if (color.r < 0.5 && color.g > 0.5 && color.b < 0.5) {
-                elementsToRemove.push(object);
-            }
-        }
-    });
+// Simplified terrain creation
+function createTerrain() {
+    // Use PlaneGeometry instead of PlaneBufferGeometry (which is deprecated)
+    const geometry = new THREE.PlaneGeometry(40, 40, 50, 50);
     
-    elementsToRemove.forEach(obj => scene.remove(obj));
-    console.log(`Removed ${elementsToRemove.length} existing terrain elements`);
-}
-
-// Create smooth terrain with height variation
-function createSmoothTerrain() {
-    // Clean up first
-    cleanupExistingTerrain();
+    // Modify vertices for curved edges
+    const positionAttribute = geometry.getAttribute('position');
     
-    // Reset background color
-    scene.background = new THREE.Color(0x87CEEB); // Sky blue
-    
-    // Create a larger ground plane with height variation
-    const geometry = new THREE.PlaneGeometry(60, 60, 60, 60);
-    const positions = geometry.attributes.position.array;
-    
-    // Modify vertices to create curved edges
-    for (let i = 0; i < positions.length; i += 3) {
-        const x = positions[i];
-        const z = positions[i + 2];
+    for (let i = 0; i < positionAttribute.count; i++) {
+        const x = positionAttribute.getX(i);
+        const y = positionAttribute.getY(i);
+        const distance = Math.sqrt(x * x + y * y);
         
-        // Calculate distance from center
-        const distanceFromCenter = Math.sqrt(x * x + z * z);
-        
-        // Create smooth curve at edges
-        if (distanceFromCenter > 15) {
-            // Calculate height based on distance
-            const heightFactor = (distanceFromCenter - 15) / 15;
-            const height = 5 * Math.pow(heightFactor, 2);
-            
-            // Apply height
-            positions[i + 1] = height;
+        if (distance > 10) {
+            // Create curved falloff
+            const z = -0.5 * Math.pow((distance - 10) / 10, 2);
+            positionAttribute.setZ(i, z);
         }
     }
     
-    geometry.attributes.position.needsUpdate = true;
     geometry.computeVertexNormals();
     
-    // Create material
+    // Create material with solid color
     const material = new THREE.MeshLambertMaterial({
         color: 0x90EE90, // Light green
         side: THREE.DoubleSide
     });
     
-    // Create mesh
     const terrain = new THREE.Mesh(geometry, material);
-    terrain.rotation.x = -Math.PI / 2;
+    terrain.rotation.x = Math.PI / 2; // Rotate to be horizontal
+    terrain.position.y = -0.1; // Position slightly below holes
     
-    // Add to scene
+    return terrain;
+}
+
+// Setup scene function
+function setupScene() {
+    // Clear existing scene elements but keep lights
+    const lights = scene.children.filter(child => child instanceof THREE.Light);
+    scene.children.length = 0;
+    lights.forEach(light => scene.add(light));
+
+    // Add terrain first (so it's in the background)
+    const terrain = createTerrain();
+    terrain.position.y = -0.5; // Move terrain down slightly
     scene.add(terrain);
-    console.log("Added smooth terrain");
-    
-    // Adjust camera
+
+    // Create and add clouds
+    const cloudPositions = [
+        { x: -5, y: 5, z: -5 },
+        { x: 0, y: 6, z: -4 },
+        { x: 5, y: 5, z: -5 }
+    ];
+
+    cloudPositions.forEach(pos => {
+        const cloud = createCloud();
+        cloud.position.set(pos.x, pos.y, pos.z);
+        scene.add(cloud);
+    });
+
+    // Add holes and moles after terrain
+    setupHolesAndMoles();
+
+    // Setup camera
     camera.position.set(0, 8, 12);
     camera.lookAt(0, 0, 0);
 }
-
-// Call the function to create the smooth terrain
-createSmoothTerrain();
-
-// Add clouds back if they were removed
-function addClouds() {
-    // Check if clouds already exist
-    let cloudsExist = false;
-    scene.traverse(function(object) {
-        if (object.isGroup && object.children.length > 0) {
-            const firstChild = object.children[0];
-            if (firstChild.material && firstChild.material.color && 
-                firstChild.material.color.getHexString() === 'ffffff') {
-                cloudsExist = true;
-            }
-        }
-    });
-    
-    if (!cloudsExist) {
-        const cloudPositions = [
-            { x: -8, y: 7, z: -5 },
-            { x: 0, y: 8, z: -4 },
-            { x: 8, y: 7, z: -5 }
-        ];
-        
-        cloudPositions.forEach(pos => {
-            // Use makeSimpleCloud instead of createCloud to avoid duplicate declaration
-            const cloud = makeSimpleCloud();
-            cloud.position.set(pos.x, pos.y, pos.z);
-            scene.add(cloud);
-        });
-        
-        console.log("Added clouds");
-    }
-}
-
-// Use a different function name to avoid duplicate declaration
-function makeSimpleCloud() {
-    const group = new THREE.Group();
-    
-    // Create simple white spheres
-    const sphereGeometry = new THREE.SphereGeometry(1, 16, 16);
-    const material = new THREE.MeshBasicMaterial({ color: 0xFFFFFF });
-    
-    // Main sphere
-    const mainSphere = new THREE.Mesh(sphereGeometry, material);
-    group.add(mainSphere);
-    
-    // Add additional spheres
-    const positions = [
-        { x: -1, y: 0.3, z: 0 },
-        { x: 1, y: 0.3, z: 0 },
-        { x: 0, y: 0.5, z: 0 }
-    ];
-    
-    positions.forEach(pos => {
-        const sphere = new THREE.Mesh(sphereGeometry, material);
-        sphere.position.set(pos.x, pos.y, pos.z);
-        sphere.scale.set(0.7, 0.5, 0.7);
-        group.add(sphere);
-    });
-    
-    return group;
-}
-
-// Add clouds
-addClouds();
 
 // Setup holes and moles
 function setupHolesAndMoles() {
@@ -236,82 +166,8 @@ const holes = [
 });
 }
 
-// Add this code to ensure the scene is properly set up
-function fixSceneSetup() {
-    console.log("Fixing scene setup...");
-    
-    // Make sure we have proper lighting
-    // First remove any existing lights to avoid duplicates
-    const existingLights = [];
-    scene.traverse(function(object) {
-        if (object.isLight) {
-            existingLights.push(object);
-        }
-    });
-    
-    existingLights.forEach(light => scene.remove(light));
-    
-    // Add new lights
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
-    scene.add(ambientLight);
-    
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-    directionalLight.position.set(5, 10, 5);
-    scene.add(directionalLight);
-    
-    // Make sure holes are visible
-    scene.traverse(function(object) {
-        if (object.geometry && object.geometry.type === 'CircleGeometry') {
-            object.material.color.set(0x505050); // Medium gray
-            object.position.y = 0.02; // Ensure holes are slightly above terrain
-        }
-    });
-    
-    // Make sure moles are properly colored
-    moles.forEach(mole => {
-        // Find the body (first child, which is the sphere)
-        if (mole.children && mole.children.length > 0) {
-            const body = mole.children[0];
-            if (body.material) {
-                body.material.color.set(0xD2B48C); // Light brown (tan) color
-            }
-        }
-    });
-    
-    // Ensure camera is properly positioned
-    camera.position.set(0, 8, 12);
-    camera.lookAt(0, 0, 0);
-    
-    console.log("Scene setup fixed");
-}
-
-// Call the fix function
-fixSceneSetup();
-
-// Make sure the game is ready to play
-function resetGame() {
-    // Reset game state
-    score = 0;
-    timeRemaining = 30;
-    gameActive = false;
-    
-    // Update UI
-    if (scoreElement && timerElement) {
-        scoreElement.textContent = `Score: ${score}`;
-        timerElement.textContent = `Time: ${timeRemaining}s`;
-    }
-    
-    // Show instructions
-    if (instructionsElement) {
-        instructionsElement.style.display = 'block';
-        instructionsElement.innerHTML = 'Hit the mole when you see a word with the short "a" sound!<br>Click anywhere to start';
-    }
-    
-    console.log("Game reset and ready to play");
-}
-
-// Call reset game
-resetGame();
+// Initialize scene
+setupScene();
 
 // Animation loop
 function animate() {
@@ -608,6 +464,35 @@ function gameLoop() {
     setTimeout(gameLoop, 2000);
 }
 
+// Simplified cloud creation
+function createCloud() {
+    const group = new THREE.Group();
+    
+    // Create simple white spheres
+    const sphereGeometry = new THREE.SphereGeometry(1, 16, 16);
+    const material = new THREE.MeshBasicMaterial({ color: 0xFFFFFF });
+    
+    // Main sphere
+    const mainSphere = new THREE.Mesh(sphereGeometry, material);
+    group.add(mainSphere);
+    
+    // Add additional spheres
+    const positions = [
+        { x: -1, y: 0.3, z: 0 },
+        { x: 1, y: 0.3, z: 0 },
+        { x: 0, y: 0.5, z: 0 }
+    ];
+    
+    positions.forEach(pos => {
+        const sphere = new THREE.Mesh(sphereGeometry, material);
+        sphere.position.set(pos.x, pos.y, pos.z);
+        sphere.scale.set(0.7, 0.5, 0.7);
+        group.add(sphere);
+    });
+    
+    return group;
+}
+
 // Explicitly add terrain and clouds to scene
 function addTerrainAndClouds() {
     // Add terrain
@@ -845,183 +730,3 @@ fixLighting();
 
 // Log the scene after fixes
 console.log("Scene after fixes:", scene);
-
-// Create a more natural curved transition between ground and sky
-function createCurvedHorizon() {
-    // Remove existing ground
-    scene.traverse(function(object) {
-        if (object.geometry && 
-            (object.geometry.type === 'PlaneGeometry' || object.geometry.type === 'PlaneBufferGeometry') && 
-            object.rotation && Math.abs(object.rotation.x + Math.PI/2) < 0.1) {
-            console.log("Removing existing ground:", object);
-            scene.remove(object);
-        }
-    });
-    
-    // Create a curved surface using a custom shape
-    const shape = new THREE.Shape();
-    
-    // Define the shape with curved edges
-    const width = 40;
-    const depth = 40;
-    
-    // Start at bottom left
-    shape.moveTo(-width/2, -depth/2);
-    
-    // Bottom edge
-    shape.lineTo(width/2, -depth/2);
-    
-    // Right edge with curve
-    shape.quadraticCurveTo(width/2 + 5, 0, width/2, depth/2);
-    
-    // Top edge
-    shape.lineTo(-width/2, depth/2);
-    
-    // Left edge with curve
-    shape.quadraticCurveTo(-width/2 - 5, 0, -width/2, -depth/2);
-    
-    // Create geometry from shape
-    const geometry = new THREE.ShapeGeometry(shape, 50);
-    
-    // Create material
-    const material = new THREE.MeshLambertMaterial({
-        color: 0x7CFC00, // Bright green
-        side: THREE.DoubleSide
-    });
-    
-    // Create mesh
-    const ground = new THREE.Mesh(geometry, material);
-    ground.rotation.x = -Math.PI / 2;
-    
-    // Add to scene
-    scene.add(ground);
-    console.log("Added new curved ground");
-    
-    // Create additional curved surfaces for the edges
-    createHorizonCurve();
-}
-
-// Create curved surfaces at the horizon
-function createHorizonCurve() {
-    // Create curves for the left and right edges
-    const curvePoints = [];
-    
-    // Create a curve that goes from ground level up and then curves to horizontal
-    for (let t = 0; t <= 1; t += 0.05) {
-        const x = 20 * (t - 0.5); // -10 to 10
-        const y = 3 * Math.pow(t, 2); // Parabolic curve
-        const z = -20 + t * 5; // Moves from back to front slightly
-        curvePoints.push(new THREE.Vector3(x, y, z));
-    }
-    
-    const curve = new THREE.CatmullRomCurve3(curvePoints);
-    
-    // Create tube geometry along the curve
-    const tubeGeometry = new THREE.TubeGeometry(curve, 20, 20, 8, false);
-    const tubeMaterial = new THREE.MeshLambertMaterial({
-        color: 0x7CFC00, // Match ground color
-        side: THREE.DoubleSide
-    });
-    
-    const tube = new THREE.Mesh(tubeGeometry, tubeMaterial);
-    scene.add(tube);
-    console.log("Added first horizon curve");
-    
-    // Create a second tube for the other side
-    const curvePoints2 = [];
-    for (let t = 0; t <= 1; t += 0.05) {
-        const x = 20 * (t - 0.5); // -10 to 10
-        const y = 3 * Math.pow(t, 2); // Same parabolic curve
-        const z = 20 - t * 5; // Mirror of first curve
-        curvePoints2.push(new THREE.Vector3(x, y, z));
-    }
-    
-    const curve2 = new THREE.CatmullRomCurve3(curvePoints2);
-    const tubeGeometry2 = new THREE.TubeGeometry(curve2, 20, 20, 8, false);
-    const tube2 = new THREE.Mesh(tubeGeometry2, tubeMaterial);
-    scene.add(tube2);
-    console.log("Added second horizon curve");
-    
-    // Add connecting curves for the corners
-    createCornerCurves();
-}
-
-// Create curves for the corners to fully connect the horizon
-function createCornerCurves() {
-    const cornerMaterial = new THREE.MeshLambertMaterial({
-        color: 0x7CFC00,
-        side: THREE.DoubleSide
-    });
-    
-    // Front left corner
-    const frontLeftPoints = [];
-    for (let t = 0; t <= 1; t += 0.05) {
-        const angle = Math.PI * 0.5 * t;
-        const x = -20 + 5 * Math.cos(angle);
-        const y = 3 * Math.pow(t, 2);
-        const z = -20 + 5 * Math.sin(angle);
-        frontLeftPoints.push(new THREE.Vector3(x, y, z));
-    }
-    
-    const frontLeftCurve = new THREE.CatmullRomCurve3(frontLeftPoints);
-    const frontLeftGeometry = new THREE.TubeGeometry(frontLeftCurve, 20, 20, 8, false);
-    const frontLeftTube = new THREE.Mesh(frontLeftGeometry, cornerMaterial);
-    scene.add(frontLeftTube);
-    
-    // Front right corner
-    const frontRightPoints = [];
-    for (let t = 0; t <= 1; t += 0.05) {
-        const angle = Math.PI * (1 - 0.5 * t);
-        const x = 20 + 5 * Math.cos(angle);
-        const y = 3 * Math.pow(t, 2);
-        const z = -20 + 5 * Math.sin(angle);
-        frontRightPoints.push(new THREE.Vector3(x, y, z));
-    }
-    
-    const frontRightCurve = new THREE.CatmullRomCurve3(frontRightPoints);
-    const frontRightGeometry = new THREE.TubeGeometry(frontRightCurve, 20, 20, 8, false);
-    const frontRightTube = new THREE.Mesh(frontRightGeometry, cornerMaterial);
-    scene.add(frontRightTube);
-    
-    // Back left corner
-    const backLeftPoints = [];
-    for (let t = 0; t <= 1; t += 0.05) {
-        const angle = Math.PI * (1.5 - 0.5 * t);
-        const x = -20 + 5 * Math.cos(angle);
-        const y = 3 * Math.pow(t, 2);
-        const z = 20 + 5 * Math.sin(angle);
-        backLeftPoints.push(new THREE.Vector3(x, y, z));
-    }
-    
-    const backLeftCurve = new THREE.CatmullRomCurve3(backLeftPoints);
-    const backLeftGeometry = new THREE.TubeGeometry(backLeftCurve, 20, 20, 8, false);
-    const backLeftTube = new THREE.Mesh(backLeftGeometry, cornerMaterial);
-    scene.add(backLeftTube);
-    
-    // Back right corner
-    const backRightPoints = [];
-    for (let t = 0; t <= 1; t += 0.05) {
-        const angle = Math.PI * (1.5 + 0.5 * t);
-        const x = 20 + 5 * Math.cos(angle);
-        const y = 3 * Math.pow(t, 2);
-        const z = 20 + 5 * Math.sin(angle);
-        backRightPoints.push(new THREE.Vector3(x, y, z));
-    }
-    
-    const backRightCurve = new THREE.CatmullRomCurve3(backRightPoints);
-    const backRightGeometry = new THREE.TubeGeometry(backRightCurve, 20, 20, 8, false);
-    const backRightTube = new THREE.Mesh(backRightGeometry, cornerMaterial);
-    scene.add(backRightTube);
-    
-    console.log("Added corner curves");
-}
-
-// Call the function to create the curved horizon
-createCurvedHorizon();
-
-// Adjust camera to better view the curved horizon
-camera.position.set(0, 10, 15);
-camera.lookAt(0, 0, 0);
-
-// Add debug logging
-console.log("Curved horizon implementation complete");
