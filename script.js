@@ -302,13 +302,13 @@ function updateMoleText(mole, word) {
     // Clear the canvas
     context.clearRect(0, 0, 512, 256);
     
-    // Set text properties - larger font
+    // Set text properties
     context.fillStyle = 'black';
-    context.font = 'bold 160px Arial'; // Increased font size
+    context.font = 'bold 160px Arial'; // Larger font
     context.textAlign = 'center';
     context.textBaseline = 'middle';
     
-    // Draw text with outline for better visibility
+    // Draw text with white outline for better visibility on brown
     context.strokeStyle = 'white';
     context.lineWidth = 10;
     context.strokeText(word, 256, 128);
@@ -322,10 +322,10 @@ function updateMoleText(mole, word) {
 function createMole() {
     const moleGroup = new THREE.Group();
     
-    // Body - very light cream color
+    // Body - light brown color
     const bodyGeometry = new THREE.SphereGeometry(0.8, 32, 32);
     const bodyMaterial = new THREE.MeshLambertMaterial({ 
-        color: 0xFFF8E0  // Very light cream color
+        color: 0xD2B48C  // Light brown (tan) color
     });
     const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
     moleGroup.add(body);
@@ -357,7 +357,7 @@ function createMole() {
     textPlane.position.set(0, 0, 0.81);
     facingGroup.add(textPlane);
     
-    // Eyes - make slightly larger for better visibility
+    // Eyes - make slightly larger
     const eyeGeometry = new THREE.CircleGeometry(0.04, 32);
     const eyeMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
     
@@ -582,13 +582,13 @@ function enhanceLighting() {
 updateHoleColor();
 enhanceLighting();
 
-// Make the ground green again (if desired)
+// Make the ground green again
 function updateGroundColor() {
     scene.children.forEach(child => {
         if (child.geometry && 
             (child.geometry.type === 'PlaneGeometry' || child.geometry.type === 'PlaneBufferGeometry') && 
             child.rotation.x === -Math.PI / 2) {
-            child.material.color.set(0x7CFC00); // Light green color
+            child.material.color.set(0x90EE90); // Light green color
         }
     });
 }
@@ -617,3 +617,19 @@ function adjustEyePositions() {
 // Uncomment if you want the ground to be green again
 // updateGroundColor();
 adjustEyePositions();
+
+// Update mole color to light brown
+function updateMoleColor() {
+    moles.forEach(mole => {
+        // Find the body (first child, which is the sphere)
+        if (mole.children && mole.children.length > 0) {
+            const body = mole.children[0];
+            if (body.material) {
+                body.material.color.set(0xD2B48C); // Light brown (tan) color
+            }
+        }
+    });
+}
+
+// Call this function to ensure good lighting
+enhanceLighting();
