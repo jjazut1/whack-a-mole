@@ -302,13 +302,16 @@ function updateMoleText(mole, word) {
     // Clear the canvas
     context.clearRect(0, 0, 512, 256);
     
-    // Set text properties - darker text for better contrast on lighter mole
+    // Set text properties
     context.fillStyle = 'black';
     context.font = 'bold 140px Arial';
     context.textAlign = 'center';
     context.textBaseline = 'middle';
     
-    // Draw text
+    // Draw text with outline for better visibility
+    context.strokeStyle = 'white';
+    context.lineWidth = 8;
+    context.strokeText(word, 256, 128);
     context.fillText(word, 256, 128);
     
     // Update the texture
@@ -319,10 +322,10 @@ function updateMoleText(mole, word) {
 function createMole() {
     const moleGroup = new THREE.Group();
     
-    // Body - lighter tan color
+    // Body - very light cream color
     const bodyGeometry = new THREE.SphereGeometry(0.8, 32, 32);
     const bodyMaterial = new THREE.MeshLambertMaterial({ 
-        color: 0xF5DEB3  // Lighter wheat color instead of tan
+        color: 0xFFF8E0  // Very light cream color
     });
     const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
     moleGroup.add(body);
@@ -354,8 +357,8 @@ function createMole() {
     textPlane.position.set(0, 0, 0.81);
     facingGroup.add(textPlane);
     
-    // Eyes
-    const eyeGeometry = new THREE.CircleGeometry(0.03, 32);
+    // Eyes - make slightly larger for better visibility
+    const eyeGeometry = new THREE.CircleGeometry(0.04, 32);
     const eyeMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
     
     const leftEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
@@ -541,3 +544,40 @@ function adjustCloudPositions() {
 
 // Call this function to adjust existing clouds
 adjustCloudPositions();
+
+// Update hole color to be less dark
+function updateHoleColor() {
+    scene.children.forEach(child => {
+        if (child.geometry && child.geometry.type === 'CircleGeometry') {
+            child.material.color.set(0x505050); // Lighter gray for holes
+        }
+    });
+}
+
+// Improve lighting for better visibility
+function enhanceLighting() {
+    // Remove existing lights
+    scene.children.forEach(child => {
+        if (child instanceof THREE.Light) {
+            scene.remove(child);
+        }
+    });
+    
+    // Add stronger ambient light
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+    scene.add(ambientLight);
+    
+    // Add directional light from front
+    const frontLight = new THREE.DirectionalLight(0xffffff, 1.0);
+    frontLight.position.set(0, 5, 10);
+    scene.add(frontLight);
+    
+    // Add directional light from above
+    const topLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    topLight.position.set(0, 10, 0);
+    scene.add(topLight);
+}
+
+// Call these functions to update the scene
+updateHoleColor();
+enhanceLighting();
