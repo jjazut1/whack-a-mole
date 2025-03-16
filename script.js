@@ -1,15 +1,26 @@
 // Import Three.js (Make sure you include Three.js in your HTML)
 import * as THREE from 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.module.min.js';
 
-// Scene setup
+// First define all necessary global variables and scene setup
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x87CEEB);
-const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
 const renderer = new THREE.WebGLRenderer({ antialias: true });
-renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.sortObjects = true;
-renderer.setClearColor(0x87CEEB, 1);
-document.body.appendChild(renderer.domElement);
+scene.background = new THREE.Color(0x87CEEB); // Sky blue
+
+// Cloud positions
+const cloudPositions = [
+    { x: -8, y: 8, z: -8 },
+    { x: 0, y: 10, z: -6 },
+    { x: 8, y: 9, z: -8 }
+];
+
+// Hole positions
+const holes = [
+    { x: -2.5, z: -2.5, y: 0.2 },
+    { x: 2.5, z: -2.5, y: 0.2 },
+    { x: -2.5, z: 2.5, y: 0.2 },
+    { x: 2.5, z: 2.5, y: 0.2 }
+];
 
 // Initialize arrays and game state
 const moles = [];
@@ -52,26 +63,104 @@ instructionsElement.style.textAlign = 'center';
 instructionsElement.innerHTML = 'Hit the mole when you see a word with the short "a" sound!<br>Click anywhere to start';
 document.body.appendChild(instructionsElement);
 
-// First, set up better lighting
-function setupLighting() {
-    // Clear existing lights
-    scene.children.filter(child => child instanceof THREE.Light).forEach(light => scene.remove(light));
+// Helper functions
+function createCloud() {
+    const cloudGroup = new THREE.Group();
+    const cloudMaterial = new THREE.MeshPhongMaterial({ // Changed to PhongMaterial
+        color: 0xFFFFFF,
+        transparent: true,
+        opacity: 0.9,
+        emissive: 0x333333 // Slight emissive for better visibility
+    });
 
-    // Add stronger ambient light
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
-    scene.add(ambientLight);
+    // Create main cloud shapes
+    const positions = [
+        { x: 0, y: 0, z: 0, scale: 1 },
+        { x: -1, y: 0, z: 0, scale: 0.8 },
+        { x: 1, y: 0, z: 0, scale: 0.8 },
+        { x: 0, y: 0.5, z: 0, scale: 0.7 }
+    ];
 
-    // Add directional lights from multiple angles
-    const mainLight = new THREE.DirectionalLight(0xffffff, 0.8);
-    mainLight.position.set(5, 10, 5);
-    scene.add(mainLight);
+    positions.forEach(pos => {
+        const cloudPiece = new THREE.Mesh(
+            new THREE.SphereGeometry(1, 16, 16),
+            cloudMaterial
+        );
+        cloudPiece.position.set(pos.x, pos.y, pos.z);
+        cloudPiece.scale.set(pos.scale, pos.scale * 0.6, pos.scale);
+        cloudGroup.add(cloudPiece);
+    });
 
-    const fillLight = new THREE.DirectionalLight(0xffffff, 0.3);
-    fillLight.position.set(-5, 8, -5);
-    scene.add(fillLight);
+    return cloudGroup;
 }
 
-// Update material settings for better visibility
+function createHole() {
+    const hole = new THREE.Mesh(
+        new THREE.BoxGeometry(0.5, 0.05, 0.5),
+        new THREE.MeshBasicMaterial({ color: 0x000000 })
+    );
+    return hole;
+}
+
+function createMole() {
+    const moleGroup = new THREE.Group();
+    
+    // Smaller body size
+    const bodyGeometry = new THREE.SphereGeometry(0.5, 32, 32);
+    const bodyMaterial = new THREE.MeshPhongMaterial({
+        color: 0xF5E6D3, // Lighter beige color
+        emissive: 0x1a1a1a,
+        shininess: 30
+    });
+    const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+    moleGroup.add(body);
+
+    // Create a front-facing group that will always face the camera
+    const facingGroup = new THREE.Group();
+    moleGroup.add(facingGroup);
+
+    // Text plane - attached to facing group
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d');
+    canvas.width = 512;
+    canvas.height = 256;
+    
+    const textTexture = new THREE.Texture(canvas);
+    textTexture.minFilter = THREE.LinearFilter;
+    textTexture.magFilter = THREE.LinearFilter;
+    
+    const textMaterial = new THREE.MeshBasicMaterial({
+        map: textTexture,
+        transparent: true,
+        side: THREE.DoubleSide,
+    });
+    
+    const textPlane = new THREE.Mesh(
+        new THREE.PlaneGeometry(0.8, 0.4),
+        textMaterial
+    );
+    textPlane.position.set(0, 0, 0.81);
+    facingGroup.add(textPlane);
+    
+    // Eyes - attached to facing group
+    const eyeGeometry = new THREE.CircleGeometry(0.03, 32);
+    const eyeMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
+    
+    const leftEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+    leftEye.position.set(-0.15, 0.4, 0.81);
+    facingGroup.add(leftEye);
+    
+    const rightEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+    rightEye.position.set(0.15, 0.4, 0.81);
+    facingGroup.add(rightEye);
+    
+    moleGroup.userData.textTexture = textTexture;
+    moleGroup.userData.textContext = context;
+    moleGroup.userData.facingGroup = facingGroup; // Store reference to facing group
+
+    return moleGroup;
+}
+
 function createTerrain() {
     const geometry = new THREE.PlaneGeometry(30, 30, 50, 50);
     const material = new THREE.MeshPhongMaterial({
@@ -91,10 +180,9 @@ function createTerrain() {
         const z = vertices[i + 2];
         const distance = Math.sqrt(x * x + z * z);
         
-        // Create hill-like curve
         vertices[i + 1] = Math.max(0, 
-            2 * Math.exp(-distance * distance / 100) + // Central hill
-            -0.05 * (distance * distance) // Edge falloff
+            2 * Math.exp(-distance * distance / 100) + 
+            -0.05 * (distance * distance)
         );
     }
     geometry.attributes.position.needsUpdate = true;
@@ -103,60 +191,78 @@ function createTerrain() {
     return terrain;
 }
 
-// Adjust hole positions to match terrain curve
-const holes = [
-    { x: -2.5, z: -2.5, y: 0.2 },
-    { x: 2.5, z: -2.5, y: 0.2 },
-    { x: -2.5, z: 2.5, y: 0.2 },
-    { x: 2.5, z: 2.5, y: 0.2 }
-];
+function setupLighting() {
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+    scene.add(ambientLight);
+
+    const mainLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    mainLight.position.set(5, 10, 5);
+    scene.add(mainLight);
+
+    const fillLight = new THREE.DirectionalLight(0xffffff, 0.3);
+    fillLight.position.set(-5, 8, -5);
+    scene.add(fillLight);
+}
 
 function setupHolesAndMoles() {
     holes.forEach(holePos => {
-        // Create and position hole
         const hole = createHole();
         hole.position.set(holePos.x, holePos.y, holePos.z);
         scene.add(hole);
         
-        // Create and position mole
         const mole = createMole();
         mole.position.set(holePos.x, holePos.y + 0.1, holePos.z);
         scene.add(mole);
     });
 }
 
-// Update renderer settings
-renderer.outputEncoding = THREE.sRGBEncoding;
-renderer.physicallyCorrectLights = true;
-renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.0;
-
-// Call setup
-setupScene();
+// Main setup function
+function setupScene() {
+    // Clear existing scene
+    while(scene.children.length > 0) { 
+        scene.remove(scene.children[0]); 
+    }
+    
+    // Setup camera
+    camera.position.set(0, 10, 15);
+    camera.lookAt(0, 0, 0);
+    
+    // Setup renderer
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.shadowMap.enabled = true;
+    
+    // Add elements to scene
+    setupLighting();
+    
+    const terrain = createTerrain();
+    scene.add(terrain);
+    
+    cloudPositions.forEach(pos => {
+        const cloud = createCloud();
+        cloud.position.set(pos.x, pos.y, pos.z);
+        scene.add(cloud);
+    });
+    
+    setupHolesAndMoles();
+}
 
 // Animation loop
 function animate() {
     requestAnimationFrame(animate);
-    
-    // Update mole faces
-    moles.forEach(mole => {
-        if (mole.userData.facingGroup) {
-            mole.userData.facingGroup.lookAt(camera.position);
-        }
-    });
-    
-    // Animate clouds
-    scene.children.forEach(child => {
-        if (child.isGroup && child.children[0]?.material?.color?.equals(new THREE.Color(0xFFFFFF))) {
-            child.position.x += 0.01;
-            if (child.position.x > 15) child.position.x = -15;
-        }
-    });
-    
     renderer.render(scene, camera);
 }
 
+// Initialize everything
+document.body.appendChild(renderer.domElement);
+setupScene();
 animate();
+
+// Handle window resize
+window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+});
 
 // Mole materials with brighter colors
 const moleBodyGeometry = new THREE.SphereGeometry(0.5, 32, 32);
@@ -280,66 +386,6 @@ function updateMoleText(mole, word) {
     texture.needsUpdate = true;
 }
 
-// Update mole creation
-function createMole() {
-    const moleGroup = new THREE.Group();
-    
-    // Smaller body size
-    const bodyGeometry = new THREE.SphereGeometry(0.5, 32, 32);
-    const bodyMaterial = new THREE.MeshPhongMaterial({
-        color: 0xF5E6D3, // Lighter beige color
-        emissive: 0x1a1a1a,
-        shininess: 30
-    });
-    const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
-    moleGroup.add(body);
-
-    // Create a front-facing group that will always face the camera
-    const facingGroup = new THREE.Group();
-    moleGroup.add(facingGroup);
-
-    // Text plane - attached to facing group
-    const canvas = document.createElement('canvas');
-    const context = canvas.getContext('2d');
-    canvas.width = 512;
-    canvas.height = 256;
-    
-    const textTexture = new THREE.Texture(canvas);
-    textTexture.minFilter = THREE.LinearFilter;
-    textTexture.magFilter = THREE.LinearFilter;
-    
-    const textMaterial = new THREE.MeshBasicMaterial({
-        map: textTexture,
-        transparent: true,
-        side: THREE.DoubleSide,
-    });
-    
-    const textPlane = new THREE.Mesh(
-        new THREE.PlaneGeometry(0.8, 0.4),
-        textMaterial
-    );
-    textPlane.position.set(0, 0, 0.81);
-    facingGroup.add(textPlane);
-    
-    // Eyes - attached to facing group
-    const eyeGeometry = new THREE.CircleGeometry(0.03, 32);
-    const eyeMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
-    
-    const leftEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
-    leftEye.position.set(-0.15, 0.4, 0.81);
-    facingGroup.add(leftEye);
-    
-    const rightEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
-    rightEye.position.set(0.15, 0.4, 0.81);
-    facingGroup.add(rightEye);
-    
-    moleGroup.userData.textTexture = textTexture;
-    moleGroup.userData.textContext = context;
-    moleGroup.userData.facingGroup = facingGroup; // Store reference to facing group
-
-    return moleGroup;
-}
-
 // Modify the assignNewWord function
 function assignNewWord(mole) {
     isShortAWord = Math.random() < 0.7;
@@ -428,37 +474,6 @@ function gameLoop() {
     setTimeout(gameLoop, 2000);
 }
 
-// Cloud creation function
-function createCloud() {
-    const cloudGroup = new THREE.Group();
-    const cloudMaterial = new THREE.MeshPhongMaterial({ // Changed to PhongMaterial
-        color: 0xFFFFFF,
-        transparent: true,
-        opacity: 0.9,
-        emissive: 0x333333 // Slight emissive for better visibility
-    });
-
-    // Create main cloud shapes
-    const positions = [
-        { x: 0, y: 0, z: 0, scale: 1 },
-        { x: -1, y: 0, z: 0, scale: 0.8 },
-        { x: 1, y: 0, z: 0, scale: 0.8 },
-        { x: 0, y: 0.5, z: 0, scale: 0.7 }
-    ];
-
-    positions.forEach(pos => {
-        const cloudPiece = new THREE.Mesh(
-            new THREE.SphereGeometry(1, 16, 16),
-            cloudMaterial
-        );
-        cloudPiece.position.set(pos.x, pos.y, pos.z);
-        cloudPiece.scale.set(pos.scale, pos.scale * 0.6, pos.scale);
-        cloudGroup.add(cloudPiece);
-    });
-
-    return cloudGroup;
-}
-
 // Add a second directional light to better show the slopes
 const backLight = new THREE.DirectionalLight(0xffffff, 0.3);
 backLight.position.set(-5, 5, -5);
@@ -468,6 +483,3 @@ scene.add(backLight);
 camera.position.set(0, 10, 15);
 camera.fov = 60; // Wider field of view
 camera.updateProjectionMatrix();
-
-// Reinitialize the scene
-setupScene();
