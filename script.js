@@ -302,15 +302,15 @@ function updateMoleText(mole, word) {
     // Clear the canvas
     context.clearRect(0, 0, 512, 256);
     
-    // Set text properties
+    // Set text properties - larger font
     context.fillStyle = 'black';
-    context.font = 'bold 140px Arial';
+    context.font = 'bold 160px Arial'; // Increased font size
     context.textAlign = 'center';
     context.textBaseline = 'middle';
     
     // Draw text with outline for better visibility
     context.strokeStyle = 'white';
-    context.lineWidth = 8;
+    context.lineWidth = 10;
     context.strokeText(word, 256, 128);
     context.fillText(word, 256, 128);
     
@@ -581,3 +581,39 @@ function enhanceLighting() {
 // Call these functions to update the scene
 updateHoleColor();
 enhanceLighting();
+
+// Make the ground green again (if desired)
+function updateGroundColor() {
+    scene.children.forEach(child => {
+        if (child.geometry && 
+            (child.geometry.type === 'PlaneGeometry' || child.geometry.type === 'PlaneBufferGeometry') && 
+            child.rotation.x === -Math.PI / 2) {
+            child.material.color.set(0x7CFC00); // Light green color
+        }
+    });
+}
+
+// Adjust eye position for better visibility
+function adjustEyePositions() {
+    moles.forEach(mole => {
+        if (mole.userData.facingGroup) {
+            mole.userData.facingGroup.children.forEach(child => {
+                // Identify eyes by their geometry and position
+                if (child.geometry && child.geometry.type === 'CircleGeometry') {
+                    // Make eyes larger
+                    child.scale.set(1.5, 1.5, 1.5);
+                    
+                    // Move eyes higher if they're the eye positions
+                    if (Math.abs(child.position.x) > 0.1) { // This is an eye
+                        child.position.y += 0.1; // Move higher
+                    }
+                }
+            });
+        }
+    });
+}
+
+// Call these functions to update the scene
+// Uncomment if you want the ground to be green again
+// updateGroundColor();
+adjustEyePositions();
