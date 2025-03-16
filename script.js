@@ -77,14 +77,6 @@ holes.forEach(pos => {
     scene.add(hole);
 });
 
-// Add lighting
-const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
-scene.add(ambientLight);
-
-const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-directionalLight.position.set(5, 10, 5);
-scene.add(directionalLight);
-
 // Create moles
 holes.forEach(pos => {
     const mole = createMole();
@@ -173,10 +165,13 @@ ground.rotation.x = -Math.PI / 2;
 ground.position.y = 0;
 scene.add(ground);
 
+// Remove any existing lights first
+scene.remove(...scene.children.filter(child => child instanceof THREE.Light));
+
 // Create a more natural 3D terrain
 function createTerrain() {
     // Create a larger geometry to allow for curved edges
-    const geometry = new THREE.PlaneBufferGeometry(30, 30, 50, 50); // More segments for smoother curves
+    const geometry = new THREE.PlaneBufferGeometry(30, 30, 50, 50);
     const vertices = geometry.attributes.position.array;
 
     // Modify vertices to create curved edges that slope down
@@ -189,11 +184,10 @@ function createTerrain() {
         
         // Create smooth falloff for edges
         let height = 0;
-        const plateauRadius = 8; // Size of flat area
-        const falloffDistance = 7; // Distance over which the edge falls
+        const plateauRadius = 8;
+        const falloffDistance = 7;
         
         if (distanceFromCenter > plateauRadius) {
-            // Create smooth falloff using cosine
             const falloff = Math.cos(Math.PI * Math.min(distanceFromCenter - plateauRadius, falloffDistance) / falloffDistance);
             height = -5 * (1 - falloff);
         }
@@ -204,7 +198,6 @@ function createTerrain() {
     geometry.attributes.position.needsUpdate = true;
     geometry.computeVertexNormals();
 
-    // Create material with transparent edges
     const material = new THREE.MeshLambertMaterial({
         color: 0x90EE90,
         side: THREE.DoubleSide,
@@ -212,7 +205,6 @@ function createTerrain() {
         opacity: 1
     });
 
-    // Create terrain mesh
     const terrain = new THREE.Mesh(geometry, material);
     terrain.rotation.x = -Math.PI / 2;
     
@@ -224,11 +216,8 @@ function createTerrain() {
         const x = positions[i];
         const z = positions[i + 2];
         const distanceFromCenter = Math.sqrt(x * x + z * z);
-        
-        // Calculate opacity based on distance from center
         const opacity = Math.max(0, Math.min(1, 1 - (distanceFromCenter - 8) / 7));
-        
-        colors.push(0.565, 0.933, 0.565, opacity); // Light green with fading opacity
+        colors.push(0.565, 0.933, 0.565, opacity);
     }
     
     geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 4));
@@ -237,21 +226,35 @@ function createTerrain() {
     return terrain;
 }
 
-// Replace the old hill with new terrain
-scene.remove(ground);
-const terrain = createTerrain();
-scene.add(terrain);
+// Update scene setup
+function updateScene() {
+    // Clear existing terrain if any
+    const existingTerrain = scene.children.find(child => child.userData.isTerrain);
+    if (existingTerrain) {
+        scene.remove(existingTerrain);
+    }
 
-// Adjust scene background to match sky color exactly
-scene.background = new THREE.Color(0x87CEEB);
+    // Add new terrain
+    const terrain = createTerrain();
+    terrain.userData.isTerrain = true;
+    scene.add(terrain);
 
-// Enhance lighting for better depth perception
-const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
-scene.add(ambientLight);
+    // Setup lighting
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+    scene.add(ambientLight);
 
-const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-directionalLight.position.set(5, 10, 5);
-scene.add(directionalLight);
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    directionalLight.position.set(5, 10, 5);
+    scene.add(directionalLight);
+
+    // Update renderer settings
+    renderer.sortObjects = true;
+    renderer.setClearColor(0x87CEEB, 1);
+    scene.background = new THREE.Color(0x87CEEB);
+}
+
+// Call the update function
+updateScene();
 
 // Enable transparency sorting
 renderer.sortObjects = true;
