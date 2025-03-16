@@ -55,8 +55,9 @@ instructionsElement.style.textAlign = 'center';
 instructionsElement.innerHTML = 'Hit the mole when you see a word with the short "a" sound!<br>Click anywhere to start';
 document.body.appendChild(instructionsElement);
 
-// Adjust terrain color and lighting
+// Simplified terrain creation
 function createTerrain() {
+    // Use PlaneGeometry instead of PlaneBufferGeometry (which is deprecated)
     const geometry = new THREE.PlaneGeometry(40, 40, 50, 50);
     
     // Modify vertices for curved edges
@@ -68,6 +69,7 @@ function createTerrain() {
         const distance = Math.sqrt(x * x + y * y);
         
         if (distance > 10) {
+            // Create curved falloff
             const z = -0.5 * Math.pow((distance - 10) / 10, 2);
             positionAttribute.setZ(i, z);
         }
@@ -75,51 +77,17 @@ function createTerrain() {
     
     geometry.computeVertexNormals();
     
-    // Use a much brighter green color
+    // Create material with solid color
     const material = new THREE.MeshLambertMaterial({
-        color: 0x4CAF50, // Brighter green
-        side: THREE.DoubleSide,
-        emissive: 0x2E7D32, // Add some self-illumination
-        emissiveIntensity: 0.2 // Subtle glow
+        color: 0x90EE90, // Light green
+        side: THREE.DoubleSide
     });
     
     const terrain = new THREE.Mesh(geometry, material);
-    terrain.rotation.x = Math.PI / 2;
-    terrain.position.y = -0.1;
+    terrain.rotation.x = Math.PI / 2; // Rotate to be horizontal
+    terrain.position.y = -0.1; // Position slightly below holes
     
     return terrain;
-}
-
-// Improve lighting
-function setupLighting() {
-    // Remove existing lights
-    scene.children.filter(child => child instanceof THREE.Light)
-        .forEach(light => scene.remove(light));
-    
-    // Add stronger ambient light
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.8); // Increased intensity
-    scene.add(ambientLight);
-    
-    // Add directional light from above
-    const mainLight = new THREE.DirectionalLight(0xffffff, 1.0); // Increased intensity
-    mainLight.position.set(0, 10, 0);
-    scene.add(mainLight);
-    
-    // Add front light to illuminate moles better
-    const frontLight = new THREE.DirectionalLight(0xffffff, 0.7);
-    frontLight.position.set(0, 5, 10);
-    scene.add(frontLight);
-}
-
-// Update hole material to be more visible
-function updateHoles() {
-    scene.children.forEach(child => {
-        if (child.geometry && child.geometry.type === 'CircleGeometry') {
-            child.material = new THREE.MeshBasicMaterial({
-                color: 0x333333 // Darker color
-            });
-        }
-    });
 }
 
 // Setup scene function
@@ -162,7 +130,7 @@ function setupHolesAndMoles() {
         color: 0x404040  // Dark gray
     });
 
-const holes = [
+    const holes = [
         { x: -2, z: -2, rotation: Math.PI * 0.25 + 0.175 },
         { x: 2, z: -2, rotation: -Math.PI * 0.25 - 0.175 },
         { x: -2, z: 2, rotation: Math.PI * 0.75 + 0.175 },
@@ -193,9 +161,9 @@ const holes = [
         
         mole.userData.isUp = false;
         mole.userData.isMoving = false;
-    scene.add(mole);
-    moles.push(mole);
-});
+        scene.add(mole);
+        moles.push(mole);
+    });
 }
 
 // Initialize scene
@@ -413,15 +381,12 @@ function assignNewWord(mole) {
     updateMoleText(mole, currentWord);
 }
 
-// Fix the animation function errors
-
-// 1. First, make sure animateMole is properly defined and accessible
-// Find the original animateMole function in your code
+// Modify the animateMole function
 function animateMole(mole, goingUp) {
     if (mole.userData.isMoving) return;
     
     mole.userData.isMoving = true;
-    const targetY = goingUp ? 0.7 : -1.0;
+    const targetY = goingUp ? 1.0 : -1.0; // Higher up position
     const duration = 200;
     const startY = mole.position.y;
     const startTime = Date.now();
@@ -453,98 +418,6 @@ function animateMole(mole, goingUp) {
     update();
 }
 
-// 2. Add mole shadows without modifying the original function
-function addMoleShadows() {
-    moles.forEach(mole => {
-        // Create a simple shadow (dark circle)
-        const shadowGeometry = new THREE.CircleGeometry(0.6, 32);
-        const shadowMaterial = new THREE.MeshBasicMaterial({
-            color: 0x000000,
-            transparent: true,
-            opacity: 0.2
-        });
-        
-        const shadow = new THREE.Mesh(shadowGeometry, shadowMaterial);
-        shadow.rotation.x = -Math.PI / 2;
-        shadow.position.copy(mole.position);
-        shadow.position.y = 0.02; // Just above the ground
-        scene.add(shadow);
-        
-        // Store shadow reference
-        mole.userData.shadow = shadow;
-        
-        // Add a custom update method to the mole
-        mole.userData.updateShadow = function() {
-            if (this.shadow) {
-                this.shadow.position.x = mole.position.x;
-                this.shadow.position.z = mole.position.z;
-                this.shadow.material.opacity = mole.userData.isUp ? 0.2 : 0;
-            }
-        };
-    });
-}
-
-// 3. Update the game loop to handle shadows
-function gameLoop() {
-    if (!gameActive) return;
-    
-    const availableMoles = moles.filter(mole => !mole.userData.isUp && !mole.userData.isMoving);
-    if (availableMoles.length > 0) {
-        const randomMole = availableMoles[Math.floor(Math.random() * availableMoles.length)];
-        animateMole(randomMole, true);
-        
-        // Update shadow when mole pops up
-        if (randomMole.userData.shadow) {
-            randomMole.userData.shadow.material.opacity = 0.2;
-        }
-        
-        setTimeout(() => {
-            if (randomMole.userData.isUp) {
-                animateMole(randomMole, false);
-                
-                // Update shadow when mole goes down
-                if (randomMole.userData.shadow) {
-                    randomMole.userData.shadow.material.opacity = 0;
-                }
-            }
-        }, 1500);
-    }
-    
-    setTimeout(gameLoop, 2000);
-}
-
-// 4. Make holes darker
-function makeHolesDarker() {
-    scene.children.forEach(child => {
-        if (child.geometry && child.geometry.type === 'CircleGeometry') {
-            child.material = new THREE.MeshBasicMaterial({
-                color: 0x333333 // Darker color
-            });
-        }
-    });
-}
-
-// 5. Add terrain texture
-function brightenTerrain() {
-    const existingTerrain = scene.children.find(
-        child => child.geometry && child.geometry.type === 'PlaneGeometry'
-    );
-    
-    if (existingTerrain) {
-        existingTerrain.material.color.set(0x4CAF50); // Brighter green
-    }
-}
-
-// Call these functions safely
-try {
-    makeHolesDarker();
-    addMoleShadows();
-    brightenTerrain();
-    console.log("Visual enhancements applied successfully");
-} catch (error) {
-    console.error("Error applying visual enhancements:", error);
-}
-
 // Game logic
 function startGame() {
     score = 0;
@@ -568,6 +441,24 @@ function startGame() {
 function updateUI() {
     scoreElement.textContent = `Score: ${score}`;
     timerElement.textContent = `Time: ${timeRemaining}s`;
+}
+
+function gameLoop() {
+    if (!gameActive) return;
+    
+    const availableMoles = moles.filter(mole => !mole.userData.isUp && !mole.userData.isMoving);
+    if (availableMoles.length > 0) {
+        const randomMole = availableMoles[Math.floor(Math.random() * availableMoles.length)];
+        animateMole(randomMole, true);
+        
+        setTimeout(() => {
+            if (randomMole.userData.isUp) {
+                animateMole(randomMole, false);
+            }
+        }, 1500);
+    }
+    
+    setTimeout(gameLoop, 2000);
 }
 
 // Simplified cloud creation
@@ -631,33 +522,3 @@ console.log("Scene children:", scene.children);
 const backLight = new THREE.DirectionalLight(0xffffff, 0.3);
 backLight.position.set(-5, 5, -5);
 scene.add(backLight);
-
-// Call these functions to update the scene
-setupLighting();
-
-// If you need to recreate the terrain
-const existingTerrain = scene.children.find(
-    child => child.geometry && child.geometry.type === 'PlaneGeometry'
-);
-if (existingTerrain) {
-    scene.remove(existingTerrain);
-}
-scene.add(createTerrain());
-
-// 4. Add shadow update to animation loop (without modifying existing functions)
-// This needs to be added to your existing animation loop
-const originalAnimate = animate;
-function animate() {
-    // Call the original animation function
-    originalAnimate();
-    
-    // Update shadows
-    moles.forEach(mole => {
-        const shadow = mole.userData.shadow;
-        if (shadow) {
-            shadow.position.x = mole.position.x;
-            shadow.position.z = mole.position.z;
-            shadow.material.opacity = mole.userData.isUp ? 0.2 : 0;
-        }
-    });
-}
