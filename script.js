@@ -78,7 +78,7 @@ holes.forEach(pos => {
 });
 
 // Add lighting
-const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
 scene.add(ambientLight);
 
 const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
@@ -173,60 +173,89 @@ ground.rotation.x = -Math.PI / 2;
 ground.position.y = 0;
 scene.add(ground);
 
-// Create a more natural hill shape with curved edges
-function createHill() {
-    // Create a custom shape for the hill
-    const shape = new THREE.Shape();
-    
-    // Start from bottom left
-    shape.moveTo(-10, -10);
-    
-    // Create curved front edge
-    shape.quadraticCurveTo(-5, -8, 0, -8);
-    shape.quadraticCurveTo(5, -8, 10, -10);
-    
-    // Create curved right edge
-    shape.quadraticCurveTo(8, -5, 8, 0);
-    shape.quadraticCurveTo(8, 5, 10, 10);
-    
-    // Create curved back edge
-    shape.quadraticCurveTo(5, 8, 0, 8);
-    shape.quadraticCurveTo(-5, 8, -10, 10);
-    
-    // Create curved left edge
-    shape.quadraticCurveTo(-8, 5, -8, 0);
-    shape.quadraticCurveTo(-8, -5, -10, -10);
-    
-    // Create geometry from shape
-    const geometry = new THREE.ShapeGeometry(shape);
-    const material = new THREE.MeshLambertMaterial({
-        color: 0x90EE90,
-        side: THREE.DoubleSide
-    });
-    
-    // Create mesh and rotate to horizontal position
-    const hill = new THREE.Mesh(geometry, material);
-    hill.rotation.x = -Math.PI / 2;
-    hill.position.y = 0;
-    
-    // Add subtle elevation variation
+// Create a more natural 3D terrain
+function createTerrain() {
+    // Create a larger geometry to allow for curved edges
+    const geometry = new THREE.PlaneBufferGeometry(30, 30, 50, 50); // More segments for smoother curves
     const vertices = geometry.attributes.position.array;
+
+    // Modify vertices to create curved edges that slope down
     for (let i = 0; i < vertices.length; i += 3) {
         const x = vertices[i];
         const z = vertices[i + 2];
+        
+        // Calculate distance from center
         const distanceFromCenter = Math.sqrt(x * x + z * z);
-        const elevation = Math.max(0, (distanceFromCenter - 5) * 0.1);
-        vertices[i + 1] = -elevation;
+        
+        // Create smooth falloff for edges
+        let height = 0;
+        const plateauRadius = 8; // Size of flat area
+        const falloffDistance = 7; // Distance over which the edge falls
+        
+        if (distanceFromCenter > plateauRadius) {
+            // Create smooth falloff using cosine
+            const falloff = Math.cos(Math.PI * Math.min(distanceFromCenter - plateauRadius, falloffDistance) / falloffDistance);
+            height = -5 * (1 - falloff);
+        }
+        
+        vertices[i + 1] = height;
     }
+
     geometry.attributes.position.needsUpdate = true;
     geometry.computeVertexNormals();
+
+    // Create material with transparent edges
+    const material = new THREE.MeshLambertMaterial({
+        color: 0x90EE90,
+        side: THREE.DoubleSide,
+        transparent: true,
+        opacity: 1
+    });
+
+    // Create terrain mesh
+    const terrain = new THREE.Mesh(geometry, material);
+    terrain.rotation.x = -Math.PI / 2;
     
-    return hill;
+    // Add vertex colors to fade edges
+    const colors = [];
+    const positions = geometry.attributes.position.array;
+    
+    for (let i = 0; i < positions.length; i += 3) {
+        const x = positions[i];
+        const z = positions[i + 2];
+        const distanceFromCenter = Math.sqrt(x * x + z * z);
+        
+        // Calculate opacity based on distance from center
+        const opacity = Math.max(0, Math.min(1, 1 - (distanceFromCenter - 8) / 7));
+        
+        colors.push(0.565, 0.933, 0.565, opacity); // Light green with fading opacity
+    }
+    
+    geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 4));
+    material.vertexColors = true;
+
+    return terrain;
 }
 
-// Add hill to scene
-const hill = createHill();
-scene.add(hill);
+// Replace the old hill with new terrain
+scene.remove(ground);
+const terrain = createTerrain();
+scene.add(terrain);
+
+// Adjust scene background to match sky color exactly
+scene.background = new THREE.Color(0x87CEEB);
+
+// Enhance lighting for better depth perception
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+scene.add(ambientLight);
+
+const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+directionalLight.position.set(5, 10, 5);
+scene.add(directionalLight);
+
+// Enable transparency sorting
+renderer.sortObjects = true;
+renderer.setClearColor(0x87CEEB, 1);
 
 // Add clouds to the scene
 const clouds = [];
