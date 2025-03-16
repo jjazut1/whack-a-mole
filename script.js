@@ -995,312 +995,42 @@ function fixPixelatedText() {
     console.log("Text rendering improved to fix pixelation");
 }
 
-// Improve renderer settings for better text
+// Fix the renderer settings function to avoid reassigning constants
 function improveRendererSettings() {
-    // Enable anti-aliasing in the renderer
-    if (!renderer.antialias) {
-        // Create a new renderer with anti-aliasing
-        const oldRenderer = renderer;
-        renderer = new THREE.WebGLRenderer({ 
-            antialias: true,
-            alpha: true,
-            powerPreference: "high-performance"
-        });
-        renderer.setSize(window.innerWidth, window.innerHeight);
+    // Check if renderer exists and is a constant
+    if (typeof renderer !== 'undefined') {
+        // Update settings without reassigning the renderer
         renderer.setPixelRatio(window.devicePixelRatio);
         
-        // Replace the old renderer's canvas
-        document.body.removeChild(oldRenderer.domElement);
-        document.body.appendChild(renderer.domElement);
+        // Enable anti-aliasing if possible without reassigning
+        if (renderer.capabilities && renderer.capabilities.isWebGL2) {
+            try {
+                // Try to modify context parameters without reassignment
+                const context = renderer.getContext();
+                if (context && context.getContextAttributes) {
+                    const attributes = context.getContextAttributes();
+                    if (attributes) {
+                        attributes.antialias = true;
+                    }
+                }
+            } catch (e) {
+                console.log("Could not modify WebGL context attributes:", e);
+            }
+        }
         
-        console.log("Renderer updated with anti-aliasing");
+        console.log("Renderer settings updated without reassignment");
     } else {
-        // Just update existing renderer settings
-        renderer.setPixelRatio(window.devicePixelRatio);
+        console.log("Renderer not available or is not a constant");
     }
 }
 
-// Create a better material for text planes
-function improveTextMaterial() {
-    moles.forEach(mole => {
-        if (mole.userData.facingGroup) {
-            mole.userData.facingGroup.children.forEach(child => {
-                // Find the text plane
-                if (child.geometry && 
-                    child.geometry.type === 'PlaneGeometry' && 
-                    child.material && 
-                    child.material.map) {
-                    
-                    // Create improved material
-                    const newMaterial = new THREE.MeshBasicMaterial({
-                        map: child.material.map,
-                        transparent: true,
-                        side: THREE.DoubleSide,
-                        alphaTest: 0.1 // Helps with edge artifacts
-                    });
-                    
-                    // Apply the new material
-                    child.material.dispose();
-                    child.material = newMaterial;
-                    
-                    console.log("Text material improved");
-                }
-            });
-        }
-    });
-}
-
-// Apply all text improvements
-fixPixelatedText();
-improveRendererSettings();
-improveTextMaterial();
-
-// Fix text rendering for all moles, especially those in the back
-function fixAllMoleText() {
-    // Update the text rendering function with better quality
-    window.updateMoleText = function(mole, word) {
-        const context = mole.userData.textContext;
-        const texture = mole.userData.textTexture;
-        
-        // Use high resolution for all moles
-        context.canvas.width = 2048;
-        context.canvas.height = 1024;
-        
-        // Clear the canvas
-        context.clearRect(0, 0, context.canvas.width, context.canvas.height);
-        
-        // Enable anti-aliasing
-        context.imageSmoothingEnabled = true;
-        context.imageSmoothingQuality = 'high';
-        
-        // Set text properties - use a clean, simple font
-        context.fillStyle = 'black';
-        context.font = '300px Arial';
-        context.textAlign = 'center';
-        context.textBaseline = 'middle';
-        
-        // Draw text
-        context.fillText(word, context.canvas.width/2, context.canvas.height/2);
-        
-        // Update the texture with maximum quality settings
-        texture.needsUpdate = true;
-        texture.minFilter = THREE.LinearFilter;
-        texture.magFilter = THREE.LinearFilter;
-        texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
-        texture.generateMipmaps = false;
-    };
-    
-    console.log("Text rendering function updated");
-}
-
-// Make all text planes billboard to face the camera
-function makeTextFaceCamera() {
-    // Update the animation loop to make all text planes face the camera
-    const originalAnimate = animate;
-    
-    window.animate = function() {
-        // Call the original animation function
-        originalAnimate();
-        
-        // Make all text planes face the camera
-        moles.forEach(mole => {
-            if (mole.userData.facingGroup) {
-                // Make the entire facing group look at the camera
-                mole.userData.facingGroup.lookAt(camera.position);
-            }
-        });
-    };
-    
-    console.log("Text billboarding enabled");
-}
-
-// Ensure all moles have consistent text plane size and position
-function standardizeTextPlanes() {
-    moles.forEach((mole, index) => {
-        if (mole.userData.facingGroup) {
-            // Find the text plane
-            let textPlane = null;
-            mole.userData.facingGroup.children.forEach(child => {
-                if (child.geometry && 
-                    child.geometry.type === 'PlaneGeometry' && 
-                    child.material && 
-                    child.material.map) {
-                    textPlane = child;
-                }
-            });
-            
-            if (textPlane) {
-                // Standardize size and position
-                textPlane.scale.set(1, 1, 1); // Reset scale
-                textPlane.geometry = new THREE.PlaneGeometry(1.2, 0.6); // Standard size
-                textPlane.position.z = 0.85; // Ensure it's in front of the mole
-                
-                // Create improved material
-                const newMaterial = new THREE.MeshBasicMaterial({
-                    map: textPlane.material.map,
-                    transparent: true,
-                    side: THREE.DoubleSide,
-                    alphaTest: 0.1,
-                    depthWrite: false // Helps with z-fighting
-                });
-                
-                // Apply the new material
-                textPlane.material.dispose();
-                textPlane.material = newMaterial;
-                
-                console.log(`Standardized text plane for mole ${index}`);
-            }
-        }
-    });
-}
-
-// Update all mole text to ensure consistency
-function updateAllMoleText() {
-    // Force update all mole text
-    moles.forEach((mole, index) => {
-        if (mole.userData.textContext) {
-            // Use a test word based on position to verify
-            const testWords = ["hat", "cat", "bat", "mad", "sad", "bad", "dad", "had"];
-            const word = testWords[index % testWords.length];
-            updateMoleText(mole, word);
-            console.log(`Updated text for mole ${index} to "${word}"`);
-        }
-    });
-}
-
-// Apply all fixes
-fixAllMoleText();
-makeTextFaceCamera();
-standardizeTextPlanes();
-updateAllMoleText();
-
-// Adjust camera to better view all moles
-camera.position.set(0, 6, 7);
-camera.lookAt(0, 0, 0);
-
-// Optimize camera position for best text viewing
-function optimizeCameraPosition() {
-    // Position camera for optimal text viewing
-    camera.position.set(0, 4.5, 6.5);
-    camera.lookAt(0, 0, 0);
-    
-    // Adjust field of view for better perspective
-    camera.fov = 60; // Slightly narrower field of view
-    camera.updateProjectionMatrix();
-    
-    console.log("Camera position optimized for text viewing");
-}
-
-// Ensure text planes are always oriented optimally
-function optimizeTextOrientation() {
-    moles.forEach(mole => {
-        if (mole.userData.facingGroup) {
-            // Find the text plane
-            let textPlane = null;
-            mole.userData.facingGroup.children.forEach(child => {
-                if (child.geometry && 
-                    child.geometry.type === 'PlaneGeometry' && 
-                    child.material && 
-                    child.material.map) {
-                    textPlane = child;
-                }
-            });
-            
-            if (textPlane) {
-                // Adjust the text plane to be perpendicular to the camera view
-                // This helps reduce perspective distortion
-                textPlane.lookAt(camera.position);
-                
-                // Move text slightly forward
-                textPlane.position.z = 0.85;
-                
-                console.log("Text plane orientation optimized");
-            }
-        }
-    });
-}
-
-// Improve text rendering with techniques to reduce pixelation
-function enhanceTextRendering() {
-    // Update the text rendering function
-    window.updateMoleText = function(mole, word) {
-        const context = mole.userData.textContext;
-        const texture = mole.userData.textTexture;
-        
-        // Use high resolution
-        context.canvas.width = 2048;
-        context.canvas.height = 1024;
-        
-        // Clear the canvas
-        context.clearRect(0, 0, context.canvas.width, context.canvas.height);
-        
-        // Fill with transparent background
-        context.fillStyle = 'rgba(255, 255, 255, 0.01)';
-        context.fillRect(0, 0, context.canvas.width, context.canvas.height);
-        
-        // Enable anti-aliasing
-        context.imageSmoothingEnabled = true;
-        context.imageSmoothingQuality = 'high';
-        
-        // Use a technique to render crisp text
-        // First draw slightly larger black text as a base
-        context.fillStyle = 'black';
-        context.font = '310px Arial';
-        context.textAlign = 'center';
-        context.textBaseline = 'middle';
-        context.fillText(word, context.canvas.width/2, context.canvas.height/2);
-        
-        // Then draw slightly smaller text in black on top for crisp edges
-        context.font = '300px Arial';
-        context.fillText(word, context.canvas.width/2, context.canvas.height/2);
-        
-        // Update the texture with maximum quality settings
-        texture.needsUpdate = true;
-        texture.minFilter = THREE.LinearFilter;
-        texture.magFilter = THREE.LinearFilter;
-        texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
-        texture.generateMipmaps = false;
-    };
-    
-    // Update all mole text
-    moles.forEach(mole => {
-        if (mole.userData.textContext) {
-            const word = currentWord || "map";
-            updateMoleText(mole, word);
-        }
-    });
-    
-    console.log("Text rendering enhanced");
-}
-
-// Improve renderer settings
-function optimizeRenderer() {
-    // Set pixel ratio to device pixel ratio for sharper rendering
-    renderer.setPixelRatio(window.devicePixelRatio);
-    
-    // Enable MSAA anti-aliasing if available
-    if (renderer.capabilities.isWebGL2) {
-        renderer.getContext().antialias = true;
-    }
-    
-    console.log("Renderer optimized");
-}
-
-// Apply all optimizations
-optimizeCameraPosition();
-optimizeTextOrientation();
-enhanceTextRendering();
-optimizeRenderer();
-
-// Add version indicator and cache-busting message
-(function() {
+// Version indicator that doesn't interfere with constants
+function addVersionIndicator() {
     // Create a unique version timestamp
     const versionTimestamp = new Date().toISOString();
-    const versionNumber = "1.0.0";
+    const versionNumber = "1.0.1"; // Incremented to reflect the fix
     
     // Create a distinctive console message
-    console.clear(); // Clear previous console messages
-    
     console.log(
         "%c Whack-a-Mole Educational Game - Latest Version Running %c",
         "background: #4CAF50; color: white; font-size: 16px; padding: 5px; border-radius: 5px;",
@@ -1313,25 +1043,11 @@ optimizeRenderer();
         ""
     );
     
-    // Add cache-busting check
-    console.log(
-        "%c Cache Status: Fresh Load Confirmed %c",
-        "background: #FF9800; color: white; font-size: 14px; padding: 3px; border-radius: 3px;",
-        ""
-    );
-    
     // Add a global variable to check in the console
     window.gameVersionInfo = {
         version: versionNumber,
         timestamp: versionTimestamp,
-        cacheStatus: "Fresh Load"
-    };
-    
-    // Add a method to verify the version is running
-    window.checkGameVersion = function() {
-        console.log("Currently running version:", versionNumber);
-        console.log("Loaded at:", versionTimestamp);
-        return "Version check complete - latest version confirmed";
+        cacheStatus: "Fresh Load - Fixed Constant Error"
     };
     
     // Add a visual indicator on the screen
@@ -1348,24 +1064,14 @@ optimizeRenderer();
     versionIndicator.textContent = 'v' + versionNumber;
     document.body.appendChild(versionIndicator);
     
-    // Force a unique query parameter on any dynamically loaded resources
-    const originalCreateElement = document.createElement;
-    document.createElement = function(tagName) {
-        const element = originalCreateElement.call(document, tagName);
-        if (tagName.toLowerCase() === 'script' || tagName.toLowerCase() === 'link') {
-            const originalSetAttribute = element.setAttribute;
-            element.setAttribute = function(name, value) {
-                if ((name === 'src' || name === 'href') && typeof value === 'string') {
-                    // Add cache-busting parameter
-                    const separator = value.includes('?') ? '&' : '?';
-                    value = value + separator + 'v=' + new Date().getTime();
-                }
-                return originalSetAttribute.call(this, name, value);
-            };
-        }
-        return element;
-    };
-})();
+    console.log("Version indicator added - running latest version with fixes");
+    
+    return "Version indicator added successfully";
+}
+
+// Call the fixed functions
+improveRendererSettings();
+addVersionIndicator();
 
 // You can also add this at the end of your main code
 console.log("Game initialization complete - running latest version");
