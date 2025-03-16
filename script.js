@@ -217,34 +217,16 @@ function updateMoleText(mole, word) {
     const texture = mole.userData.textTexture;
     
     // Clear the canvas
-    context.clearRect(0, 0, 1024, 1024);
-    
-    // Add subtle background for better contrast
-    context.fillStyle = 'rgba(255, 255, 255, 0.9)';
-    context.fillRect(0, 0, 1024, 1024);
+    context.clearRect(0, 0, 512, 256);
     
     // Set text properties
     context.fillStyle = 'black';
-    context.font = 'bold 280px Arial'; // Larger font
+    context.font = 'bold 140px Arial';
     context.textAlign = 'center';
     context.textBaseline = 'middle';
     
-    // Add text shadow for better visibility
-    context.shadowColor = 'rgba(0, 0, 0, 0.3)';
-    context.shadowBlur = 4;
-    context.shadowOffsetX = 2;
-    context.shadowOffsetY = 2;
-    
     // Draw text
-    context.fillText(word, 512, 512);
-    
-    // Add stroke to the text
-    context.strokeStyle = 'rgba(0, 0, 0, 0.5)';
-    context.lineWidth = 8;
-    context.strokeText(word, 512, 512);
-    
-    // Reset shadow
-    context.shadowColor = 'transparent';
+    context.fillText(word, 256, 128);
     
     // Update the texture
     texture.needsUpdate = true;
@@ -254,21 +236,34 @@ function updateMoleText(mole, word) {
 function createMole() {
     const moleGroup = new THREE.Group();
     
-    // Body - pure white like the image
+    // Body - pure white
     const bodyGeometry = new THREE.SphereGeometry(0.8, 32, 32);
-    const bodyMaterial = new THREE.MeshLambertMaterial({ color: 0xFFFFFF }); // Pure white
+    const bodyMaterial = new THREE.MeshLambertMaterial({ color: 0xFFFFFF });
     const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
     moleGroup.add(body);
 
-    // Text plane - improved for better visibility
+    // Create angled text board
+    const boardGeometry = new THREE.PlaneGeometry(1.2, 0.6); // Rectangular board
+    const boardMaterial = new THREE.MeshLambertMaterial({ 
+        color: 0xFFFFFF, // White board
+        side: THREE.DoubleSide
+    });
+    const board = new THREE.Mesh(boardGeometry, boardMaterial);
+    
+    // Position and rotate the board
+    board.position.set(0, -0.3, 0.6); // Lower on the mole
+    board.rotation.x = -0.6; // Angle upward
+    moleGroup.add(board);
+
+    // Text plane - positioned on the board
     const canvas = document.createElement('canvas');
     const context = canvas.getContext('2d');
-    canvas.width = 1024; // Increased resolution
-    canvas.height = 1024; // Increased resolution
+    canvas.width = 512;
+    canvas.height = 256; // Rectangular to match board
     
     const textTexture = new THREE.Texture(canvas);
-    textTexture.minFilter = THREE.LinearFilter; // Improve text sharpness
-    textTexture.magFilter = THREE.LinearFilter; // Improve text sharpness
+    textTexture.minFilter = THREE.LinearFilter;
+    textTexture.magFilter = THREE.LinearFilter;
     
     const textMaterial = new THREE.MeshBasicMaterial({
         map: textTexture,
@@ -277,23 +272,14 @@ function createMole() {
     });
     
     const textPlane = new THREE.Mesh(
-        new THREE.PlaneGeometry(1.4, 1.4), // Slightly larger text area
+        new THREE.PlaneGeometry(1.1, 0.5), // Slightly smaller than board
         textMaterial
     );
-    // Adjusted position for better visibility
-    textPlane.position.set(0, -0.15, 0.82); // Moved slightly forward
+    // Position text just above the board
+    textPlane.position.copy(board.position);
+    textPlane.rotation.copy(board.rotation);
+    textPlane.position.z += 0.01; // Slightly in front of board
     moleGroup.add(textPlane);
-    
-    // Add a background plane behind text for better contrast
-    const textBgGeometry = new THREE.PlaneGeometry(1.3, 0.7);
-    const textBgMaterial = new THREE.MeshBasicMaterial({
-        color: 0xFFFFFF, // White background
-        transparent: true,
-        opacity: 0.8
-    });
-    const textBackground = new THREE.Mesh(textBgGeometry, textBgMaterial);
-    textBackground.position.set(0, -0.15, 0.81); // Slightly behind text
-    moleGroup.add(textBackground);
     
     moleGroup.userData.textTexture = textTexture;
     moleGroup.userData.textContext = context;
@@ -302,37 +288,21 @@ function createMole() {
     const eyeGeometry = new THREE.CircleGeometry(0.06, 32);
     const eyeMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
     
-    // Left eye - moved higher
     const leftEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
     leftEye.position.set(-0.2, 0.4, 0.75);
     moleGroup.add(leftEye);
     
-    // Right eye - moved higher
     const rightEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
     rightEye.position.set(0.2, 0.4, 0.75);
     moleGroup.add(rightEye);
 
-    // Nose - small black dot between and below eyes
+    // Nose
     const nose = new THREE.Mesh(
         new THREE.CircleGeometry(0.06, 32),
         new THREE.MeshBasicMaterial({ color: 0x000000 })
     );
     nose.position.set(0, 0.3, 0.78);
     moleGroup.add(nose);
-
-    // Simple straight mouth with slight curve
-    const mouthGeometry = new THREE.Shape();
-    mouthGeometry.moveTo(-0.15, 0);
-    mouthGeometry.quadraticCurveTo(0, -0.03, 0.15, 0); // Very slight curve down
-    
-    const mouthMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
-    const mouth = new THREE.Mesh(
-        new THREE.ShapeGeometry(mouthGeometry),
-        mouthMaterial
-    );
-    
-    mouth.position.set(0, 0.2, 0.78); // Positioned between nose and text area
-    moleGroup.add(mouth);
 
     return moleGroup;
 }
