@@ -55,7 +55,7 @@ document.body.appendChild(instructionsElement);
 // Hole setup
 const holeGeometry = new THREE.CircleGeometry(1.4, 32);
 const holeMaterial = new THREE.MeshLambertMaterial({ 
-    color: 0xC0C0C0
+    color: 0x404040  // Darker gray
 });
 
 // Define hole positions
@@ -113,7 +113,7 @@ const moleBodyGeometry = new THREE.SphereGeometry(0.5, 32, 32);
 const moleNoseGeometry = new THREE.SphereGeometry(0.15, 16, 16);
 const moleEyeGeometry = new THREE.SphereGeometry(0.1, 16, 16);
 const moleMaterial = new THREE.MeshLambertMaterial({ 
-    color: 0xA0522D  // Warmer brown color
+    color: 0xD2B48C  // Light brown (tan)
 });
 const moleNoseMaterial = new THREE.MeshLambertMaterial({ 
     color: 0x1A1A1A  // Dark gray for nose
@@ -159,7 +159,7 @@ window.addEventListener('click', (event) => {
 });
 
 // Set camera position
-camera.position.set(0, 6, 8);
+camera.position.set(0, 7, 9);
 camera.lookAt(0, 0, -1);
 
 // Add ground (green hill)
@@ -173,47 +173,42 @@ ground.rotation.x = -Math.PI / 2;
 ground.position.y = 0;
 scene.add(ground);
 
-// Function to create a cloud
-function createCloud() {
-    const cloudGroup = new THREE.Group();
+// Create rounded hill shape
+function createHill() {
+    const hillShape = new THREE.Shape();
     
-    // Create multiple white spheres for fluffy cloud appearance
-    const cloudGeometry = new THREE.SphereGeometry(1, 32, 32);
-    const cloudMaterial = new THREE.MeshLambertMaterial({ 
-        color: 0xFFFFFF,
-        transparent: true,
-        opacity: 0.9
+    // Create a rounded hill curve
+    hillShape.moveTo(-15, -15);
+    hillShape.quadraticCurveTo(-10, 2, 0, 2); // Left side curve
+    hillShape.quadraticCurveTo(10, 2, 15, -15); // Right side curve
+    hillShape.lineTo(-15, -15); // Bottom line
+    
+    const geometry = new THREE.ShapeGeometry(hillShape);
+    const material = new THREE.MeshLambertMaterial({ 
+        color: 0x90EE90 // Light green
     });
-
-    // Main cloud parts
-    const mainSphere = new THREE.Mesh(cloudGeometry, cloudMaterial);
-    mainSphere.scale.set(1, 0.6, 1);
-    cloudGroup.add(mainSphere);
-
-    // Add additional spheres for fluffy appearance
-    const positions = [
-        { x: -0.8, y: 0.2, z: 0, scale: 0.8 },
-        { x: 0.8, y: 0.2, z: 0, scale: 0.8 },
-        { x: 0, y: 0.3, z: 0, scale: 0.9 }
-    ];
-
-    positions.forEach(pos => {
-        const cloudPiece = new THREE.Mesh(cloudGeometry, cloudMaterial);
-        cloudPiece.position.set(pos.x, pos.y, pos.z);
-        cloudPiece.scale.set(pos.scale, pos.scale * 0.6, pos.scale);
-        cloudGroup.add(cloudPiece);
-    });
-
-    return cloudGroup;
+    
+    const hill = new THREE.Mesh(geometry, material);
+    hill.rotation.x = -Math.PI / 2;
+    hill.position.y = 0;
+    return hill;
 }
+
+// Add hill to scene
+const hill = createHill();
+scene.add(hill);
 
 // Add clouds to the scene
 const clouds = [];
 const cloudPositions = [
-    { x: -5, y: 8, z: -5 },
-    { x: 5, y: 9, z: -3 },
-    { x: 0, y: 7, z: -4 }
+    { x: -5, y: 5, z: -3 },  // Lowered height
+    { x: 5, y: 6, z: -2 },   // Lowered height
+    { x: 0, y: 4.5, z: -4 }  // Lowered height
 ];
+
+// Clear existing clouds and add new ones
+clouds.forEach(cloud => scene.remove(cloud));
+clouds.length = 0;
 
 cloudPositions.forEach(pos => {
     const cloud = createCloud();
@@ -221,6 +216,10 @@ cloudPositions.forEach(pos => {
     scene.add(cloud);
     clouds.push(cloud);
 });
+
+// Add some subtle shadows
+renderer.shadowMap.enabled = true;
+directionalLight.castShadow = true;
 
 // Animation loop
 function animate() {
@@ -235,8 +234,7 @@ function animate() {
     
     // Animate clouds
     clouds.forEach((cloud, index) => {
-        cloud.position.x += 0.005 * (index % 2 ? 1 : -1);
-        // Reset cloud position when it moves too far
+        cloud.position.x += 0.003 * (index % 2 ? 1 : -1); // Slightly slower movement
         if (cloud.position.x > 10) cloud.position.x = -10;
         if (cloud.position.x < -10) cloud.position.x = 10;
     });
@@ -323,9 +321,11 @@ function updateMoleText(mole, word) {
 function createMole() {
     const moleGroup = new THREE.Group();
     
-    // Body
+    // Body - now light brown
     const bodyGeometry = new THREE.SphereGeometry(0.8, 32, 32);
-    const bodyMaterial = new THREE.MeshLambertMaterial({ color: 0xFFFFFF });
+    const bodyMaterial = new THREE.MeshLambertMaterial({ 
+        color: 0xD2B48C  // Light brown (tan)
+    });
     const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
     moleGroup.add(body);
 
@@ -461,4 +461,36 @@ function gameLoop() {
     }
     
     setTimeout(gameLoop, 2000);
+}
+
+// Update cloud positions and size
+function createCloud() {
+    const cloudGroup = new THREE.Group();
+    
+    const cloudGeometry = new THREE.SphereGeometry(0.8, 32, 32); // Slightly smaller clouds
+    const cloudMaterial = new THREE.MeshLambertMaterial({ 
+        color: 0xFFFFFF,
+        transparent: true,
+        opacity: 0.9
+    });
+
+    // Main cloud parts
+    const mainSphere = new THREE.Mesh(cloudGeometry, cloudMaterial);
+    mainSphere.scale.set(1, 0.6, 1);
+    cloudGroup.add(mainSphere);
+
+    const positions = [
+        { x: -0.8, y: 0.2, z: 0, scale: 0.8 },
+        { x: 0.8, y: 0.2, z: 0, scale: 0.8 },
+        { x: 0, y: 0.3, z: 0, scale: 0.9 }
+    ];
+
+    positions.forEach(pos => {
+        const cloudPiece = new THREE.Mesh(cloudGeometry, cloudMaterial);
+        cloudPiece.position.set(pos.x, pos.y, pos.z);
+        cloudPiece.scale.set(pos.scale, pos.scale * 0.6, pos.scale);
+        cloudGroup.add(cloudPiece);
+    });
+
+    return cloudGroup;
 }
