@@ -115,10 +115,8 @@ function setupLighting() {
 function updateHoles() {
     scene.children.forEach(child => {
         if (child.geometry && child.geometry.type === 'CircleGeometry') {
-            child.material = new THREE.MeshLambertMaterial({
-                color: 0x666666, // Slightly darker gray
-                emissive: 0x222222,
-                emissiveIntensity: 0.1
+            child.material = new THREE.MeshBasicMaterial({
+                color: 0x333333 // Darker color
             });
         }
     });
@@ -415,21 +413,137 @@ function assignNewWord(mole) {
     updateMoleText(mole, currentWord);
 }
 
-// Modify the animateMole function
-const originalAnimateMole = animateMole;
-animateMole = function(mole, goingUp) {
-    // Call original animation
-    originalAnimateMole(mole, goingUp);
+// Fix the animation function errors
+
+// 1. First, make sure animateMole is properly defined and accessible
+// Find the original animateMole function in your code
+function animateMole(mole, goingUp) {
+    if (mole.userData.isMoving) return;
     
-    // Also animate shadow opacity
-    if (mole.userData.shadow) {
-        if (goingUp) {
-            mole.userData.shadow.material.opacity = 0.2;
+    mole.userData.isMoving = true;
+    const targetY = goingUp ? 0.7 : -1.0;
+    const duration = 200;
+    const startY = mole.position.y;
+    const startTime = Date.now();
+    
+    if (goingUp) {
+        assignNewWord(mole);
+    } else {
+        updateMoleText(mole, '');
+    }
+    
+    function update() {
+        const elapsed = Date.now() - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        
+        // Easing function for smooth animation
+        const ease = progress < 0.5 
+            ? 2 * progress * progress 
+            : -1 + (4 - 2 * progress) * progress;
+            
+        mole.position.y = startY + (targetY - startY) * ease;
+        
+        if (progress < 1) {
+            requestAnimationFrame(update);
         } else {
-            mole.userData.shadow.material.opacity = 0;
+            mole.userData.isMoving = false;
+            mole.userData.isUp = goingUp;
         }
     }
-};
+    update();
+}
+
+// 2. Add mole shadows without modifying the original function
+function addMoleShadows() {
+    moles.forEach(mole => {
+        // Create a simple shadow (dark circle)
+        const shadowGeometry = new THREE.CircleGeometry(0.6, 32);
+        const shadowMaterial = new THREE.MeshBasicMaterial({
+            color: 0x000000,
+            transparent: true,
+            opacity: 0.2
+        });
+        
+        const shadow = new THREE.Mesh(shadowGeometry, shadowMaterial);
+        shadow.rotation.x = -Math.PI / 2;
+        shadow.position.copy(mole.position);
+        shadow.position.y = 0.02; // Just above the ground
+        scene.add(shadow);
+        
+        // Store shadow reference
+        mole.userData.shadow = shadow;
+        
+        // Add a custom update method to the mole
+        mole.userData.updateShadow = function() {
+            if (this.shadow) {
+                this.shadow.position.x = mole.position.x;
+                this.shadow.position.z = mole.position.z;
+                this.shadow.material.opacity = mole.userData.isUp ? 0.2 : 0;
+            }
+        };
+    });
+}
+
+// 3. Update the game loop to handle shadows
+function gameLoop() {
+    if (!gameActive) return;
+    
+    const availableMoles = moles.filter(mole => !mole.userData.isUp && !mole.userData.isMoving);
+    if (availableMoles.length > 0) {
+        const randomMole = availableMoles[Math.floor(Math.random() * availableMoles.length)];
+        animateMole(randomMole, true);
+        
+        // Update shadow when mole pops up
+        if (randomMole.userData.shadow) {
+            randomMole.userData.shadow.material.opacity = 0.2;
+        }
+        
+        setTimeout(() => {
+            if (randomMole.userData.isUp) {
+                animateMole(randomMole, false);
+                
+                // Update shadow when mole goes down
+                if (randomMole.userData.shadow) {
+                    randomMole.userData.shadow.material.opacity = 0;
+                }
+            }
+        }, 1500);
+    }
+    
+    setTimeout(gameLoop, 2000);
+}
+
+// 4. Make holes darker
+function updateHoles() {
+    scene.children.forEach(child => {
+        if (child.geometry && child.geometry.type === 'CircleGeometry') {
+            child.material = new THREE.MeshBasicMaterial({
+                color: 0x333333 // Darker color
+            });
+        }
+    });
+}
+
+// 5. Add terrain texture
+function addTerrainTexture() {
+    const existingTerrain = scene.children.find(
+        child => child.geometry && child.geometry.type === 'PlaneGeometry'
+    );
+    
+    if (existingTerrain) {
+        existingTerrain.material.color.set(0x4CAF50); // Brighter green
+    }
+}
+
+// Call these functions safely
+try {
+    updateHoles();
+    addMoleShadows();
+    addTerrainTexture();
+    console.log("Visual enhancements applied successfully");
+} catch (error) {
+    console.error("Error applying visual enhancements:", error);
+}
 
 // Game logic
 function startGame() {
@@ -454,24 +568,6 @@ function startGame() {
 function updateUI() {
     scoreElement.textContent = `Score: ${score}`;
     timerElement.textContent = `Time: ${timeRemaining}s`;
-}
-
-function gameLoop() {
-    if (!gameActive) return;
-    
-    const availableMoles = moles.filter(mole => !mole.userData.isUp && !mole.userData.isMoving);
-    if (availableMoles.length > 0) {
-        const randomMole = availableMoles[Math.floor(Math.random() * availableMoles.length)];
-        animateMole(randomMole, true);
-        
-        setTimeout(() => {
-            if (randomMole.userData.isUp) {
-                animateMole(randomMole, false);
-            }
-        }, 1500);
-    }
-    
-    setTimeout(gameLoop, 2000);
 }
 
 // Simplified cloud creation
@@ -538,7 +634,6 @@ scene.add(backLight);
 
 // Call these functions to update the scene
 setupLighting();
-updateHoles();
 
 // If you need to recreate the terrain
 const existingTerrain = scene.children.find(
@@ -548,67 +643,3 @@ if (existingTerrain) {
     scene.remove(existingTerrain);
 }
 scene.add(createTerrain());
-
-// Add subtle shadow under moles
-function addMoleShadows() {
-    moles.forEach(mole => {
-        // Create a simple shadow (dark circle)
-        const shadowGeometry = new THREE.CircleGeometry(0.6, 32);
-        const shadowMaterial = new THREE.MeshBasicMaterial({
-            color: 0x000000,
-            transparent: true,
-            opacity: 0.2
-        });
-        
-        const shadow = new THREE.Mesh(shadowGeometry, shadowMaterial);
-        shadow.rotation.x = -Math.PI / 2;
-        shadow.position.copy(mole.position);
-        shadow.position.y = 0.02; // Just above the ground
-        scene.add(shadow);
-        
-        // Link shadow to mole for animation
-        mole.userData.shadow = shadow;
-    });
-}
-
-// Add subtle terrain texture
-function addTerrainTexture() {
-    const existingTerrain = scene.children.find(
-        child => child.geometry && child.geometry.type === 'PlaneGeometry'
-    );
-    
-    if (existingTerrain) {
-        // Create noise texture
-        const canvas = document.createElement('canvas');
-        canvas.width = 512;
-        canvas.height = 512;
-        const ctx = canvas.getContext('2d');
-        
-        // Fill with base color
-        ctx.fillStyle = '#90EE90';
-        ctx.fillRect(0, 0, 512, 512);
-        
-        // Add noise pattern
-        for (let i = 0; i < 5000; i++) {
-            const x = Math.random() * 512;
-            const y = Math.random() * 512;
-            const size = Math.random() * 3 + 1;
-            const brightness = 0.95 + Math.random() * 0.1; // Subtle variation
-            
-            ctx.fillStyle = `rgba(144, 238, 144, ${brightness})`;
-            ctx.fillRect(x, y, size, size);
-        }
-        
-        const texture = new THREE.CanvasTexture(canvas);
-        texture.wrapS = THREE.RepeatWrapping;
-        texture.wrapT = THREE.RepeatWrapping;
-        texture.repeat.set(4, 4);
-        
-        existingTerrain.material.map = texture;
-        existingTerrain.material.needsUpdate = true;
-    }
-}
-
-// Call these enhancement functions
-addMoleShadows();
-addTerrainTexture();
