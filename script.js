@@ -938,3 +938,119 @@ function addTextLighting() {
 improveTextClarity();
 improveTextPlanes();
 addTextLighting();
+
+// Improve text rendering with anti-aliasing and smoother edges
+function fixPixelatedText() {
+    // Update the text rendering function
+    window.updateMoleText = function(mole, word) {
+        const context = mole.userData.textContext;
+        const texture = mole.userData.textTexture;
+        
+        // Increase canvas resolution significantly for smoother text
+        if (context.canvas.width < 2048) {
+            context.canvas.width = 2048;
+            context.canvas.height = 1024;
+        }
+        
+        // Clear the canvas
+        context.clearRect(0, 0, context.canvas.width, context.canvas.height);
+        
+        // Enable anti-aliasing
+        context.imageSmoothingEnabled = true;
+        context.imageSmoothingQuality = 'high';
+        
+        // Set text properties
+        context.fillStyle = 'black';
+        context.font = '300px Arial'; // Clean, sans-serif font
+        context.textAlign = 'center';
+        context.textBaseline = 'middle';
+        
+        // Use a technique to render smoother text
+        // First, render at a larger size
+        const scaleFactor = 2;
+        context.scale(scaleFactor, scaleFactor);
+        
+        // Draw text with smooth edges
+        context.fillText(word, context.canvas.width/(2*scaleFactor), context.canvas.height/(2*scaleFactor));
+        
+        // Reset scale
+        context.setTransform(1, 0, 0, 1, 0, 0);
+        
+        // Update the texture with better filtering
+        texture.needsUpdate = true;
+        texture.minFilter = THREE.LinearFilter;
+        texture.magFilter = THREE.LinearFilter;
+        texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
+        texture.generateMipmaps = false;
+    };
+    
+    // Update existing mole text
+    moles.forEach(mole => {
+        if (mole.userData.textContext) {
+            const word = currentWord || "nap";
+            updateMoleText(mole, word);
+        }
+    });
+    
+    console.log("Text rendering improved to fix pixelation");
+}
+
+// Improve renderer settings for better text
+function improveRendererSettings() {
+    // Enable anti-aliasing in the renderer
+    if (!renderer.antialias) {
+        // Create a new renderer with anti-aliasing
+        const oldRenderer = renderer;
+        renderer = new THREE.WebGLRenderer({ 
+            antialias: true,
+            alpha: true,
+            powerPreference: "high-performance"
+        });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        
+        // Replace the old renderer's canvas
+        document.body.removeChild(oldRenderer.domElement);
+        document.body.appendChild(renderer.domElement);
+        
+        console.log("Renderer updated with anti-aliasing");
+    } else {
+        // Just update existing renderer settings
+        renderer.setPixelRatio(window.devicePixelRatio);
+    }
+}
+
+// Create a better material for text planes
+function improveTextMaterial() {
+    moles.forEach(mole => {
+        if (mole.userData.facingGroup) {
+            mole.userData.facingGroup.children.forEach(child => {
+                // Find the text plane
+                if (child.geometry && 
+                    child.geometry.type === 'PlaneGeometry' && 
+                    child.material && 
+                    child.material.map) {
+                    
+                    // Create improved material
+                    const newMaterial = new THREE.MeshBasicMaterial({
+                        map: child.material.map,
+                        transparent: true,
+                        side: THREE.DoubleSide,
+                        alphaTest: 0.1 // Helps with edge artifacts
+                    });
+                    
+                    // Apply the new material
+                    child.material.dispose();
+                    child.material = newMaterial;
+                    
+                    console.log("Text material improved");
+                }
+            });
+        }
+    });
+}
+
+// Apply all text improvements
+fixPixelatedText();
+improveRendererSettings();
+improveTextMaterial();
