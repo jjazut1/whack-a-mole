@@ -55,73 +55,142 @@ instructionsElement.style.textAlign = 'center';
 instructionsElement.innerHTML = 'Hit the mole when you see a word with the short "a" sound!<br>Click anywhere to start';
 document.body.appendChild(instructionsElement);
 
-// Simplified terrain creation
-function createTerrain() {
-    // Use PlaneGeometry instead of PlaneBufferGeometry (which is deprecated)
-    const geometry = new THREE.PlaneGeometry(40, 40, 50, 50);
+// Remove any existing terrain elements
+function cleanupExistingTerrain() {
+    // Find and remove all green elements
+    const elementsToRemove = [];
+    scene.traverse(function(object) {
+        if (object.material && object.material.color) {
+            const color = object.material.color;
+            // Check if it's a green-ish color
+            if (color.r < 0.5 && color.g > 0.5 && color.b < 0.5) {
+                elementsToRemove.push(object);
+            }
+        }
+    });
     
-    // Modify vertices for curved edges
-    const positionAttribute = geometry.getAttribute('position');
+    elementsToRemove.forEach(obj => scene.remove(obj));
+    console.log(`Removed ${elementsToRemove.length} existing terrain elements`);
+}
+
+// Create smooth terrain with height variation
+function createSmoothTerrain() {
+    // Clean up first
+    cleanupExistingTerrain();
     
-    for (let i = 0; i < positionAttribute.count; i++) {
-        const x = positionAttribute.getX(i);
-        const y = positionAttribute.getY(i);
-        const distance = Math.sqrt(x * x + y * y);
+    // Reset background color
+    scene.background = new THREE.Color(0x87CEEB); // Sky blue
+    
+    // Create a larger ground plane with height variation
+    const geometry = new THREE.PlaneGeometry(60, 60, 60, 60);
+    const positions = geometry.attributes.position.array;
+    
+    // Modify vertices to create curved edges
+    for (let i = 0; i < positions.length; i += 3) {
+        const x = positions[i];
+        const z = positions[i + 2];
         
-        if (distance > 10) {
-            // Create curved falloff
-            const z = -0.5 * Math.pow((distance - 10) / 10, 2);
-            positionAttribute.setZ(i, z);
+        // Calculate distance from center
+        const distanceFromCenter = Math.sqrt(x * x + z * z);
+        
+        // Create smooth curve at edges
+        if (distanceFromCenter > 15) {
+            // Calculate height based on distance
+            const heightFactor = (distanceFromCenter - 15) / 15;
+            const height = 5 * Math.pow(heightFactor, 2);
+            
+            // Apply height
+            positions[i + 1] = height;
         }
     }
     
+    geometry.attributes.position.needsUpdate = true;
     geometry.computeVertexNormals();
     
-    // Create material with solid color
+    // Create material
     const material = new THREE.MeshLambertMaterial({
         color: 0x90EE90, // Light green
         side: THREE.DoubleSide
     });
     
+    // Create mesh
     const terrain = new THREE.Mesh(geometry, material);
-    terrain.rotation.x = Math.PI / 2; // Rotate to be horizontal
-    terrain.position.y = -0.1; // Position slightly below holes
+    terrain.rotation.x = -Math.PI / 2;
     
-    return terrain;
-}
-
-// Setup scene function
-function setupScene() {
-    // Clear existing scene elements but keep lights
-    const lights = scene.children.filter(child => child instanceof THREE.Light);
-    scene.children.length = 0;
-    lights.forEach(light => scene.add(light));
-
-    // Add terrain first (so it's in the background)
-    const terrain = createTerrain();
-    terrain.position.y = -0.5; // Move terrain down slightly
+    // Add to scene
     scene.add(terrain);
-
-    // Create and add clouds
-    const cloudPositions = [
-        { x: -5, y: 5, z: -5 },
-        { x: 0, y: 6, z: -4 },
-        { x: 5, y: 5, z: -5 }
-    ];
-
-    cloudPositions.forEach(pos => {
-        const cloud = createCloud();
-        cloud.position.set(pos.x, pos.y, pos.z);
-        scene.add(cloud);
-    });
-
-    // Add holes and moles after terrain
-    setupHolesAndMoles();
-
-    // Setup camera
+    console.log("Added smooth terrain");
+    
+    // Adjust camera
     camera.position.set(0, 8, 12);
     camera.lookAt(0, 0, 0);
 }
+
+// Call the function to create the smooth terrain
+createSmoothTerrain();
+
+// Add clouds back if they were removed
+function addClouds() {
+    // Check if clouds already exist
+    let cloudsExist = false;
+    scene.traverse(function(object) {
+        if (object.isGroup && object.children.length > 0) {
+            const firstChild = object.children[0];
+            if (firstChild.material && firstChild.material.color && 
+                firstChild.material.color.getHexString() === 'ffffff') {
+                cloudsExist = true;
+            }
+        }
+    });
+    
+    if (!cloudsExist) {
+        const cloudPositions = [
+            { x: -8, y: 7, z: -5 },
+            { x: 0, y: 8, z: -4 },
+            { x: 8, y: 7, z: -5 }
+        ];
+        
+        cloudPositions.forEach(pos => {
+            const cloud = createCloud();
+            cloud.position.set(pos.x, pos.y, pos.z);
+            scene.add(cloud);
+        });
+        
+        console.log("Added clouds");
+    }
+}
+
+// Cloud creation function
+function createCloud() {
+    const group = new THREE.Group();
+    
+    // Create simple white spheres
+    const sphereGeometry = new THREE.SphereGeometry(1, 16, 16);
+    const material = new THREE.MeshBasicMaterial({ color: 0xFFFFFF });
+    
+    // Main sphere
+    const mainSphere = new THREE.Mesh(sphereGeometry, material);
+    group.add(mainSphere);
+    
+    // Add additional spheres
+    const positions = [
+        { x: -1, y: 0.3, z: 0 },
+        { x: 1, y: 0.3, z: 0 },
+        { x: 0, y: 0.5, z: 0 }
+    ];
+    
+    positions.forEach(pos => {
+        const sphere = new THREE.Mesh(sphereGeometry, material);
+        sphere.position.set(pos.x, pos.y, pos.z);
+        sphere.scale.set(0.7, 0.5, 0.7);
+        group.add(sphere);
+    });
+    
+    return group;
+}
+
+// Add clouds
+addClouds();
 
 // Setup holes and moles
 function setupHolesAndMoles() {
