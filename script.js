@@ -22,8 +22,11 @@ const holes = [
     { x: 2.5, z: 2.5, y: 0.2 }
 ];
 
-// Initialize arrays and game state
+// Add mole animation state tracking
 const moles = [];
+const moleStates = [];
+
+// Initialize arrays and game state
 let score = 0;
 let gameActive = false;
 let timeRemaining = 30;
@@ -105,10 +108,10 @@ function createHole() {
 function createMole() {
     const moleGroup = new THREE.Group();
     
-    // Smaller body size
+    // Create mole body
     const bodyGeometry = new THREE.SphereGeometry(0.5, 32, 32);
     const bodyMaterial = new THREE.MeshPhongMaterial({
-        color: 0xF5E6D3, // Lighter beige color
+        color: 0xF5E6D3,
         emissive: 0x1a1a1a,
         shininess: 30
     });
@@ -158,6 +161,9 @@ function createMole() {
     moleGroup.userData.textContext = context;
     moleGroup.userData.facingGroup = facingGroup; // Store reference to facing group
 
+    // Set initial position below ground
+    moleGroup.position.y = -1;
+    
     return moleGroup;
 }
 
@@ -173,16 +179,17 @@ function createTerrain() {
     terrain.rotation.x = -Math.PI / 2;
     terrain.position.y = -0.5;
 
-    // Create natural curved surface and edges
+    // Create natural curved surface
     const vertices = geometry.attributes.position.array;
     for (let i = 0; i < vertices.length; i += 3) {
         const x = vertices[i];
         const z = vertices[i + 2];
         const distance = Math.sqrt(x * x + z * z);
         
+        // More pronounced hill effect
         vertices[i + 1] = Math.max(0, 
-            2 * Math.exp(-distance * distance / 100) + 
-            -0.05 * (distance * distance)
+            3 * Math.exp(-distance * distance / 50) + // Higher central hill
+            -0.1 * (distance * distance) // Steeper falloff
         );
     }
     geometry.attributes.position.needsUpdate = true;
@@ -205,50 +212,81 @@ function setupLighting() {
 }
 
 function setupHolesAndMoles() {
-    holes.forEach(holePos => {
+    moles.length = 0; // Clear existing moles array
+    moleStates.length = 0; // Clear existing states
+
+    holes.forEach((holePos, index) => {
+        // Create and position hole
         const hole = createHole();
-        hole.position.set(holePos.x, holePos.y, holePos.z);
+        hole.position.set(holePos.x, -0.4, holePos.z); // Lower hole position
         scene.add(hole);
         
+        // Create and position mole
         const mole = createMole();
-        mole.position.set(holePos.x, holePos.y + 0.1, holePos.z);
+        mole.position.set(holePos.x, -1, holePos.z); // Start below ground
         scene.add(mole);
+        
+        // Store mole reference and state
+        moles.push(mole);
+        moleStates.push({
+            isUp: false,
+            targetY: -1,
+            speed: 0.1,
+            timeUp: 0,
+            word: '' // Will store the current word
+        });
     });
 }
 
 // Main setup function
 function setupScene() {
-    // Clear existing scene
-    while(scene.children.length > 0) { 
-        scene.remove(scene.children[0]); 
-    }
+    scene.children.length = 0;
     
     // Setup camera
-    camera.position.set(0, 10, 15);
+    camera.position.set(0, 12, 15);
     camera.lookAt(0, 0, 0);
     
-    // Setup renderer
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.shadowMap.enabled = true;
-    
-    // Add elements to scene
     setupLighting();
     
+    // Add terrain first
     const terrain = createTerrain();
     scene.add(terrain);
     
+    // Add clouds
     cloudPositions.forEach(pos => {
         const cloud = createCloud();
         cloud.position.set(pos.x, pos.y, pos.z);
         scene.add(cloud);
     });
     
+    // Setup holes and moles
     setupHolesAndMoles();
+    
+    // Start the game
+    startGame();
 }
 
 // Animation loop
 function animate() {
     requestAnimationFrame(animate);
+    
+    // Animate moles
+    moles.forEach((mole, index) => {
+        const state = moleStates[index];
+        
+        // Move mole towards target position
+        const currentY = mole.position.y;
+        if (Math.abs(currentY - state.targetY) > 0.01) {
+            mole.position.y += (state.targetY - currentY) * state.speed;
+        }
+        
+        // Check if mole should go down
+        if (state.isUp && Date.now() - state.timeUp > 2000) {
+            state.isUp = false;
+            state.targetY = -1;
+        }
+    });
+    
     renderer.render(scene, camera);
 }
 
@@ -483,3 +521,14 @@ scene.add(backLight);
 camera.position.set(0, 10, 15);
 camera.fov = 60; // Wider field of view
 camera.updateProjectionMatrix();
+
+// Function to make a mole pop up
+function popUpMole(index, word) {
+    if (index >= 0 && index < moles.length) {
+        const state = moleStates[index];
+        state.isUp = true;
+        state.targetY = 0; // Above ground position
+        state.timeUp = Date.now();
+        state.word = word;
+    }
+}
