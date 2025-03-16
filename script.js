@@ -73,9 +73,9 @@ ground.rotation.x = -Math.PI / 2;
 scene.add(ground);
 
 // Hole creation
-const holeGeometry = new THREE.CircleGeometry(1.2, 32);
+const holeGeometry = new THREE.CircleGeometry(1.4, 32); // Larger hole
 const holeMaterial = new THREE.MeshLambertMaterial({ 
-    color: 0x808080  // Medium gray color
+    color: 0xC0C0C0  // Lighter gray
 });
 const holes = [
     { x: -2, z: -2 }, { x: 2, z: -2 },
@@ -150,7 +150,7 @@ window.addEventListener('click', (event) => {
 });
 
 // Camera Position
-camera.position.set(0, 6, 8);
+camera.position.set(0, 5, 7);
 camera.lookAt(0, 0, 0);
 
 // Animation Loop
@@ -221,7 +221,7 @@ function updateMoleText(mole, word) {
     
     // Set text properties
     context.fillStyle = 'black';
-    context.font = 'bold 120px Arial';
+    context.font = 'bold 140px Arial';
     context.textAlign = 'center';
     context.textBaseline = 'middle';
     
@@ -236,14 +236,13 @@ function updateMoleText(mole, word) {
 function createMole() {
     const moleGroup = new THREE.Group();
     
-    // Body - elongated sphere shape
+    // Body - perfect sphere
     const bodyGeometry = new THREE.SphereGeometry(0.8, 32, 32);
-    bodyGeometry.scale(1, 1.3, 1); // Stretch vertically
     const bodyMaterial = new THREE.MeshLambertMaterial({ color: 0xFFFFFF });
     const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
     moleGroup.add(body);
 
-    // Text plane - directly on the front lower portion of the mole
+    // Text plane - on the front of the sphere
     const canvas = document.createElement('canvas');
     const context = canvas.getContext('2d');
     canvas.width = 512;
@@ -260,34 +259,29 @@ function createMole() {
     });
     
     const textPlane = new THREE.Mesh(
-        new THREE.PlaneGeometry(1.0, 0.5),
+        new THREE.PlaneGeometry(0.8, 0.4),
         textMaterial
     );
-    // Position text directly on the front lower portion
-    textPlane.position.set(0, -0.2, 0.75);
+    // Position text on the front
+    textPlane.position.set(0, 0, 0.8);
     moleGroup.add(textPlane);
     
     moleGroup.userData.textTexture = textTexture;
     moleGroup.userData.textContext = context;
 
-    // Facial features - simple black dots in triangular arrangement
-    const dotGeometry = new THREE.CircleGeometry(0.05, 32);
-    const dotMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
+    // Just two eyes - small black dots positioned higher
+    const eyeGeometry = new THREE.CircleGeometry(0.03, 32);
+    const eyeMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
     
     // Left eye
-    const leftEye = new THREE.Mesh(dotGeometry, dotMaterial);
-    leftEye.position.set(-0.15, 0.3, 0.75);
+    const leftEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+    leftEye.position.set(-0.15, 0.4, 0.75);
     moleGroup.add(leftEye);
     
     // Right eye
-    const rightEye = new THREE.Mesh(dotGeometry, dotMaterial);
-    rightEye.position.set(0.15, 0.3, 0.75);
+    const rightEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+    rightEye.position.set(0.15, 0.4, 0.75);
     moleGroup.add(rightEye);
-
-    // Nose (slightly lower to form triangle)
-    const nose = new THREE.Mesh(dotGeometry, dotMaterial);
-    nose.position.set(0, 0.15, 0.75);
-    moleGroup.add(nose);
 
     return moleGroup;
 }
@@ -305,7 +299,7 @@ function animateMole(mole, goingUp) {
     if (mole.userData.isMoving) return;
     
     mole.userData.isMoving = true;
-    const targetY = goingUp ? 0.9 : -1.0; // Raised up position
+    const targetY = goingUp ? 1.0 : -1.0; // Higher up position
     const duration = 200;
     const startY = mole.position.y;
     const startTime = Date.now();
