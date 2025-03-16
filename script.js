@@ -514,7 +514,7 @@ function gameLoop() {
 }
 
 // 4. Make holes darker
-function updateHoles() {
+function makeHolesDarker() {
     scene.children.forEach(child => {
         if (child.geometry && child.geometry.type === 'CircleGeometry') {
             child.material = new THREE.MeshBasicMaterial({
@@ -525,7 +525,7 @@ function updateHoles() {
 }
 
 // 5. Add terrain texture
-function addTerrainTexture() {
+function brightenTerrain() {
     const existingTerrain = scene.children.find(
         child => child.geometry && child.geometry.type === 'PlaneGeometry'
     );
@@ -537,9 +537,9 @@ function addTerrainTexture() {
 
 // Call these functions safely
 try {
-    updateHoles();
+    makeHolesDarker();
     addMoleShadows();
-    addTerrainTexture();
+    brightenTerrain();
     console.log("Visual enhancements applied successfully");
 } catch (error) {
     console.error("Error applying visual enhancements:", error);
@@ -643,3 +643,21 @@ if (existingTerrain) {
     scene.remove(existingTerrain);
 }
 scene.add(createTerrain());
+
+// 4. Add shadow update to animation loop (without modifying existing functions)
+// This needs to be added to your existing animation loop
+const originalAnimate = animate;
+function animate() {
+    // Call the original animation function
+    originalAnimate();
+    
+    // Update shadows
+    moles.forEach(mole => {
+        const shadow = mole.userData.shadow;
+        if (shadow) {
+            shadow.position.x = mole.position.x;
+            shadow.position.z = mole.position.z;
+            shadow.material.opacity = mole.userData.isUp ? 0.2 : 0;
+        }
+    });
+}
