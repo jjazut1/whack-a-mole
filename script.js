@@ -730,3 +730,110 @@ fixLighting();
 
 // Log the scene after fixes
 console.log("Scene after fixes:", scene);
+
+// Zoom in the camera
+function zoomInCamera() {
+    // Move camera closer to the scene
+    camera.position.set(0, 5, 6); // Reduced z value to zoom in
+camera.lookAt(0, 0, 0);
+    console.log("Camera zoomed in:", camera.position);
+}
+
+// Load Google Cosmic Neue font
+function loadCustomFont() {
+    // Create a link element to load the font
+    const fontLink = document.createElement('link');
+    fontLink.href = 'https://fonts.googleapis.com/css2?family=Comic+Neue:wght@700&display=swap';
+    fontLink.rel = 'stylesheet';
+    document.head.appendChild(fontLink);
+    
+    // Add a style element for font-family
+    const style = document.createElement('style');
+    style.textContent = `
+        @font-face {
+            font-family: 'Comic Neue';
+            font-style: normal;
+            font-weight: 700;
+            src: url(https://fonts.gstatic.com/s/comicneue/v8/4UaErEJDsxBrF37olUeD_xHM8pxULg.woff2) format('woff2');
+        }
+    `;
+    document.head.appendChild(style);
+    
+    console.log("Custom font loaded");
+}
+
+// Improve text rendering with the new font
+function updateTextRendering() {
+    // Update the text rendering function
+    window.updateMoleText = function(mole, word) {
+        const context = mole.userData.textContext;
+        const texture = mole.userData.textTexture;
+        
+        // Clear the canvas
+        context.clearRect(0, 0, 512, 256);
+        
+        // Set text properties with Comic Neue font
+        context.fillStyle = 'black';
+        context.font = 'bold 140px "Comic Neue", sans-serif';
+        context.textAlign = 'center';
+        context.textBaseline = 'middle';
+        
+        // Draw text with outline for better visibility
+        context.strokeStyle = 'white';
+        context.lineWidth = 8;
+        context.strokeText(word, 256, 128);
+        context.fillText(word, 256, 128);
+        
+        // Update the texture
+        texture.needsUpdate = true;
+    };
+    
+    // Update UI text elements
+    const textElements = [scoreElement, timerElement, instructionsElement];
+    textElements.forEach(element => {
+        if (element) {
+            element.style.fontFamily = '"Comic Neue", sans-serif';
+            element.style.fontSize = '28px';
+            element.style.fontWeight = 'bold';
+            element.style.textShadow = '2px 2px 4px rgba(0,0,0,0.5)';
+        }
+    });
+    
+    console.log("Text rendering updated");
+}
+
+// Make text planes larger for better visibility
+function enlargeTextPlanes() {
+    moles.forEach(mole => {
+        if (mole.userData.facingGroup) {
+            mole.userData.facingGroup.children.forEach(child => {
+                // Find the text plane
+                if (child.geometry && 
+                    child.geometry.type === 'PlaneGeometry' && 
+                    child.material && 
+                    child.material.map) {
+                    
+                    // Make it larger
+                    child.scale.set(1.5, 1.5, 1.5);
+                    console.log("Text plane enlarged");
+                }
+            });
+        }
+    });
+}
+
+// Apply all improvements
+loadCustomFont();
+zoomInCamera();
+updateTextRendering();
+enlargeTextPlanes();
+
+// Update any existing mole text
+moles.forEach(mole => {
+    if (mole.userData.textContext && mole.userData.isUp) {
+        updateMoleText(mole, currentWord);
+    }
+});
+
+// Ensure UI is updated
+updateUI();
