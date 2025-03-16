@@ -130,7 +130,7 @@ function setupHolesAndMoles() {
         color: 0x404040  // Dark gray
     });
 
-    const holes = [
+const holes = [
         { x: -2, z: -2, rotation: Math.PI * 0.25 + 0.175 },
         { x: 2, z: -2, rotation: -Math.PI * 0.25 - 0.175 },
         { x: -2, z: 2, rotation: Math.PI * 0.75 + 0.175 },
@@ -161,9 +161,9 @@ function setupHolesAndMoles() {
         
         mole.userData.isUp = false;
         mole.userData.isMoving = false;
-        scene.add(mole);
-        moles.push(mole);
-    });
+    scene.add(mole);
+    moles.push(mole);
+});
 }
 
 // Initialize scene
@@ -302,7 +302,7 @@ function updateMoleText(mole, word) {
     // Clear the canvas
     context.clearRect(0, 0, 512, 256);
     
-    // Set text properties
+    // Set text properties - darker text for better contrast on lighter mole
     context.fillStyle = 'black';
     context.font = 'bold 140px Arial';
     context.textAlign = 'center';
@@ -319,19 +319,19 @@ function updateMoleText(mole, word) {
 function createMole() {
     const moleGroup = new THREE.Group();
     
-    // Body - now light brown
+    // Body - lighter tan color
     const bodyGeometry = new THREE.SphereGeometry(0.8, 32, 32);
     const bodyMaterial = new THREE.MeshLambertMaterial({ 
-        color: 0xD2B48C  // Light brown (tan)
+        color: 0xF5DEB3  // Lighter wheat color instead of tan
     });
     const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
     moleGroup.add(body);
 
-    // Create a front-facing group that will always face the camera
+    // Create a front-facing group for text and facial features
     const facingGroup = new THREE.Group();
     moleGroup.add(facingGroup);
 
-    // Text plane - attached to facing group
+    // Text plane
     const canvas = document.createElement('canvas');
     const context = canvas.getContext('2d');
     canvas.width = 512;
@@ -354,7 +354,7 @@ function createMole() {
     textPlane.position.set(0, 0, 0.81);
     facingGroup.add(textPlane);
     
-    // Eyes - attached to facing group
+    // Eyes
     const eyeGeometry = new THREE.CircleGeometry(0.03, 32);
     const eyeMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
     
@@ -368,7 +368,7 @@ function createMole() {
     
     moleGroup.userData.textTexture = textTexture;
     moleGroup.userData.textContext = context;
-    moleGroup.userData.facingGroup = facingGroup; // Store reference to facing group
+    moleGroup.userData.facingGroup = facingGroup;
 
     return moleGroup;
 }
@@ -499,9 +499,9 @@ function addTerrainAndClouds() {
     
     // Add clouds
     const cloudPositions = [
-        { x: -8, y: 5, z: -5 },
-        { x: 0, y: 6, z: -4 },
-        { x: 8, y: 5, z: -5 }
+        { x: -8, y: 7, z: -5 },  // Higher y value
+        { x: 0, y: 8, z: -4 },   // Higher y value
+        { x: 8, y: 7, z: -5 }    // Higher y value
     ];
     
     cloudPositions.forEach(pos => {
@@ -522,3 +522,22 @@ console.log("Scene children:", scene.children);
 const backLight = new THREE.DirectionalLight(0xffffff, 0.3);
 backLight.position.set(-5, 5, -5);
 scene.add(backLight);
+
+// Move clouds higher
+function adjustCloudPositions() {
+    // Find all clouds in the scene
+    scene.children.forEach(child => {
+        // Identify clouds by checking if they're groups with white material children
+        if (child.isGroup && child.children.length > 0) {
+            const firstChild = child.children[0];
+            if (firstChild.material && firstChild.material.color && 
+                firstChild.material.color.getHexString() === 'ffffff') {
+                // Move cloud up by 2 units
+                child.position.y += 2;
+            }
+        }
+    });
+}
+
+// Call this function to adjust existing clouds
+adjustCloudPositions();
