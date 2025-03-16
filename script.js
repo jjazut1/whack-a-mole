@@ -236,8 +236,82 @@ const holes = [
 });
 }
 
-// Initialize scene
-setupScene();
+// Add this code to ensure the scene is properly set up
+function fixSceneSetup() {
+    console.log("Fixing scene setup...");
+    
+    // Make sure we have proper lighting
+    // First remove any existing lights to avoid duplicates
+    const existingLights = [];
+    scene.traverse(function(object) {
+        if (object.isLight) {
+            existingLights.push(object);
+        }
+    });
+    
+    existingLights.forEach(light => scene.remove(light));
+    
+    // Add new lights
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+    scene.add(ambientLight);
+    
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    directionalLight.position.set(5, 10, 5);
+    scene.add(directionalLight);
+    
+    // Make sure holes are visible
+    scene.traverse(function(object) {
+        if (object.geometry && object.geometry.type === 'CircleGeometry') {
+            object.material.color.set(0x505050); // Medium gray
+            object.position.y = 0.02; // Ensure holes are slightly above terrain
+        }
+    });
+    
+    // Make sure moles are properly colored
+    moles.forEach(mole => {
+        // Find the body (first child, which is the sphere)
+        if (mole.children && mole.children.length > 0) {
+            const body = mole.children[0];
+            if (body.material) {
+                body.material.color.set(0xD2B48C); // Light brown (tan) color
+            }
+        }
+    });
+    
+    // Ensure camera is properly positioned
+    camera.position.set(0, 8, 12);
+    camera.lookAt(0, 0, 0);
+    
+    console.log("Scene setup fixed");
+}
+
+// Call the fix function
+fixSceneSetup();
+
+// Make sure the game is ready to play
+function resetGame() {
+    // Reset game state
+    score = 0;
+    timeRemaining = 30;
+    gameActive = false;
+    
+    // Update UI
+    if (scoreElement && timerElement) {
+        scoreElement.textContent = `Score: ${score}`;
+        timerElement.textContent = `Time: ${timeRemaining}s`;
+    }
+    
+    // Show instructions
+    if (instructionsElement) {
+        instructionsElement.style.display = 'block';
+        instructionsElement.innerHTML = 'Hit the mole when you see a word with the short "a" sound!<br>Click anywhere to start';
+    }
+    
+    console.log("Game reset and ready to play");
+}
+
+// Call reset game
+resetGame();
 
 // Animation loop
 function animate() {
