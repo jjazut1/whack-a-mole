@@ -54,7 +54,7 @@ document.body.appendChild(instructionsElement);
 
 // Create a more natural 3D terrain
 function createTerrain() {
-    const geometry = new THREE.PlaneBufferGeometry(30, 30, 50, 50);
+    const geometry = new THREE.PlaneBufferGeometry(40, 40, 50, 50);
     const vertices = geometry.attributes.position.array;
 
     for (let i = 0; i < vertices.length; i += 3) {
@@ -63,12 +63,12 @@ function createTerrain() {
         const distanceFromCenter = Math.sqrt(x * x + z * z);
         
         let height = 0;
-        const plateauRadius = 8;
-        const falloffDistance = 7;
+        const plateauRadius = 12; // Increased flat area
+        const falloffDistance = 10; // Increased falloff distance
         
         if (distanceFromCenter > plateauRadius) {
             const falloff = Math.cos(Math.PI * Math.min(distanceFromCenter - plateauRadius, falloffDistance) / falloffDistance);
-            height = -5 * (1 - falloff);
+            height = -8 * (1 - falloff); // Increased depth for more visible curve
         }
         
         vertices[i + 1] = height;
@@ -78,50 +78,42 @@ function createTerrain() {
     geometry.computeVertexNormals();
 
     const material = new THREE.MeshLambertMaterial({
-        color: 0x90EE90,
-        side: THREE.DoubleSide,
-        transparent: true,
-        opacity: 1
+        color: 0x90EE90, // Light green
+        side: THREE.DoubleSide
     });
 
     const terrain = new THREE.Mesh(geometry, material);
     terrain.rotation.x = -Math.PI / 2;
     
-    const colors = [];
-    const positions = geometry.attributes.position.array;
-    
-    for (let i = 0; i < positions.length; i += 3) {
-        const x = positions[i];
-        const z = positions[i + 2];
-        const distanceFromCenter = Math.sqrt(x * x + z * z);
-        const opacity = Math.max(0, Math.min(1, 1 - (distanceFromCenter - 8) / 7));
-        colors.push(0.565, 0.933, 0.565, opacity);
-    }
-    
-    geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 4));
-    material.vertexColors = true;
-
     return terrain;
 }
 
 // Setup scene function
 function setupScene() {
-    // Clear existing lights and terrain
+    // Clear existing scene elements but keep lights
+    const lights = scene.children.filter(child => child instanceof THREE.Light);
     scene.children.length = 0;
+    lights.forEach(light => scene.add(light));
 
-    // Add lights
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
-    scene.add(ambientLight);
-
-    const mainLight = new THREE.DirectionalLight(0xffffff, 0.8);
-    mainLight.position.set(5, 10, 5);
-    scene.add(mainLight);
-
-    // Add terrain
+    // Add terrain first (so it's in the background)
     const terrain = createTerrain();
+    terrain.position.y = -0.5; // Move terrain down slightly
     scene.add(terrain);
 
-    // Add holes and moles
+    // Create and add clouds
+    const cloudPositions = [
+        { x: -5, y: 5, z: -5 },
+        { x: 0, y: 6, z: -4 },
+        { x: 5, y: 5, z: -5 }
+    ];
+
+    cloudPositions.forEach(pos => {
+        const cloud = createCloud();
+        cloud.position.set(pos.x, pos.y, pos.z);
+        scene.add(cloud);
+    });
+
+    // Add holes and moles after terrain
     setupHolesAndMoles();
 
     // Setup camera
@@ -179,10 +171,18 @@ setupScene();
 function animate() {
     requestAnimationFrame(animate);
     
-    // Update mole faces to look at camera
+    // Update mole faces
     moles.forEach(mole => {
         if (mole.userData.facingGroup) {
             mole.userData.facingGroup.lookAt(camera.position);
+        }
+    });
+    
+    // Animate clouds
+    scene.children.forEach(child => {
+        if (child.isGroup && child.children[0]?.material?.color?.equals(new THREE.Color(0xFFFFFF))) {
+            child.position.x += 0.01;
+            if (child.position.x > 15) child.position.x = -15;
         }
     });
     
@@ -459,30 +459,28 @@ function gameLoop() {
     setTimeout(gameLoop, 2000);
 }
 
-// Update cloud positions and size
+// Cloud creation function
 function createCloud() {
     const cloudGroup = new THREE.Group();
-    
-    const cloudGeometry = new THREE.SphereGeometry(0.8, 32, 32); // Slightly smaller clouds
-    const cloudMaterial = new THREE.MeshLambertMaterial({ 
+    const cloudMaterial = new THREE.MeshLambertMaterial({
         color: 0xFFFFFF,
         transparent: true,
         opacity: 0.9
     });
 
-    // Main cloud parts
-    const mainSphere = new THREE.Mesh(cloudGeometry, cloudMaterial);
-    mainSphere.scale.set(1, 0.6, 1);
-    cloudGroup.add(mainSphere);
-
+    // Create main cloud shapes
     const positions = [
-        { x: -0.8, y: 0.2, z: 0, scale: 0.8 },
-        { x: 0.8, y: 0.2, z: 0, scale: 0.8 },
-        { x: 0, y: 0.3, z: 0, scale: 0.9 }
+        { x: 0, y: 0, z: 0, scale: 1 },
+        { x: -1, y: 0, z: 0, scale: 0.8 },
+        { x: 1, y: 0, z: 0, scale: 0.8 },
+        { x: 0, y: 0.5, z: 0, scale: 0.7 }
     ];
 
     positions.forEach(pos => {
-        const cloudPiece = new THREE.Mesh(cloudGeometry, cloudMaterial);
+        const cloudPiece = new THREE.Mesh(
+            new THREE.SphereGeometry(1, 16, 16),
+            cloudMaterial
+        );
         cloudPiece.position.set(pos.x, pos.y, pos.z);
         cloudPiece.scale.set(pos.scale, pos.scale * 0.6, pos.scale);
         cloudGroup.add(cloudPiece);
