@@ -162,6 +162,66 @@ window.addEventListener('click', (event) => {
 camera.position.set(0, 6, 8);
 camera.lookAt(0, 0, -1);
 
+// Add ground (green hill)
+const groundGeometry = new THREE.PlaneGeometry(20, 20);
+const groundMaterial = new THREE.MeshLambertMaterial({ 
+    color: 0x90EE90,  // Light green color
+    side: THREE.DoubleSide 
+});
+const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+ground.rotation.x = -Math.PI / 2;
+ground.position.y = 0;
+scene.add(ground);
+
+// Function to create a cloud
+function createCloud() {
+    const cloudGroup = new THREE.Group();
+    
+    // Create multiple white spheres for fluffy cloud appearance
+    const cloudGeometry = new THREE.SphereGeometry(1, 32, 32);
+    const cloudMaterial = new THREE.MeshLambertMaterial({ 
+        color: 0xFFFFFF,
+        transparent: true,
+        opacity: 0.9
+    });
+
+    // Main cloud parts
+    const mainSphere = new THREE.Mesh(cloudGeometry, cloudMaterial);
+    mainSphere.scale.set(1, 0.6, 1);
+    cloudGroup.add(mainSphere);
+
+    // Add additional spheres for fluffy appearance
+    const positions = [
+        { x: -0.8, y: 0.2, z: 0, scale: 0.8 },
+        { x: 0.8, y: 0.2, z: 0, scale: 0.8 },
+        { x: 0, y: 0.3, z: 0, scale: 0.9 }
+    ];
+
+    positions.forEach(pos => {
+        const cloudPiece = new THREE.Mesh(cloudGeometry, cloudMaterial);
+        cloudPiece.position.set(pos.x, pos.y, pos.z);
+        cloudPiece.scale.set(pos.scale, pos.scale * 0.6, pos.scale);
+        cloudGroup.add(cloudPiece);
+    });
+
+    return cloudGroup;
+}
+
+// Add clouds to the scene
+const clouds = [];
+const cloudPositions = [
+    { x: -5, y: 8, z: -5 },
+    { x: 5, y: 9, z: -3 },
+    { x: 0, y: 7, z: -4 }
+];
+
+cloudPositions.forEach(pos => {
+    const cloud = createCloud();
+    cloud.position.set(pos.x, pos.y, pos.z);
+    scene.add(cloud);
+    clouds.push(cloud);
+});
+
 // Animation loop
 function animate() {
     requestAnimationFrame(animate);
@@ -171,6 +231,14 @@ function animate() {
         if (mole.userData.facingGroup) {
             mole.userData.facingGroup.lookAt(camera.position);
         }
+    });
+    
+    // Animate clouds
+    clouds.forEach((cloud, index) => {
+        cloud.position.x += 0.005 * (index % 2 ? 1 : -1);
+        // Reset cloud position when it moves too far
+        if (cloud.position.x > 10) cloud.position.x = -10;
+        if (cloud.position.x < -10) cloud.position.x = 10;
     });
     
     renderer.render(scene, camera);
