@@ -3,19 +3,19 @@ import * as THREE from 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/thr
 
 // Scene setup
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x87CEEB); // Sky blue background
+scene.background = new THREE.Color(0x87CEEB);
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.outputEncoding = THREE.sRGBEncoding;
-renderer.physicallyCorrectLights = true;
+renderer.sortObjects = true;
+renderer.setClearColor(0x87CEEB, 1);
 document.body.appendChild(renderer.domElement);
 
 // Initialize arrays and game state
-const moles = []; // Define moles array globally
+const moles = [];
 let score = 0;
 let gameActive = false;
-let timeRemaining = 30; // 30 seconds game duration
+let timeRemaining = 30;
 
 // Add word lists
 const shortAWords = ['hat', 'cat', 'bat', 'mad', 'sad', 'bad', 'dad', 'had', 'lap', 'map', 'nap', 'rap'];
@@ -52,53 +52,144 @@ instructionsElement.style.textAlign = 'center';
 instructionsElement.innerHTML = 'Hit the mole when you see a word with the short "a" sound!<br>Click anywhere to start';
 document.body.appendChild(instructionsElement);
 
-// Hole setup
-const holeGeometry = new THREE.CircleGeometry(1.4, 32);
-const holeMaterial = new THREE.MeshLambertMaterial({ 
-    color: 0x404040  // Darker gray
-});
+// Create a more natural 3D terrain
+function createTerrain() {
+    const geometry = new THREE.PlaneBufferGeometry(30, 30, 50, 50);
+    const vertices = geometry.attributes.position.array;
 
-// Define hole positions
-const holes = [
-    // Left side moles rotate counter-clockwise (+10 degrees = +0.175 radians)
-    { x: -2, z: -2, rotation: Math.PI * 0.25 + 0.175 }, // Front left
-    { x: -2, z: 2, rotation: Math.PI * 0.75 + 0.175 },  // Back left
-    
-    // Right side moles rotate clockwise (-10 degrees = -0.175 radians)
-    { x: 2, z: -2, rotation: -Math.PI * 0.25 - 0.175 }, // Front right
-    { x: 2, z: 2, rotation: -Math.PI * 0.75 - 0.175 }   // Back right
-];
+    for (let i = 0; i < vertices.length; i += 3) {
+        const x = vertices[i];
+        const z = vertices[i + 2];
+        const distanceFromCenter = Math.sqrt(x * x + z * z);
+        
+        let height = 0;
+        const plateauRadius = 8;
+        const falloffDistance = 7;
+        
+        if (distanceFromCenter > plateauRadius) {
+            const falloff = Math.cos(Math.PI * Math.min(distanceFromCenter - plateauRadius, falloffDistance) / falloffDistance);
+            height = -5 * (1 - falloff);
+        }
+        
+        vertices[i + 1] = height;
+    }
 
-// Create holes
-holes.forEach(pos => {
-    const hole = new THREE.Mesh(holeGeometry, holeMaterial);
-    hole.rotation.x = -Math.PI / 2;
-    hole.position.set(pos.x * 1.5, 0.01, pos.z * 1.5);
-    scene.add(hole);
-});
+    geometry.attributes.position.needsUpdate = true;
+    geometry.computeVertexNormals();
 
-// Create moles
-holes.forEach(pos => {
-    const mole = createMole();
-    mole.position.set(pos.x * 1.5, -1.0, pos.z * 1.5);
+    const material = new THREE.MeshLambertMaterial({
+        color: 0x90EE90,
+        side: THREE.DoubleSide,
+        transparent: true,
+        opacity: 1
+    });
+
+    const terrain = new THREE.Mesh(geometry, material);
+    terrain.rotation.x = -Math.PI / 2;
     
-    // Base rotation toward center
-    const targetPoint = new THREE.Vector3(0, 0, -3);
-    mole.lookAt(targetPoint);
-    mole.rotateX(Math.PI / 2);
+    const colors = [];
+    const positions = geometry.attributes.position.array;
     
-    // Additional rotation based on side
-    if (pos.x < 0) {
-        mole.rotateY(0.175);
-    } else {
-        mole.rotateY(-0.175);
+    for (let i = 0; i < positions.length; i += 3) {
+        const x = positions[i];
+        const z = positions[i + 2];
+        const distanceFromCenter = Math.sqrt(x * x + z * z);
+        const opacity = Math.max(0, Math.min(1, 1 - (distanceFromCenter - 8) / 7));
+        colors.push(0.565, 0.933, 0.565, opacity);
     }
     
-    mole.userData.isUp = false;
-    mole.userData.isMoving = false;
-    scene.add(mole);
-    moles.push(mole);
-});
+    geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 4));
+    material.vertexColors = true;
+
+    return terrain;
+}
+
+// Setup scene function
+function setupScene() {
+    // Clear existing lights and terrain
+    scene.children.length = 0;
+
+    // Add lights
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+    scene.add(ambientLight);
+
+    const mainLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    mainLight.position.set(5, 10, 5);
+    scene.add(mainLight);
+
+    // Add terrain
+    const terrain = createTerrain();
+    scene.add(terrain);
+
+    // Add holes and moles
+    setupHolesAndMoles();
+
+    // Setup camera
+    camera.position.set(0, 8, 12);
+    camera.lookAt(0, 0, 0);
+}
+
+// Setup holes and moles
+function setupHolesAndMoles() {
+    const holeGeometry = new THREE.CircleGeometry(1.4, 32);
+    const holeMaterial = new THREE.MeshLambertMaterial({ 
+        color: 0x404040  // Dark gray
+    });
+
+    const holes = [
+        { x: -2, z: -2, rotation: Math.PI * 0.25 + 0.175 },
+        { x: 2, z: -2, rotation: -Math.PI * 0.25 - 0.175 },
+        { x: -2, z: 2, rotation: Math.PI * 0.75 + 0.175 },
+        { x: 2, z: 2, rotation: -Math.PI * 0.75 - 0.175 }
+    ];
+
+    holes.forEach(pos => {
+        // Create hole
+        const hole = new THREE.Mesh(holeGeometry, holeMaterial);
+        hole.rotation.x = -Math.PI / 2;
+        hole.position.set(pos.x * 1.5, 0.01, pos.z * 1.5);
+        scene.add(hole);
+
+        // Create mole
+        const mole = createMole();
+        mole.position.set(pos.x * 1.5, -1.0, pos.z * 1.5);
+        
+        // Set mole rotation
+        const targetPoint = new THREE.Vector3(0, 0, -3);
+        mole.lookAt(targetPoint);
+        mole.rotateX(Math.PI / 2);
+        
+        if (pos.x < 0) {
+            mole.rotateY(0.175);
+        } else {
+            mole.rotateY(-0.175);
+        }
+        
+        mole.userData.isUp = false;
+        mole.userData.isMoving = false;
+        scene.add(mole);
+        moles.push(mole);
+    });
+}
+
+// Initialize scene
+setupScene();
+
+// Animation loop
+function animate() {
+    requestAnimationFrame(animate);
+    
+    // Update mole faces to look at camera
+    moles.forEach(mole => {
+        if (mole.userData.facingGroup) {
+            mole.userData.facingGroup.lookAt(camera.position);
+        }
+    });
+    
+    renderer.render(scene, camera);
+}
+
+animate();
 
 // Mole materials with brighter colors
 const moleBodyGeometry = new THREE.SphereGeometry(0.5, 32, 32);
@@ -149,163 +240,6 @@ window.addEventListener('click', (event) => {
         }
     }
 });
-
-// Set camera position
-camera.position.set(0, 8, 12);
-camera.lookAt(0, 0, 0);
-
-// Add ground (green hill)
-const groundGeometry = new THREE.PlaneGeometry(20, 20);
-const groundMaterial = new THREE.MeshLambertMaterial({ 
-    color: 0x90EE90,  // Light green color
-    side: THREE.DoubleSide 
-});
-const ground = new THREE.Mesh(groundGeometry, groundMaterial);
-ground.rotation.x = -Math.PI / 2;
-ground.position.y = 0;
-scene.add(ground);
-
-// Remove any existing lights first
-scene.remove(...scene.children.filter(child => child instanceof THREE.Light));
-
-// Create a more natural 3D terrain
-function createTerrain() {
-    // Create a larger geometry to allow for curved edges
-    const geometry = new THREE.PlaneBufferGeometry(30, 30, 50, 50);
-    const vertices = geometry.attributes.position.array;
-
-    // Modify vertices to create curved edges that slope down
-    for (let i = 0; i < vertices.length; i += 3) {
-        const x = vertices[i];
-        const z = vertices[i + 2];
-        
-        // Calculate distance from center
-        const distanceFromCenter = Math.sqrt(x * x + z * z);
-        
-        // Create smooth falloff for edges
-        let height = 0;
-        const plateauRadius = 8;
-        const falloffDistance = 7;
-        
-        if (distanceFromCenter > plateauRadius) {
-            const falloff = Math.cos(Math.PI * Math.min(distanceFromCenter - plateauRadius, falloffDistance) / falloffDistance);
-            height = -5 * (1 - falloff);
-        }
-        
-        vertices[i + 1] = height;
-    }
-
-    geometry.attributes.position.needsUpdate = true;
-    geometry.computeVertexNormals();
-
-    const material = new THREE.MeshLambertMaterial({
-        color: 0x90EE90,
-        side: THREE.DoubleSide,
-        transparent: true,
-        opacity: 1
-    });
-
-    const terrain = new THREE.Mesh(geometry, material);
-    terrain.rotation.x = -Math.PI / 2;
-    
-    // Add vertex colors to fade edges
-    const colors = [];
-    const positions = geometry.attributes.position.array;
-    
-    for (let i = 0; i < positions.length; i += 3) {
-        const x = positions[i];
-        const z = positions[i + 2];
-        const distanceFromCenter = Math.sqrt(x * x + z * z);
-        const opacity = Math.max(0, Math.min(1, 1 - (distanceFromCenter - 8) / 7));
-        colors.push(0.565, 0.933, 0.565, opacity);
-    }
-    
-    geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 4));
-    material.vertexColors = true;
-
-    return terrain;
-}
-
-// Update scene setup
-function updateScene() {
-    // Clear existing terrain if any
-    const existingTerrain = scene.children.find(child => child.userData.isTerrain);
-    if (existingTerrain) {
-        scene.remove(existingTerrain);
-    }
-
-    // Add new terrain
-    const terrain = createTerrain();
-    terrain.userData.isTerrain = true;
-    scene.add(terrain);
-
-    // Setup lighting
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
-    scene.add(ambientLight);
-
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-    directionalLight.position.set(5, 10, 5);
-    scene.add(directionalLight);
-
-    // Update renderer settings
-    renderer.sortObjects = true;
-    renderer.setClearColor(0x87CEEB, 1);
-    scene.background = new THREE.Color(0x87CEEB);
-}
-
-// Call the update function
-updateScene();
-
-// Enable transparency sorting
-renderer.sortObjects = true;
-renderer.setClearColor(0x87CEEB, 1);
-
-// Add clouds to the scene
-const clouds = [];
-const cloudPositions = [
-    { x: -4, y: 5, z: -3 },
-    { x: 4, y: 6, z: -2 },
-    { x: 0, y: 4.5, z: -4 }
-];
-
-// Clear existing clouds and add new ones
-clouds.forEach(cloud => scene.remove(cloud));
-clouds.length = 0;
-
-cloudPositions.forEach(pos => {
-    const cloud = createCloud();
-    cloud.position.set(pos.x, pos.y, pos.z);
-    scene.add(cloud);
-    clouds.push(cloud);
-});
-
-// Add some subtle shadows
-renderer.shadowMap.enabled = true;
-directionalLight.castShadow = true;
-
-// Animation loop
-function animate() {
-    requestAnimationFrame(animate);
-    
-    // Update all moles to face camera
-    moles.forEach(mole => {
-        if (mole.userData.facingGroup) {
-            mole.userData.facingGroup.lookAt(camera.position);
-        }
-    });
-    
-    // Animate clouds
-    clouds.forEach((cloud, index) => {
-        cloud.position.x += 0.003 * (index % 2 ? 1 : -1); // Slightly slower movement
-        if (cloud.position.x > 10) cloud.position.x = -10;
-        if (cloud.position.x < -10) cloud.position.x = 10;
-    });
-    
-    renderer.render(scene, camera);
-}
-
-// Start animation
-animate();
 
 // Add success indicator function
 function createSuccessIndicator(position) {
