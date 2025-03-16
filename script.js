@@ -633,3 +633,100 @@ function updateMoleColor() {
 
 // Call this function to ensure good lighting
 enhanceLighting();
+
+// More direct approach to update ground color
+function fixGroundColor() {
+    // Log all scene children to debug
+    console.log("Scene children:", scene.children);
+    
+    // Try multiple approaches to find and update the ground
+    scene.traverse(function(object) {
+        // Look for large plane geometries that are likely to be the ground
+        if (object.geometry && 
+            (object.geometry.type === 'PlaneGeometry' || object.geometry.type === 'PlaneBufferGeometry') && 
+            object.geometry.parameters && 
+            object.geometry.parameters.width > 10) {
+            
+            console.log("Found potential ground:", object);
+            
+            // Force update the material
+            object.material = new THREE.MeshLambertMaterial({
+                color: 0x4CAF50, // Brighter green
+                side: THREE.DoubleSide
+            });
+            
+            console.log("Updated ground color");
+        }
+    });
+}
+
+// More direct approach to update mole color
+function fixMoleColor() {
+    // Log all moles to debug
+    console.log("Moles array:", moles);
+    
+    moles.forEach((mole, index) => {
+        console.log(`Examining mole ${index}:`, mole);
+        
+        // Try to find the body mesh (usually the first child or the object itself)
+        let bodyMesh = null;
+        
+        if (mole.children && mole.children.length > 0) {
+            // Try to find a sphere geometry which is likely the body
+            mole.traverse(function(child) {
+                if (child.geometry && 
+                    (child.geometry.type === 'SphereGeometry' || child.geometry.type === 'SphereBufferGeometry')) {
+                    bodyMesh = child;
+                }
+            });
+            
+            if (!bodyMesh && mole.children[0].isMesh) {
+                bodyMesh = mole.children[0];
+            }
+        }
+        
+        if (bodyMesh) {
+            console.log("Found mole body:", bodyMesh);
+            
+            // Force update the material
+            bodyMesh.material = new THREE.MeshLambertMaterial({
+                color: 0xC19A6B // Warmer, more visible light brown
+            });
+            
+            console.log("Updated mole color");
+        }
+    });
+}
+
+// Ensure proper lighting
+function fixLighting() {
+    // Remove any existing lights
+    const existingLights = [];
+    scene.traverse(function(object) {
+        if (object.isLight) {
+            existingLights.push(object);
+        }
+    });
+    
+    existingLights.forEach(light => scene.remove(light));
+    
+    // Add new lights
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+    scene.add(ambientLight);
+    
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    directionalLight.position.set(5, 10, 5);
+    scene.add(directionalLight);
+    
+    const frontLight = new THREE.DirectionalLight(0xffffff, 0.6);
+    frontLight.position.set(0, 5, 10);
+    scene.add(frontLight);
+}
+
+// Call all fix functions
+fixGroundColor();
+fixMoleColor();
+fixLighting();
+
+// Log the scene after fixes
+console.log("Scene after fixes:", scene);
