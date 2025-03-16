@@ -837,3 +837,104 @@ moles.forEach(mole => {
 
 // Ensure UI is updated
 updateUI();
+
+// Improve text rendering for better clarity
+function improveTextClarity() {
+    // Update the text rendering function
+    window.updateMoleText = function(mole, word) {
+        const context = mole.userData.textContext;
+        const texture = mole.userData.textTexture;
+        
+        // Increase canvas resolution for sharper text
+        if (context.canvas.width < 1024) {
+            context.canvas.width = 1024;
+            context.canvas.height = 512;
+        }
+        
+        // Clear the canvas
+        context.clearRect(0, 0, context.canvas.width, context.canvas.height);
+        
+        // Add a subtle background for better contrast
+        context.fillStyle = 'rgba(255, 255, 255, 0.3)';
+        context.fillRect(0, 0, context.canvas.width, context.canvas.height);
+        
+        // Set text properties
+        context.fillStyle = 'black';
+        context.font = 'bold 180px Arial'; // Larger, simpler font
+        context.textAlign = 'center';
+        context.textBaseline = 'middle';
+        
+        // Add strong white outline
+        context.strokeStyle = 'white';
+        context.lineWidth = 12;
+        context.strokeText(word, context.canvas.width/2, context.canvas.height/2);
+        
+        // Fill text
+        context.fillText(word, context.canvas.width/2, context.canvas.height/2);
+        
+        // Update the texture with better filtering
+        texture.needsUpdate = true;
+        texture.minFilter = THREE.LinearFilter;
+        texture.magFilter = THREE.LinearFilter;
+        texture.generateMipmaps = false;
+    };
+    
+    // Update existing mole text
+    moles.forEach(mole => {
+        if (mole.userData.textContext) {
+            // Get current word or use a default
+            const word = currentWord || "nap";
+            updateMoleText(mole, word);
+        }
+    });
+    
+    console.log("Text clarity improved");
+}
+
+// Make text planes larger and better positioned
+function improveTextPlanes() {
+    moles.forEach(mole => {
+        if (mole.userData.facingGroup) {
+            mole.userData.facingGroup.children.forEach(child => {
+                // Find the text plane
+                if (child.geometry && 
+                    child.geometry.type === 'PlaneGeometry' && 
+                    child.material && 
+                    child.material.map) {
+                    
+                    // Replace with larger plane
+                    const newPlane = new THREE.Mesh(
+                        new THREE.PlaneGeometry(1.2, 0.6),
+                        child.material
+                    );
+                    
+                    // Position it better
+                    newPlane.position.copy(child.position);
+                    newPlane.position.z = 0.82; // Slightly more forward
+                    
+                    // Replace the old plane
+                    const parent = child.parent;
+                    parent.remove(child);
+                    parent.add(newPlane);
+                    
+                    console.log("Text plane improved");
+                }
+            });
+        }
+    });
+}
+
+// Add directional lighting specifically for text
+function addTextLighting() {
+    const textLight = new THREE.DirectionalLight(0xffffff, 1.0);
+    textLight.position.set(0, 0, 10); // Light directly from camera
+    camera.add(textLight);
+    scene.add(camera); // Ensure camera is in scene
+    
+    console.log("Text lighting added");
+}
+
+// Apply all text improvements
+improveTextClarity();
+improveTextPlanes();
+addTextLighting();
