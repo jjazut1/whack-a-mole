@@ -1054,3 +1054,126 @@ function improveTextMaterial() {
 fixPixelatedText();
 improveRendererSettings();
 improveTextMaterial();
+
+// Fix text rendering for all moles, especially those in the back
+function fixAllMoleText() {
+    // Update the text rendering function with better quality
+    window.updateMoleText = function(mole, word) {
+        const context = mole.userData.textContext;
+        const texture = mole.userData.textTexture;
+        
+        // Use high resolution for all moles
+        context.canvas.width = 2048;
+        context.canvas.height = 1024;
+        
+        // Clear the canvas
+        context.clearRect(0, 0, context.canvas.width, context.canvas.height);
+        
+        // Enable anti-aliasing
+        context.imageSmoothingEnabled = true;
+        context.imageSmoothingQuality = 'high';
+        
+        // Set text properties - use a clean, simple font
+        context.fillStyle = 'black';
+        context.font = '300px Arial';
+        context.textAlign = 'center';
+        context.textBaseline = 'middle';
+        
+        // Draw text
+        context.fillText(word, context.canvas.width/2, context.canvas.height/2);
+        
+        // Update the texture with maximum quality settings
+        texture.needsUpdate = true;
+        texture.minFilter = THREE.LinearFilter;
+        texture.magFilter = THREE.LinearFilter;
+        texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
+        texture.generateMipmaps = false;
+    };
+    
+    console.log("Text rendering function updated");
+}
+
+// Make all text planes billboard to face the camera
+function makeTextFaceCamera() {
+    // Update the animation loop to make all text planes face the camera
+    const originalAnimate = animate;
+    
+    window.animate = function() {
+        // Call the original animation function
+        originalAnimate();
+        
+        // Make all text planes face the camera
+        moles.forEach(mole => {
+            if (mole.userData.facingGroup) {
+                // Make the entire facing group look at the camera
+                mole.userData.facingGroup.lookAt(camera.position);
+            }
+        });
+    };
+    
+    console.log("Text billboarding enabled");
+}
+
+// Ensure all moles have consistent text plane size and position
+function standardizeTextPlanes() {
+    moles.forEach((mole, index) => {
+        if (mole.userData.facingGroup) {
+            // Find the text plane
+            let textPlane = null;
+            mole.userData.facingGroup.children.forEach(child => {
+                if (child.geometry && 
+                    child.geometry.type === 'PlaneGeometry' && 
+                    child.material && 
+                    child.material.map) {
+                    textPlane = child;
+                }
+            });
+            
+            if (textPlane) {
+                // Standardize size and position
+                textPlane.scale.set(1, 1, 1); // Reset scale
+                textPlane.geometry = new THREE.PlaneGeometry(1.2, 0.6); // Standard size
+                textPlane.position.z = 0.85; // Ensure it's in front of the mole
+                
+                // Create improved material
+                const newMaterial = new THREE.MeshBasicMaterial({
+                    map: textPlane.material.map,
+                    transparent: true,
+                    side: THREE.DoubleSide,
+                    alphaTest: 0.1,
+                    depthWrite: false // Helps with z-fighting
+                });
+                
+                // Apply the new material
+                textPlane.material.dispose();
+                textPlane.material = newMaterial;
+                
+                console.log(`Standardized text plane for mole ${index}`);
+            }
+        }
+    });
+}
+
+// Update all mole text to ensure consistency
+function updateAllMoleText() {
+    // Force update all mole text
+    moles.forEach((mole, index) => {
+        if (mole.userData.textContext) {
+            // Use a test word based on position to verify
+            const testWords = ["hat", "cat", "bat", "mad", "sad", "bad", "dad", "had"];
+            const word = testWords[index % testWords.length];
+            updateMoleText(mole, word);
+            console.log(`Updated text for mole ${index} to "${word}"`);
+        }
+    });
+}
+
+// Apply all fixes
+fixAllMoleText();
+makeTextFaceCamera();
+standardizeTextPlanes();
+updateAllMoleText();
+
+// Adjust camera to better view all moles
+camera.position.set(0, 6, 7);
+camera.lookAt(0, 0, 0);
