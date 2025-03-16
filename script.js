@@ -58,108 +58,71 @@ function setupLighting() {
     scene.children.filter(child => child instanceof THREE.Light).forEach(light => scene.remove(light));
 
     // Add stronger ambient light
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
     scene.add(ambientLight);
 
     // Add directional lights from multiple angles
-    const mainLight = new THREE.DirectionalLight(0xffffff, 1.0);
+    const mainLight = new THREE.DirectionalLight(0xffffff, 0.8);
     mainLight.position.set(5, 10, 5);
     scene.add(mainLight);
 
-    const frontLight = new THREE.DirectionalLight(0xffffff, 0.6);
-    frontLight.position.set(0, 5, 10);
-    scene.add(frontLight);
+    const fillLight = new THREE.DirectionalLight(0xffffff, 0.3);
+    fillLight.position.set(-5, 8, -5);
+    scene.add(fillLight);
 }
 
 // Update material settings for better visibility
 function createTerrain() {
-    const geometry = new THREE.PlaneBufferGeometry(30, 30, 50, 50);
+    const geometry = new THREE.PlaneGeometry(30, 30, 50, 50);
     const material = new THREE.MeshPhongMaterial({
         color: 0x90EE90,
         side: THREE.DoubleSide,
-        shininess: 0,
-        emissive: 0x103810
+        shininess: 0
     });
     
     const terrain = new THREE.Mesh(geometry, material);
     terrain.rotation.x = -Math.PI / 2;
-    terrain.position.y = -0.1; // Slightly below holes
-    
+    terrain.position.y = -0.5;
+
+    // Create natural curved surface and edges
+    const vertices = geometry.attributes.position.array;
+    for (let i = 0; i < vertices.length; i += 3) {
+        const x = vertices[i];
+        const z = vertices[i + 2];
+        const distance = Math.sqrt(x * x + z * z);
+        
+        // Create hill-like curve
+        vertices[i + 1] = Math.max(0, 
+            2 * Math.exp(-distance * distance / 100) + // Central hill
+            -0.05 * (distance * distance) // Edge falloff
+        );
+    }
+    geometry.attributes.position.needsUpdate = true;
+    geometry.computeVertexNormals();
+
     return terrain;
 }
 
-// Modify setupScene to include lighting setup
-function setupScene() {
-    // Clear scene
-    scene.children.length = 0;
-    
-    // Setup lighting first
-    setupLighting();
-    
-    // Add terrain
-    const terrain = createTerrain();
-    scene.add(terrain);
-    
-    // Add clouds
-    const cloudPositions = [
-        { x: -8, y: 8, z: -8 },
-        { x: 0, y: 10, z: -6 },
-        { x: 8, y: 9, z: -8 }
-    ];
-    
-    cloudPositions.forEach(pos => {
-        const cloud = createCloud();
-        cloud.position.set(pos.x, pos.y, pos.z);
-        scene.add(cloud);
-    });
-    
-    // Add holes and moles
-    setupHolesAndMoles();
-}
+// Adjust hole positions to match terrain curve
+const holes = [
+    { x: -2.5, z: -2.5, y: 0.2 },
+    { x: 2.5, z: -2.5, y: 0.2 },
+    { x: -2.5, z: 2.5, y: 0.2 },
+    { x: 2.5, z: 2.5, y: 0.2 }
+];
 
-// Setup holes and moles
 function setupHolesAndMoles() {
-    const holeGeometry = new THREE.CircleGeometry(1.4, 32);
-    const holeMaterial = new THREE.MeshPhongMaterial({ // Changed to PhongMaterial
-        color: 0x404040,
-        emissive: 0x101010,
-        shininess: 0
-    });
-
-    const holes = [
-        { x: -3, z: -3, rotation: Math.PI * 0.25 + 0.175 },
-        { x: 3, z: -3, rotation: -Math.PI * 0.25 - 0.175 },
-        { x: -3, z: 3, rotation: Math.PI * 0.75 + 0.175 },
-        { x: 3, z: 3, rotation: -Math.PI * 0.75 - 0.175 }
-    ];
-
-holes.forEach(pos => {
-        // Create hole
-        const hole = new THREE.Mesh(holeGeometry, holeMaterial);
-        hole.rotation.x = -Math.PI / 2;
-        hole.position.set(pos.x * 1.5, 0.01, pos.z * 1.5);
+    holes.forEach(holePos => {
+        // Create and position hole
+        const hole = createHole();
+        hole.position.set(holePos.x, holePos.y, holePos.z);
         scene.add(hole);
-
-        // Create mole
+        
+        // Create and position mole
         const mole = createMole();
-        mole.position.set(pos.x * 1.5, -1.0, pos.z * 1.5);
-        
-        // Set mole rotation
-        const targetPoint = new THREE.Vector3(0, 0, -3);
-        mole.lookAt(targetPoint);
-        mole.rotateX(Math.PI / 2);
-        
-        if (pos.x < 0) {
-            mole.rotateY(0.175);
-        } else {
-            mole.rotateY(-0.175);
-        }
-        
-        mole.userData.isUp = false;
-        mole.userData.isMoving = false;
-    scene.add(mole);
-    moles.push(mole);
-});
+        mole.position.set(holePos.x, holePos.y + 0.1, holePos.z);
+        scene.add(mole);
+    });
 }
 
 // Update renderer settings
@@ -502,6 +465,9 @@ backLight.position.set(-5, 5, -5);
 scene.add(backLight);
 
 // Adjust camera position and field of view
-camera.position.set(0, 12, 15); // Move camera back and up
+camera.position.set(0, 10, 15);
 camera.fov = 60; // Wider field of view
 camera.updateProjectionMatrix();
+
+// Reinitialize the scene
+setupScene();
