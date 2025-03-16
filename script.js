@@ -73,9 +73,9 @@ ground.rotation.x = -Math.PI / 2;
 scene.add(ground);
 
 // Hole creation
-const holeGeometry = new THREE.CircleGeometry(1.0, 32);
+const holeGeometry = new THREE.CircleGeometry(1.2, 32);
 const holeMaterial = new THREE.MeshLambertMaterial({ 
-    color: 0x2C2C2C  // Dark gray for holes
+    color: 0x808080  // Medium gray color
 });
 const holes = [
     { x: -2, z: -2 }, { x: 2, z: -2 },
@@ -221,7 +221,7 @@ function updateMoleText(mole, word) {
     
     // Set text properties
     context.fillStyle = 'black';
-    context.font = 'bold 140px Arial';
+    context.font = 'bold 120px Arial';
     context.textAlign = 'center';
     context.textBaseline = 'middle';
     
@@ -236,30 +236,18 @@ function updateMoleText(mole, word) {
 function createMole() {
     const moleGroup = new THREE.Group();
     
-    // Body - pure white
+    // Body - elongated sphere shape
     const bodyGeometry = new THREE.SphereGeometry(0.8, 32, 32);
+    bodyGeometry.scale(1, 1.3, 1); // Stretch vertically
     const bodyMaterial = new THREE.MeshLambertMaterial({ color: 0xFFFFFF });
     const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
     moleGroup.add(body);
 
-    // Create angled text board
-    const boardGeometry = new THREE.PlaneGeometry(1.2, 0.6); // Rectangular board
-    const boardMaterial = new THREE.MeshLambertMaterial({ 
-        color: 0xFFFFFF, // White board
-        side: THREE.DoubleSide
-    });
-    const board = new THREE.Mesh(boardGeometry, boardMaterial);
-    
-    // Position and rotate the board
-    board.position.set(0, -0.3, 0.6); // Lower on the mole
-    board.rotation.x = -0.6; // Angle upward
-    moleGroup.add(board);
-
-    // Text plane - positioned on the board
+    // Text plane - directly on the front lower portion of the mole
     const canvas = document.createElement('canvas');
     const context = canvas.getContext('2d');
     canvas.width = 512;
-    canvas.height = 256; // Rectangular to match board
+    canvas.height = 256;
     
     const textTexture = new THREE.Texture(canvas);
     textTexture.minFilter = THREE.LinearFilter;
@@ -272,36 +260,33 @@ function createMole() {
     });
     
     const textPlane = new THREE.Mesh(
-        new THREE.PlaneGeometry(1.1, 0.5), // Slightly smaller than board
+        new THREE.PlaneGeometry(1.0, 0.5),
         textMaterial
     );
-    // Position text just above the board
-    textPlane.position.copy(board.position);
-    textPlane.rotation.copy(board.rotation);
-    textPlane.position.z += 0.01; // Slightly in front of board
+    // Position text directly on the front lower portion
+    textPlane.position.set(0, -0.2, 0.75);
     moleGroup.add(textPlane);
     
     moleGroup.userData.textTexture = textTexture;
     moleGroup.userData.textContext = context;
 
-    // Eyes - small black dots positioned higher
-    const eyeGeometry = new THREE.CircleGeometry(0.06, 32);
-    const eyeMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
+    // Facial features - simple black dots in triangular arrangement
+    const dotGeometry = new THREE.CircleGeometry(0.05, 32);
+    const dotMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
     
-    const leftEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
-    leftEye.position.set(-0.2, 0.4, 0.75);
+    // Left eye
+    const leftEye = new THREE.Mesh(dotGeometry, dotMaterial);
+    leftEye.position.set(-0.15, 0.3, 0.75);
     moleGroup.add(leftEye);
     
-    const rightEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
-    rightEye.position.set(0.2, 0.4, 0.75);
+    // Right eye
+    const rightEye = new THREE.Mesh(dotGeometry, dotMaterial);
+    rightEye.position.set(0.15, 0.3, 0.75);
     moleGroup.add(rightEye);
 
-    // Nose
-    const nose = new THREE.Mesh(
-        new THREE.CircleGeometry(0.06, 32),
-        new THREE.MeshBasicMaterial({ color: 0x000000 })
-    );
-    nose.position.set(0, 0.3, 0.78);
+    // Nose (slightly lower to form triangle)
+    const nose = new THREE.Mesh(dotGeometry, dotMaterial);
+    nose.position.set(0, 0.15, 0.75);
     moleGroup.add(nose);
 
     return moleGroup;
