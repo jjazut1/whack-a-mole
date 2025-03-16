@@ -55,9 +55,8 @@ instructionsElement.style.textAlign = 'center';
 instructionsElement.innerHTML = 'Hit the mole when you see a word with the short "a" sound!<br>Click anywhere to start';
 document.body.appendChild(instructionsElement);
 
-// Simplified terrain creation
+// Adjust terrain color and lighting
 function createTerrain() {
-    // Use PlaneGeometry instead of PlaneBufferGeometry (which is deprecated)
     const geometry = new THREE.PlaneGeometry(40, 40, 50, 50);
     
     // Modify vertices for curved edges
@@ -69,7 +68,6 @@ function createTerrain() {
         const distance = Math.sqrt(x * x + y * y);
         
         if (distance > 10) {
-            // Create curved falloff
             const z = -0.5 * Math.pow((distance - 10) / 10, 2);
             positionAttribute.setZ(i, z);
         }
@@ -77,17 +75,53 @@ function createTerrain() {
     
     geometry.computeVertexNormals();
     
-    // Create material with solid color
+    // Use a much brighter green color
     const material = new THREE.MeshLambertMaterial({
-        color: 0x90EE90, // Light green
-        side: THREE.DoubleSide
+        color: 0x4CAF50, // Brighter green
+        side: THREE.DoubleSide,
+        emissive: 0x2E7D32, // Add some self-illumination
+        emissiveIntensity: 0.2 // Subtle glow
     });
     
     const terrain = new THREE.Mesh(geometry, material);
-    terrain.rotation.x = Math.PI / 2; // Rotate to be horizontal
-    terrain.position.y = -0.1; // Position slightly below holes
+    terrain.rotation.x = Math.PI / 2;
+    terrain.position.y = -0.1;
     
     return terrain;
+}
+
+// Improve lighting
+function setupLighting() {
+    // Remove existing lights
+    scene.children.filter(child => child instanceof THREE.Light)
+        .forEach(light => scene.remove(light));
+    
+    // Add stronger ambient light
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.8); // Increased intensity
+    scene.add(ambientLight);
+    
+    // Add directional light from above
+    const mainLight = new THREE.DirectionalLight(0xffffff, 1.0); // Increased intensity
+    mainLight.position.set(0, 10, 0);
+    scene.add(mainLight);
+    
+    // Add front light to illuminate moles better
+    const frontLight = new THREE.DirectionalLight(0xffffff, 0.7);
+    frontLight.position.set(0, 5, 10);
+    scene.add(frontLight);
+}
+
+// Update hole material to be more visible
+function updateHoles() {
+    scene.children.forEach(child => {
+        if (child.geometry && child.geometry.type === 'CircleGeometry') {
+            child.material = new THREE.MeshLambertMaterial({
+                color: 0x555555, // Lighter gray
+                emissive: 0x222222, // Slight glow
+                emissiveIntensity: 0.2
+            });
+        }
+    });
 }
 
 // Setup scene function
@@ -522,3 +556,16 @@ console.log("Scene children:", scene.children);
 const backLight = new THREE.DirectionalLight(0xffffff, 0.3);
 backLight.position.set(-5, 5, -5);
 scene.add(backLight);
+
+// Call these functions to update the scene
+setupLighting();
+updateHoles();
+
+// If you need to recreate the terrain
+const existingTerrain = scene.children.find(
+    child => child.geometry && child.geometry.type === 'PlaneGeometry'
+);
+if (existingTerrain) {
+    scene.remove(existingTerrain);
+}
+scene.add(createTerrain());
