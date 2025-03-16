@@ -730,3 +730,183 @@ fixLighting();
 
 // Log the scene after fixes
 console.log("Scene after fixes:", scene);
+
+// Create a more natural curved transition between ground and sky
+function createCurvedHorizon() {
+    // Remove existing ground
+    scene.traverse(function(object) {
+        if (object.geometry && 
+            (object.geometry.type === 'PlaneGeometry' || object.geometry.type === 'PlaneBufferGeometry') && 
+            object.rotation && Math.abs(object.rotation.x + Math.PI/2) < 0.1) {
+            console.log("Removing existing ground:", object);
+            scene.remove(object);
+        }
+    });
+    
+    // Create a curved surface using a custom shape
+    const shape = new THREE.Shape();
+    
+    // Define the shape with curved edges
+    const width = 40;
+    const depth = 40;
+    
+    // Start at bottom left
+    shape.moveTo(-width/2, -depth/2);
+    
+    // Bottom edge
+    shape.lineTo(width/2, -depth/2);
+    
+    // Right edge with curve
+    shape.quadraticCurveTo(width/2 + 5, 0, width/2, depth/2);
+    
+    // Top edge
+    shape.lineTo(-width/2, depth/2);
+    
+    // Left edge with curve
+    shape.quadraticCurveTo(-width/2 - 5, 0, -width/2, -depth/2);
+    
+    // Create geometry from shape
+    const geometry = new THREE.ShapeGeometry(shape, 50);
+    
+    // Create material
+    const material = new THREE.MeshLambertMaterial({
+        color: 0x7CFC00, // Bright green
+        side: THREE.DoubleSide
+    });
+    
+    // Create mesh
+    const ground = new THREE.Mesh(geometry, material);
+    ground.rotation.x = -Math.PI / 2;
+    
+    // Add to scene
+    scene.add(ground);
+    console.log("Added new curved ground");
+    
+    // Create additional curved surfaces for the edges
+    createHorizonCurve();
+}
+
+// Create curved surfaces at the horizon
+function createHorizonCurve() {
+    // Create curves for the left and right edges
+    const curvePoints = [];
+    
+    // Create a curve that goes from ground level up and then curves to horizontal
+    for (let t = 0; t <= 1; t += 0.05) {
+        const x = 20 * (t - 0.5); // -10 to 10
+        const y = 3 * Math.pow(t, 2); // Parabolic curve
+        const z = -20 + t * 5; // Moves from back to front slightly
+        curvePoints.push(new THREE.Vector3(x, y, z));
+    }
+    
+    const curve = new THREE.CatmullRomCurve3(curvePoints);
+    
+    // Create tube geometry along the curve
+    const tubeGeometry = new THREE.TubeGeometry(curve, 20, 20, 8, false);
+    const tubeMaterial = new THREE.MeshLambertMaterial({
+        color: 0x7CFC00, // Match ground color
+        side: THREE.DoubleSide
+    });
+    
+    const tube = new THREE.Mesh(tubeGeometry, tubeMaterial);
+    scene.add(tube);
+    console.log("Added first horizon curve");
+    
+    // Create a second tube for the other side
+    const curvePoints2 = [];
+    for (let t = 0; t <= 1; t += 0.05) {
+        const x = 20 * (t - 0.5); // -10 to 10
+        const y = 3 * Math.pow(t, 2); // Same parabolic curve
+        const z = 20 - t * 5; // Mirror of first curve
+        curvePoints2.push(new THREE.Vector3(x, y, z));
+    }
+    
+    const curve2 = new THREE.CatmullRomCurve3(curvePoints2);
+    const tubeGeometry2 = new THREE.TubeGeometry(curve2, 20, 20, 8, false);
+    const tube2 = new THREE.Mesh(tubeGeometry2, tubeMaterial);
+    scene.add(tube2);
+    console.log("Added second horizon curve");
+    
+    // Add connecting curves for the corners
+    createCornerCurves();
+}
+
+// Create curves for the corners to fully connect the horizon
+function createCornerCurves() {
+    const cornerMaterial = new THREE.MeshLambertMaterial({
+        color: 0x7CFC00,
+        side: THREE.DoubleSide
+    });
+    
+    // Front left corner
+    const frontLeftPoints = [];
+    for (let t = 0; t <= 1; t += 0.05) {
+        const angle = Math.PI * 0.5 * t;
+        const x = -20 + 5 * Math.cos(angle);
+        const y = 3 * Math.pow(t, 2);
+        const z = -20 + 5 * Math.sin(angle);
+        frontLeftPoints.push(new THREE.Vector3(x, y, z));
+    }
+    
+    const frontLeftCurve = new THREE.CatmullRomCurve3(frontLeftPoints);
+    const frontLeftGeometry = new THREE.TubeGeometry(frontLeftCurve, 20, 20, 8, false);
+    const frontLeftTube = new THREE.Mesh(frontLeftGeometry, cornerMaterial);
+    scene.add(frontLeftTube);
+    
+    // Front right corner
+    const frontRightPoints = [];
+    for (let t = 0; t <= 1; t += 0.05) {
+        const angle = Math.PI * (1 - 0.5 * t);
+        const x = 20 + 5 * Math.cos(angle);
+        const y = 3 * Math.pow(t, 2);
+        const z = -20 + 5 * Math.sin(angle);
+        frontRightPoints.push(new THREE.Vector3(x, y, z));
+    }
+    
+    const frontRightCurve = new THREE.CatmullRomCurve3(frontRightPoints);
+    const frontRightGeometry = new THREE.TubeGeometry(frontRightCurve, 20, 20, 8, false);
+    const frontRightTube = new THREE.Mesh(frontRightGeometry, cornerMaterial);
+    scene.add(frontRightTube);
+    
+    // Back left corner
+    const backLeftPoints = [];
+    for (let t = 0; t <= 1; t += 0.05) {
+        const angle = Math.PI * (1.5 - 0.5 * t);
+        const x = -20 + 5 * Math.cos(angle);
+        const y = 3 * Math.pow(t, 2);
+        const z = 20 + 5 * Math.sin(angle);
+        backLeftPoints.push(new THREE.Vector3(x, y, z));
+    }
+    
+    const backLeftCurve = new THREE.CatmullRomCurve3(backLeftPoints);
+    const backLeftGeometry = new THREE.TubeGeometry(backLeftCurve, 20, 20, 8, false);
+    const backLeftTube = new THREE.Mesh(backLeftGeometry, cornerMaterial);
+    scene.add(backLeftTube);
+    
+    // Back right corner
+    const backRightPoints = [];
+    for (let t = 0; t <= 1; t += 0.05) {
+        const angle = Math.PI * (1.5 + 0.5 * t);
+        const x = 20 + 5 * Math.cos(angle);
+        const y = 3 * Math.pow(t, 2);
+        const z = 20 + 5 * Math.sin(angle);
+        backRightPoints.push(new THREE.Vector3(x, y, z));
+    }
+    
+    const backRightCurve = new THREE.CatmullRomCurve3(backRightPoints);
+    const backRightGeometry = new THREE.TubeGeometry(backRightCurve, 20, 20, 8, false);
+    const backRightTube = new THREE.Mesh(backRightGeometry, cornerMaterial);
+    scene.add(backRightTube);
+    
+    console.log("Added corner curves");
+}
+
+// Call the function to create the curved horizon
+createCurvedHorizon();
+
+// Adjust camera to better view the curved horizon
+camera.position.set(0, 10, 15);
+camera.lookAt(0, 0, 0);
+
+// Add debug logging
+console.log("Curved horizon implementation complete");
