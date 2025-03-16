@@ -58,17 +58,13 @@ function setupLighting() {
     scene.children.filter(child => child instanceof THREE.Light).forEach(light => scene.remove(light));
 
     // Add stronger ambient light
-    const ambientLight = new THREE.AmbientLight(0xffffff, 1.0); // Increased intensity
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
     scene.add(ambientLight);
 
     // Add directional lights from multiple angles
     const mainLight = new THREE.DirectionalLight(0xffffff, 1.0);
     mainLight.position.set(5, 10, 5);
     scene.add(mainLight);
-
-    const fillLight = new THREE.DirectionalLight(0xffffff, 0.8);
-    fillLight.position.set(-5, 8, -5);
-    scene.add(fillLight);
 
     const frontLight = new THREE.DirectionalLight(0xffffff, 0.6);
     frontLight.position.set(0, 5, 10);
@@ -77,38 +73,17 @@ function setupLighting() {
 
 // Update material settings for better visibility
 function createTerrain() {
-    const geometry = new THREE.PlaneBufferGeometry(40, 40, 50, 50);
-    const vertices = geometry.attributes.position.array;
-
-    for (let i = 0; i < vertices.length; i += 3) {
-        const x = vertices[i];
-        const z = vertices[i + 2];
-        const distanceFromCenter = Math.sqrt(x * x + z * z);
-        
-        let height = 0;
-        const plateauRadius = 12; // Increased flat area
-        const falloffDistance = 10; // Increased falloff distance
-        
-        if (distanceFromCenter > plateauRadius) {
-            const falloff = Math.cos(Math.PI * Math.min(distanceFromCenter - plateauRadius, falloffDistance) / falloffDistance);
-            height = -8 * (1 - falloff); // Increased depth for more visible curve
-        }
-        
-        vertices[i + 1] = height;
-    }
-
-    geometry.attributes.position.needsUpdate = true;
-    geometry.computeVertexNormals();
-
-    const material = new THREE.MeshPhongMaterial({ // Changed to PhongMaterial
+    const geometry = new THREE.PlaneBufferGeometry(30, 30, 50, 50);
+    const material = new THREE.MeshPhongMaterial({
         color: 0x90EE90,
         side: THREE.DoubleSide,
-        shininess: 0, // No shine for grass
-        emissive: 0x103810 // Slight emissive for better visibility
+        shininess: 0,
+        emissive: 0x103810
     });
-
+    
     const terrain = new THREE.Mesh(geometry, material);
     terrain.rotation.x = -Math.PI / 2;
+    terrain.position.y = -0.1; // Slightly below holes
     
     return terrain;
 }
@@ -127,9 +102,9 @@ function setupScene() {
     
     // Add clouds
     const cloudPositions = [
-        { x: -5, y: 5, z: -5 },
-        { x: 0, y: 6, z: -4 },
-        { x: 5, y: 5, z: -5 }
+        { x: -8, y: 8, z: -8 },
+        { x: 0, y: 10, z: -6 },
+        { x: 8, y: 9, z: -8 }
     ];
     
     cloudPositions.forEach(pos => {
@@ -152,10 +127,10 @@ function setupHolesAndMoles() {
     });
 
     const holes = [
-        { x: -2, z: -2, rotation: Math.PI * 0.25 + 0.175 },
-        { x: 2, z: -2, rotation: -Math.PI * 0.25 - 0.175 },
-        { x: -2, z: 2, rotation: Math.PI * 0.75 + 0.175 },
-        { x: 2, z: 2, rotation: -Math.PI * 0.75 - 0.175 }
+        { x: -3, z: -3, rotation: Math.PI * 0.25 + 0.175 },
+        { x: 3, z: -3, rotation: -Math.PI * 0.25 - 0.175 },
+        { x: -3, z: 3, rotation: Math.PI * 0.75 + 0.175 },
+        { x: 3, z: 3, rotation: -Math.PI * 0.75 - 0.175 }
     ];
 
 holes.forEach(pos => {
@@ -346,11 +321,11 @@ function updateMoleText(mole, word) {
 function createMole() {
     const moleGroup = new THREE.Group();
     
-    // Body with better material
-    const bodyGeometry = new THREE.SphereGeometry(0.8, 32, 32);
-    const bodyMaterial = new THREE.MeshPhongMaterial({ // Changed to PhongMaterial
-        color: 0xD2B48C, // Light brown
-        emissive: 0x1a1a1a, // Slight emissive
+    // Smaller body size
+    const bodyGeometry = new THREE.SphereGeometry(0.5, 32, 32);
+    const bodyMaterial = new THREE.MeshPhongMaterial({
+        color: 0xF5E6D3, // Lighter beige color
+        emissive: 0x1a1a1a,
         shininess: 30
     });
     const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
@@ -525,3 +500,8 @@ function createCloud() {
 const backLight = new THREE.DirectionalLight(0xffffff, 0.3);
 backLight.position.set(-5, 5, -5);
 scene.add(backLight);
+
+// Adjust camera position and field of view
+camera.position.set(0, 12, 15); // Move camera back and up
+camera.fov = 60; // Wider field of view
+camera.updateProjectionMatrix();
