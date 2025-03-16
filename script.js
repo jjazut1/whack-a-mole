@@ -78,8 +78,10 @@ const holeMaterial = new THREE.MeshLambertMaterial({
     color: 0xC0C0C0  // Lighter gray
 });
 const holes = [
-    { x: -2, z: -2 }, { x: 2, z: -2 },
-    { x: -2, z: 2 }, { x: 2, z: 2 }
+    { x: -2, z: -2, rotation: Math.PI * 0.25 }, // Front left
+    { x: 2, z: -2, rotation: -Math.PI * 0.25 }, // Front right
+    { x: -2, z: 2, rotation: Math.PI * 0.75 }, // Back left
+    { x: 2, z: 2, rotation: -Math.PI * 0.75 }  // Back right
 ];
 
 holes.forEach(pos => {
@@ -106,7 +108,18 @@ const moleEyeMaterial = new THREE.MeshLambertMaterial({
 const moles = [];
 holes.forEach(pos => {
     const mole = createMole();
-    mole.position.set(pos.x * 1.5, -1.5, pos.z * 1.5);
+    mole.position.set(pos.x * 1.5, -1.0, pos.z * 1.5);
+    
+    // Calculate direction to center front point (0, 0, -3)
+    const targetPoint = new THREE.Vector3(0, 0, -3);
+    const molePosition = new THREE.Vector3(pos.x * 1.5, 0, pos.z * 1.5);
+    const direction = new THREE.Vector3().subVectors(targetPoint, molePosition);
+    
+    // Make the mole face the target point
+    mole.lookAt(targetPoint);
+    // Adjust the up vector to keep moles upright
+    mole.rotateX(Math.PI / 2);
+    
     mole.userData.isUp = false;
     mole.userData.isMoving = false;
     scene.add(mole);
@@ -150,8 +163,8 @@ window.addEventListener('click', (event) => {
 });
 
 // Camera Position
-camera.position.set(0, 5, 7);
-camera.lookAt(0, 0, 0);
+camera.position.set(0, 6, 8);
+camera.lookAt(0, 0, -1); // Look slightly toward the front
 
 // Animation Loop
 function animate() {
@@ -236,13 +249,13 @@ function updateMoleText(mole, word) {
 function createMole() {
     const moleGroup = new THREE.Group();
     
-    // Body - perfect sphere
+    // Body
     const bodyGeometry = new THREE.SphereGeometry(0.8, 32, 32);
     const bodyMaterial = new THREE.MeshLambertMaterial({ color: 0xFFFFFF });
     const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
     moleGroup.add(body);
 
-    // Text plane - on the front of the sphere
+    // Text plane
     const canvas = document.createElement('canvas');
     const context = canvas.getContext('2d');
     canvas.width = 512;
@@ -262,23 +275,20 @@ function createMole() {
         new THREE.PlaneGeometry(0.8, 0.4),
         textMaterial
     );
-    // Position text on the front
     textPlane.position.set(0, 0, 0.8);
     moleGroup.add(textPlane);
     
     moleGroup.userData.textTexture = textTexture;
     moleGroup.userData.textContext = context;
 
-    // Just two eyes - small black dots positioned higher
+    // Eyes
     const eyeGeometry = new THREE.CircleGeometry(0.03, 32);
     const eyeMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
     
-    // Left eye
     const leftEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
     leftEye.position.set(-0.15, 0.4, 0.75);
     moleGroup.add(leftEye);
     
-    // Right eye
     const rightEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
     rightEye.position.set(0.15, 0.4, 0.75);
     moleGroup.add(rightEye);
