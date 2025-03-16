@@ -151,7 +151,8 @@ function addClouds() {
         ];
         
         cloudPositions.forEach(pos => {
-            const cloud = createCloud();
+            // Use makeSimpleCloud instead of createCloud to avoid duplicate declaration
+            const cloud = makeSimpleCloud();
             cloud.position.set(pos.x, pos.y, pos.z);
             scene.add(cloud);
         });
@@ -160,8 +161,8 @@ function addClouds() {
     }
 }
 
-// Cloud creation function
-function createCloud() {
+// Use a different function name to avoid duplicate declaration
+function makeSimpleCloud() {
     const group = new THREE.Group();
     
     // Create simple white spheres
@@ -531,35 +532,6 @@ function gameLoop() {
     }
     
     setTimeout(gameLoop, 2000);
-}
-
-// Simplified cloud creation
-function createCloud() {
-    const group = new THREE.Group();
-    
-    // Create simple white spheres
-    const sphereGeometry = new THREE.SphereGeometry(1, 16, 16);
-    const material = new THREE.MeshBasicMaterial({ color: 0xFFFFFF });
-    
-    // Main sphere
-    const mainSphere = new THREE.Mesh(sphereGeometry, material);
-    group.add(mainSphere);
-    
-    // Add additional spheres
-    const positions = [
-        { x: -1, y: 0.3, z: 0 },
-        { x: 1, y: 0.3, z: 0 },
-        { x: 0, y: 0.5, z: 0 }
-    ];
-    
-    positions.forEach(pos => {
-        const sphere = new THREE.Mesh(sphereGeometry, material);
-        sphere.position.set(pos.x, pos.y, pos.z);
-        sphere.scale.set(0.7, 0.5, 0.7);
-        group.add(sphere);
-    });
-    
-    return group;
 }
 
 // Explicitly add terrain and clouds to scene
