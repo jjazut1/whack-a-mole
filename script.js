@@ -1076,8 +1076,8 @@ addVersionIndicator();
 // You can also add this at the end of your main code
 console.log("Game initialization complete - running latest version");
 
-// Final fix for hair positioning to ensure it's on top of the mole's head
-function finalHairPositionFix() {
+// Complete overhaul of hair positioning using local coordinates
+function fixHairPositioningCompletely() {
     // Remove any existing hair first
     moles.forEach(mole => {
         for (let i = mole.children.length - 1; i >= 0; i--) {
@@ -1088,15 +1088,24 @@ function finalHairPositionFix() {
         }
     });
     
-    // Simplified hair styles with absolute positioning
+    // Get mole orientation to determine "up" direction
+    function getMoleUpDirection(mole) {
+        // Default up vector (for debugging)
+        return new THREE.Vector3(0, 1, 0);
+    }
+    
+    // Hair styles with correct positioning relative to mole orientation
     const hairStyles = [
-        // Spiky hair - positioned directly on top
+        // Spiky hair
         function(mole) {
             const hairGroup = new THREE.Group();
             hairGroup.userData.isHair = true;
             
-            const spikeCount = 5 + Math.floor(Math.random() * 4);
+            const spikeCount = 5 + Math.floor(Math.random() * 3);
             const hairColor = new THREE.Color(0x3D2314); // Brown
+            
+            // Create a container positioned at the center of the mole
+            hairGroup.position.set(0, 0, 0);
             
             for (let i = 0; i < spikeCount; i++) {
                 const spike = new THREE.Mesh(
@@ -1106,34 +1115,39 @@ function finalHairPositionFix() {
                 
                 const angle = (i / spikeCount) * Math.PI * 2;
                 
-                // Position directly on top with outward angle
+                // Position spikes in a circle on top of the head
                 spike.position.set(
                     Math.sin(angle) * 0.2,
-                    0.8, // Higher position
+                    0.5, // Directly on top
                     Math.cos(angle) * 0.2
                 );
                 
-                // Point spikes upward and outward
-                spike.rotation.x = Math.PI / 2 - 0.5;
-                spike.rotation.y = -angle;
+                // Orient spikes outward
+                spike.lookAt(new THREE.Vector3(
+                    Math.sin(angle) * 2,
+                    1.5,
+                    Math.cos(angle) * 2
+                ));
                 
                 hairGroup.add(spike);
             }
             
-            // Add the hair group directly to the mole
             mole.add(hairGroup);
-            
-            console.log("Added spiky hair on top");
+            console.log("Added spiky hair with absolute positioning");
         },
         
-        // Mohawk - centered on top
+        // Mohawk
         function(mole) {
             const hairGroup = new THREE.Group();
             hairGroup.userData.isHair = true;
             
+            // Bright colors for mohawk
             const hairColor = new THREE.Color(
-                [0xFF0000, 0x00FF00, 0x0000FF, 0xFF00FF][Math.floor(Math.random() * 4)]
+                [0xFF00FF, 0x00FF00, 0xFF0000, 0x00FFFF][Math.floor(Math.random() * 4)]
             );
+            
+            // Create a container positioned at the center of the mole
+            hairGroup.position.set(0, 0, 0);
             
             const mohawkCount = 5;
             for (let i = 0; i < mohawkCount; i++) {
@@ -1142,10 +1156,10 @@ function finalHairPositionFix() {
                     new THREE.MeshLambertMaterial({ color: hairColor })
                 );
                 
-                // Position in a line directly on top
+                // Position in a line on top
                 spike.position.set(
                     0,
-                    0.9, // Higher position
+                    0.5, // Directly on top
                     -0.2 + (i / (mohawkCount - 1)) * 0.4
                 );
                 
@@ -1155,19 +1169,20 @@ function finalHairPositionFix() {
                 hairGroup.add(spike);
             }
             
-            // Add the hair group directly to the mole
             mole.add(hairGroup);
-            
-            console.log("Added mohawk on top");
+            console.log("Added mohawk with absolute positioning");
         },
         
-        // Curly hair - positioned on top
+        // Curly hair
         function(mole) {
             const hairGroup = new THREE.Group();
             hairGroup.userData.isHair = true;
             
-            const curlCount = 6 + Math.floor(Math.random() * 3);
+            const curlCount = 6;
             const hairColor = new THREE.Color(0x3D2314); // Brown
+            
+            // Create a container positioned at the center of the mole
+            hairGroup.position.set(0, 0, 0);
             
             for (let i = 0; i < curlCount; i++) {
                 const curl = new THREE.Mesh(
@@ -1177,14 +1192,14 @@ function finalHairPositionFix() {
                 
                 const angle = (i / curlCount) * Math.PI * 2;
                 
-                // Position curls on top of the head
+                // Position curls in a circle on top
                 curl.position.set(
                     Math.sin(angle) * 0.2,
-                    0.8 + Math.random() * 0.1, // Higher position with variation
+                    0.5, // Directly on top
                     Math.cos(angle) * 0.2
                 );
                 
-                // Random orientation for natural look
+                // Random orientation
                 curl.rotation.set(
                     Math.random() * Math.PI,
                     Math.random() * Math.PI,
@@ -1194,42 +1209,85 @@ function finalHairPositionFix() {
                 hairGroup.add(curl);
             }
             
-            // Add the hair group directly to the mole
             mole.add(hairGroup);
-            
-            console.log("Added curly hair on top");
+            console.log("Added curly hair with absolute positioning");
         }
     ];
     
-    // Apply random hair styles to each mole
+    // Apply hair to each mole with debugging
     moles.forEach((mole, index) => {
+        console.log(`Mole ${index} position:`, mole.position);
+        console.log(`Mole ${index} rotation:`, mole.rotation);
+        
         // Choose a random hair style
         const randomStyle = hairStyles[Math.floor(Math.random() * hairStyles.length)];
         
         // Apply the hair style
         randomStyle(mole);
-        
-        console.log(`Final hair fix on mole ${index}`);
     });
     
-    console.log("Final hair positioning applied to all moles");
+    console.log("Complete hair positioning overhaul applied");
 }
 
-// Call the function to fix hair positioning
-finalHairPositionFix();
+// Add a function to manually position hair on top
+function addManualHair() {
+    moles.forEach((mole, index) => {
+        // Remove any existing hair
+        for (let i = mole.children.length - 1; i >= 0; i--) {
+            const child = mole.children[i];
+            if (child.userData && child.userData.isHair) {
+                mole.remove(child);
+            }
+        }
+        
+        // Create a simple hair tuft directly on top
+        const hairMaterial = new THREE.MeshLambertMaterial({ 
+            color: [0x3D2314, 0xFF00FF, 0x00FF00, 0xFF0000][Math.floor(Math.random() * 4)]
+        });
+        
+        // Create 3-5 spikes in a tight group on top
+        const spikeCount = 3 + Math.floor(Math.random() * 3);
+        
+        for (let i = 0; i < spikeCount; i++) {
+            const spike = new THREE.Mesh(
+                new THREE.ConeGeometry(0.06, 0.25, 8),
+                hairMaterial
+            );
+            
+            // Position directly on top with slight variation
+            spike.position.set(
+                (Math.random() - 0.5) * 0.1,
+                0.5, // Top of sphere
+                (Math.random() - 0.5) * 0.1
+            );
+            
+            // Point upward with slight variation
+            spike.rotation.x = (Math.random() - 0.5) * 0.3;
+            spike.rotation.z = (Math.random() - 0.5) * 0.3;
+            
+            spike.userData.isHair = true;
+            mole.add(spike);
+        }
+        
+        console.log(`Added manual hair to mole ${index}`);
+    });
+}
+
+// Call the manual hair function for most reliable positioning
+addManualHair();
 
 // Update the version indicator
 if (window.gameVersionInfo) {
-    window.gameVersionInfo.version = "1.0.4";
+    window.gameVersionInfo.version = "1.0.5";
     window.gameVersionInfo.timestamp = new Date().toISOString();
-    window.gameVersionInfo.cacheStatus = "Fresh Load - Final Hair Fix";
+    window.gameVersionInfo.cacheStatus = "Fresh Load - Manual Hair Fix";
 }
 
 // Update the version display if it exists
 document.querySelectorAll('[style*="position: absolute"][style*="bottom: 10px"][style*="right: 10px"]').forEach(el => {
-    el.textContent = 'v1.0.4';
+    el.textContent = 'v1.0.5';
 });
 
-console.log("%c Final Mole Hair Fix Applied! %c", 
+console.log("%c Manual Hair Positioning Applied! %c", 
     "background: #4CAF50; color: white; font-size: 14px; padding: 3px; border-radius: 3px;",
     "");
