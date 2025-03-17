@@ -334,10 +334,10 @@ function createRealisticHairstyle() {
         const tubeGeometry = new THREE.TubeGeometry(curve, 20, 0.02, 8, false);
         const hairStrand = new THREE.Mesh(tubeGeometry, hairMaterial);
 
-        // Randomize position
+        // Adjust position to sit directly on the mole's head
         hairStrand.position.set(
             (Math.random() - 0.5) * 0.8, // Random x position
-            0.8,                        // Fixed y position
+            0.4,                        // Lower y position
             (Math.random() - 0.5) * 0.4 // Random z position
         );
 
@@ -1071,7 +1071,7 @@ function addVersionIndicator() {
     );
     
     console.log(
-        "%c Version: pink" + versionNumber + " | Loaded: " + versionTimestamp + " %c",
+        "%c Version: red" + versionNumber + " | Loaded: " + versionTimestamp + " %c",
         "background: #2196F3; color: white; font-size: 14px; padding: 3px; border-radius: 3px;",
         ""
     );
