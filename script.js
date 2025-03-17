@@ -318,26 +318,26 @@ function updateMoleText(mole, word) {
     texture.needsUpdate = true;
 }
 
-// Function to create a realistic, curved hairstyle
-function createRealisticHairstyle() {
+// Function to create a realistic, dense hairstyle
+function createDenseHairstyle() {
     const hairGroup = new THREE.Group();
     const hairMaterial = new THREE.MeshLambertMaterial({ color: 0x8B4513 }); // Brown color
 
     // Create a curve for each strand
-    for (let i = 0; i < 20; i++) {
+    for (let i = 0; i < 50; i++) { // Increase quantity
         const curve = new THREE.CatmullRomCurve3([
             new THREE.Vector3(0, 0, 0),
             new THREE.Vector3((Math.random() - 0.5) * 0.2, 0.2, (Math.random() - 0.5) * 0.2),
             new THREE.Vector3((Math.random() - 0.5) * 0.4, 0.4, (Math.random() - 0.5) * 0.4)
         ]);
 
-        const tubeGeometry = new THREE.TubeGeometry(curve, 20, 0.02, 8, false);
+        const tubeGeometry = new THREE.TubeGeometry(curve, 20, 0.01, 8, false); // Smaller diameter
         const hairStrand = new THREE.Mesh(tubeGeometry, hairMaterial);
 
-        // Adjust position to sit directly on the mole's head
+        // Adjust position to sit slightly above the mole's head
         hairStrand.position.set(
             (Math.random() - 0.5) * 0.8, // Random x position
-            0.4,                        // Lower y position
+            0.5,                        // Slightly higher y position
             (Math.random() - 0.5) * 0.4 // Random z position
         );
 
@@ -347,7 +347,7 @@ function createRealisticHairstyle() {
     return hairGroup;
 }
 
-// Modify the createMole function to add the realistic hair
+// Modify the createMole function to add the dense hair
 function createMole() {
     const moleGroup = new THREE.Group();
     
@@ -364,7 +364,7 @@ function createMole() {
     moleGroup.add(facingGroup);
 
     // Add hair to the facing group
-    const hair = createRealisticHairstyle();
+    const hair = createDenseHairstyle();
     facingGroup.add(hair);
 
     // Text plane
@@ -1071,7 +1071,7 @@ function addVersionIndicator() {
     );
     
     console.log(
-        "%c Version: red" + versionNumber + " | Loaded: " + versionTimestamp + " %c",
+        "%c Version: black" + versionNumber + " | Loaded: " + versionTimestamp + " %c",
         "background: #2196F3; color: white; font-size: 14px; padding: 3px; border-radius: 3px;",
         ""
     );
