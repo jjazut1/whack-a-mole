@@ -1024,57 +1024,105 @@ function improveRendererSettings() {
     }
 }
 
-// Version indicator that doesn't interfere with constants
-function addVersionIndicator() {
-    // Create a unique version timestamp
-    const versionTimestamp = new Date().toISOString();
-    const versionNumber = "1.0.1"; // Incremented to reflect the fix
+// Create a distinctive version indicator with timestamp
+(function createVersionIndicator() {
+    // Remove any existing version indicators
+    document.querySelectorAll('[data-version-indicator="true"]').forEach(el => {
+        el.remove();
+    });
     
-    // Create a distinctive console message
+    // Create a unique version identifier
+    const versionNumber = "1.0.9";
+    const timestamp = new Date().toISOString();
+    const uniqueId = Math.random().toString(36).substring(2, 8);
+    
+    // Create the indicator element
+    const indicator = document.createElement('div');
+    indicator.setAttribute('data-version-indicator', 'true');
+    indicator.style.position = 'fixed';
+    indicator.style.bottom = '10px';
+    indicator.style.right = '10px';
+    indicator.style.backgroundColor = 'purple';
+    indicator.style.color = 'white';
+    indicator.style.padding = '8px 12px';
+    indicator.style.borderRadius = '5px';
+    indicator.style.fontFamily = 'monospace';
+    indicator.style.fontSize = '14px';
+    indicator.style.zIndex = '10000';
+    indicator.style.boxShadow = '0 0 10px rgba(0,0,0,0.5)';
+    indicator.style.userSelect = 'none';
+    
+    // Set the content
+    indicator.textContent = `v${versionNumber}-${uniqueId}`;
+    
+    // Add hover effect to show more details
+    indicator.title = `Loaded: ${timestamp}`;
+    indicator.addEventListener('click', function() {
+        alert(`Version: ${versionNumber}\nLoaded: ${timestamp}\nID: ${uniqueId}\nCache Status: Fresh Load`);
+    });
+    
+    // Add to document
+    document.body.appendChild(indicator);
+    
+    // Also add a more prominent indicator at the top
+    const topIndicator = document.createElement('div');
+    topIndicator.setAttribute('data-version-indicator', 'true');
+    topIndicator.style.position = 'fixed';
+    topIndicator.style.top = '10px';
+    topIndicator.style.left = '50%';
+    topIndicator.style.transform = 'translateX(-50%)';
+    topIndicator.style.backgroundColor = 'blue';
+    topIndicator.style.color = 'white';
+    topIndicator.style.padding = '10px 20px';
+    topIndicator.style.borderRadius = '5px';
+    topIndicator.style.fontFamily = 'Arial, sans-serif';
+    topIndicator.style.fontSize = '16px';
+    topIndicator.style.fontWeight = 'bold';
+    topIndicator.style.zIndex = '10001';
+    topIndicator.style.boxShadow = '0 0 10px rgba(0,0,0,0.5)';
+    
+    // Set the content with unique ID to ensure cache is cleared
+    topIndicator.textContent = `Fresh Version ${versionNumber}-${uniqueId.substring(0, 4)}`;
+    
+    // Add to document
+    document.body.appendChild(topIndicator);
+    
+    // Log to console
     console.log(
-        "%c Whack-a-Mole Educational Game - Latest Version Running %c",
-        "background: #4CAF50; color: white; font-size: 16px; padding: 5px; border-radius: 5px;",
+        `%c Version ${versionNumber}-${uniqueId} loaded at ${timestamp} %c`,
+        "background: #9C27B0; color: white; font-size: 14px; padding: 5px; border-radius: 3px;",
         ""
     );
     
-    console.log(
-        "%c Version: " + versionNumber + " | Loaded: " + versionTimestamp + " %c",
-        "background: #2196F3; color: white; font-size: 14px; padding: 3px; border-radius: 3px;",
-        ""
-    );
-    
-    // Add a global variable to check in the console
-    window.gameVersionInfo = {
+    // Store in window object for verification
+    window.versionInfo = {
         version: versionNumber,
-        timestamp: versionTimestamp,
-        cacheStatus: "Fresh Load - Fixed Constant Error"
+        timestamp: timestamp,
+        id: uniqueId,
+        status: "Fresh Load"
     };
     
-    // Add a visual indicator on the screen
-    const versionIndicator = document.createElement('div');
-    versionIndicator.style.position = 'absolute';
-    versionIndicator.style.bottom = '10px';
-    versionIndicator.style.right = '10px';
-    versionIndicator.style.background = 'rgba(0,0,0,0.5)';
-    versionIndicator.style.color = 'white';
-    versionIndicator.style.padding = '5px';
-    versionIndicator.style.borderRadius = '3px';
-    versionIndicator.style.fontSize = '12px';
-    versionIndicator.style.fontFamily = 'monospace';
-    versionIndicator.textContent = 'v' + versionNumber;
-    document.body.appendChild(versionIndicator);
-    
-    console.log("Version indicator added - running latest version with fixes");
-    
-    return "Version indicator added successfully";
-}
+    return `Version indicator ${versionNumber}-${uniqueId} created`;
+})();
 
-// Call the fixed functions
-improveRendererSettings();
-addVersionIndicator();
-
-// You can also add this at the end of your main code
-console.log("Game initialization complete - running latest version");
+// Add a function to check version from console
+window.checkVersion = function() {
+    if (window.versionInfo) {
+        console.log(
+            `%c Current Version: ${window.versionInfo.version}-${window.versionInfo.id} %c`,
+            "background: #4CAF50; color: white; font-size: 14px; padding: 5px; border-radius: 3px;",
+            ""
+        );
+        return window.versionInfo;
+    } else {
+        console.log(
+            `%c No version info available %c`,
+            "background: #F44336; color: white; font-size: 14px; padding: 5px; border-radius: 3px;",
+            ""
+        );
+        return "No version info available";
+    }
+};
 
 // Complete overhaul of hair positioning using local coordinates
 function fixHairPositioningCompletely() {
