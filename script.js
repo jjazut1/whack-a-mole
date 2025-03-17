@@ -1355,7 +1355,7 @@ console.log("Game initialization complete - running latest version");
     indicator.style.fontSize = '14px';
     indicator.style.fontWeight = 'bold';
     indicator.style.zIndex = '1002';
-    indicator.textContent = `RED HAIR v${versionNumber}`;
+    indicator.textContent = `blue HAIR v${versionNumber}`;
     document.body.appendChild(indicator);
     
     // Force a render update
@@ -1369,5 +1369,179 @@ console.log("Game initialization complete - running latest version");
     }
     
     console.log("Super visible hair implementation complete");
+})();
+
+// Version 1.5.4 - Final Hair Approach
+(function finalHairApproach() {
+    // Create a unique version identifier
+    const versionNumber = "1.5.4";
+    
+    console.log(`%c Final Hair v${versionNumber} %c`, 
+        "background: #4CAF50; color: white; font-size: 14px; padding: 5px; border-radius: 3px;",
+        "");
+    
+    // Add hair to any mole that's visible, ignoring isUp property
+    function addHairToVisibleMoles() {
+        // Check if moles array exists
+        if (!moles || !Array.isArray(moles) || moles.length === 0) {
+            console.log("No moles found");
+            return;
+        }
+        
+        console.log(`Found ${moles.length} moles`);
+        
+        // Process each mole
+        moles.forEach((mole, index) => {
+            try {
+                if (!mole) {
+                    console.log(`Mole ${index} is invalid`);
+                    return;
+                }
+                
+                // Check if mole is visible by y position (above ground)
+                const isAboveGround = mole.position.y > 0;
+                
+                console.log(`Mole ${index} - Position: ${mole.position.y}, Above ground: ${isAboveGround}`);
+                
+                // Also check children to see if there's a visible mesh
+                let hasVisibleBody = false;
+                mole.children.forEach(child => {
+                    if (child.isMesh && child.visible) {
+                        hasVisibleBody = true;
+                    }
+                });
+                
+                if (isAboveGround || hasVisibleBody) {
+                    console.log(`Mole ${index} appears to be visible, adding hair`);
+                    
+                    // Create extremely visible hair
+                    const hairGeometry = new THREE.BoxGeometry(0.5, 0.15, 0.3);
+                    const hairMaterial = new THREE.MeshBasicMaterial({ color: 0xFF0000 }); // Bright red
+                    const hair = new THREE.Mesh(hairGeometry, hairMaterial);
+                    
+                    // Position it directly on top of the mole
+                    // Assuming mole's origin is at its center
+                    hair.position.set(0, 0.5, 0); // Position at y=0.5 units above the center
+                    
+                    // Add directly to the mole
+                    mole.add(hair);
+                    
+                    console.log(`Added visible hair to mole ${index}`);
+                } else {
+                    console.log(`Mole ${index} appears hidden, skipping`);
+                }
+            } catch (error) {
+                console.error(`Error processing mole ${index}:`, error);
+            }
+        });
+    }
+    
+    // For each visible mole in the scene, regardless of whether it's in the moles array
+    function findAllVisibleMolesInScene() {
+        try {
+            let visibleMolesFound = 0;
+            
+            // Find all objects in the scene that might be moles
+            scene.children.forEach((object, index) => {
+                // Check if it looks like a mole (has a sphere geometry child)
+                let isMoleObject = false;
+                let moleBody = null;
+                
+                if (object.children) {
+                    object.children.forEach(child => {
+                        if (child.geometry && 
+                            (child.geometry.type === 'SphereGeometry' || child.geometry.type === 'SphereBufferGeometry')) {
+                            isMoleObject = true;
+                            moleBody = child;
+                        }
+                    });
+                }
+                
+                if (isMoleObject && moleBody) {
+                    visibleMolesFound++;
+                    console.log(`Found visible mole-like object at index ${index}`);
+                    
+                    // Create extremely visible hair
+                    const hairGeometry = new THREE.BoxGeometry(0.5, 0.15, 0.3);
+                    const hairMaterial = new THREE.MeshBasicMaterial({ color: 0xFF0000 }); // Bright red
+                    const hair = new THREE.Mesh(hairGeometry, hairMaterial);
+                    
+                    // Position on top of the mole body
+                    hair.position.set(0, 0.5, 0);
+                    
+                    // Add to the mole body
+                    moleBody.add(hair);
+                    
+                    console.log(`Added visible hair to mole-like object ${index}`);
+                }
+            });
+            
+            console.log(`Found ${visibleMolesFound} visible mole-like objects in scene`);
+            
+            if (visibleMolesFound === 0) {
+                // If no moles were found, try the moles array as a fallback
+                addHairToVisibleMoles();
+            }
+        } catch (error) {
+            console.error("Error finding visible moles in scene:", error);
+            // Fallback to the original approach
+            addHairToVisibleMoles();
+        }
+    }
+    
+    // Try both approaches
+    findAllVisibleMolesInScene();
+    
+    // Add an on-screen message about what we're doing
+    const message = document.createElement('div');
+    message.style.position = 'fixed';
+    message.style.top = '20%';
+    message.style.left = '50%';
+    message.style.transform = 'translate(-50%, -50%)';
+    message.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+    message.style.color = 'white';
+    message.style.padding = '15px 20px';
+    message.style.borderRadius = '10px';
+    message.style.fontFamily = 'Arial, sans-serif';
+    message.style.fontSize = '16px';
+    message.style.fontWeight = 'bold';
+    message.style.textAlign = 'center';
+    message.style.zIndex = '2000';
+    message.style.pointerEvents = 'none';
+    message.innerHTML = `Finding and adding bright red hair to all visible moles.<br>Version ${versionNumber}`;
+    document.body.appendChild(message);
+    
+    // Remove the message after 5 seconds
+    setTimeout(() => {
+        message.remove();
+    }, 5000);
+    
+    // Add version indicator
+    const indicator = document.createElement('div');
+    indicator.style.position = 'fixed';
+    indicator.style.bottom = '10px';
+    indicator.style.right = '10px';
+    indicator.style.backgroundColor = 'rgba(76, 175, 80, 0.8)';
+    indicator.style.color = 'white';
+    indicator.style.padding = '8px 15px';
+    indicator.style.borderRadius = '5px';
+    indicator.style.fontFamily = 'Arial, sans-serif';
+    indicator.style.fontSize = '14px';
+    indicator.style.fontWeight = 'bold';
+    indicator.style.zIndex = '1002';
+    indicator.textContent = `FINAL HAIR v${versionNumber}`;
+    document.body.appendChild(indicator);
+    
+    // Force a render update
+    if (typeof renderer !== 'undefined' && typeof scene !== 'undefined' && typeof camera !== 'undefined') {
+        try {
+            renderer.render(scene, camera);
+            console.log("Forced render update");
+        } catch (error) {
+            console.error("Error during render:", error);
+        }
+    }
+    
+    console.log("Final hair approach complete");
 })();
 
