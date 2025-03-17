@@ -318,19 +318,19 @@ function updateMoleText(mole, word) {
     texture.needsUpdate = true;
 }
 
-// Function to create a more detailed hairstyle
-function createDetailedHairstyle() {
+// Function to create a more visible hairstyle
+function createVisibleHairstyle() {
     const hairGroup = new THREE.Group();
 
-    // Main hair volume
-    const mainHairGeometry = new THREE.CylinderGeometry(0.5, 0.5, 0.2, 32);
+    // Create the main hair volume
+    const mainHairGeometry = new THREE.BoxGeometry(1.0, 0.3, 0.6); // Larger size
     const mainHairMaterial = new THREE.MeshLambertMaterial({ color: 0x8B4513 }); // Brown color
     const mainHair = new THREE.Mesh(mainHairGeometry, mainHairMaterial);
-    mainHair.position.set(0, 0.6, 0);
+    mainHair.position.set(0, 0.6, 0); // Higher position
     hairGroup.add(mainHair);
 
-    // Side hair volumes
-    const sideHairGeometry = new THREE.SphereGeometry(0.2, 16, 16);
+    // Create side hair volumes
+    const sideHairGeometry = new THREE.BoxGeometry(0.3, 0.3, 0.6); // Larger size
     const sideHairLeft = new THREE.Mesh(sideHairGeometry, mainHairMaterial);
     sideHairLeft.position.set(-0.6, 0.5, 0);
     hairGroup.add(sideHairLeft);
@@ -339,17 +339,16 @@ function createDetailedHairstyle() {
     sideHairRight.position.set(0.6, 0.5, 0);
     hairGroup.add(sideHairRight);
 
-    // Front wave
-    const frontWaveGeometry = new THREE.CylinderGeometry(0.3, 0.3, 0.1, 32);
+    // Create front wave
+    const frontWaveGeometry = new THREE.BoxGeometry(0.8, 0.2, 0.3); // Larger size
     const frontWave = new THREE.Mesh(frontWaveGeometry, mainHairMaterial);
-    frontWave.position.set(0, 0.7, 0.3);
-    frontWave.rotation.x = Math.PI / 2;
+    frontWave.position.set(0, 0.7, 0.3); // Higher and more forward
     hairGroup.add(frontWave);
 
     return hairGroup;
 }
 
-// Modify the createMole function to add the detailed hair
+// Modify the createMole function to add the visible hair
 function createMole() {
     const moleGroup = new THREE.Group();
     
@@ -366,7 +365,7 @@ function createMole() {
     moleGroup.add(facingGroup);
 
     // Add hair to the facing group
-    const hair = createDetailedHairstyle();
+    const hair = createVisibleHairstyle();
     facingGroup.add(hair);
 
     // Text plane
@@ -1073,7 +1072,7 @@ function addVersionIndicator() {
     );
     
     console.log(
-        "%c Version: pink" + versionNumber + " | Loaded: " + versionTimestamp + " %c",
+        "%c Version: red" + versionNumber + " | Loaded: " + versionTimestamp + " %c",
         "background: #2196F3; color: white; font-size: 14px; padding: 3px; border-radius: 3px;",
         ""
     );
