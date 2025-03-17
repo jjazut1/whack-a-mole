@@ -1286,3 +1286,88 @@ console.log("Game initialization complete - running latest version");
     console.log("Fixed styled hair implementation complete");
 })();
 
+// Version 1.5.3 - Super Simple Visible Hair
+(function addVisibleHair() {
+    // Create a unique version identifier
+    const versionNumber = "1.5.3";
+    
+    console.log(`%c Visible Hair v${versionNumber} %c`, 
+        "background: #E91E63; color: white; font-size: 14px; padding: 5px; border-radius: 3px;",
+        "");
+    
+    // Force update to all moles
+    function forceVisibleHairOnMoles() {
+        // Check if moles array exists
+        if (!moles || !Array.isArray(moles) || moles.length === 0) {
+            console.log("No moles found");
+            return;
+        }
+        
+        console.log(`Found ${moles.length} moles, adding visible hair`);
+        
+        // Process each mole
+        moles.forEach((mole, index) => {
+            try {
+                if (!mole || !mole.userData) {
+                    console.log(`Mole ${index} is invalid`);
+                    return;
+                }
+                
+                // Skip moles that aren't visible
+                if (!mole.userData.isUp) {
+                    console.log(`Mole ${index} is not up, skipping`);
+                    return;
+                }
+                
+                console.log(`Adding hair to mole ${index}`);
+                
+                // Create an EXTREMELY visible hair piece
+                const hairGeometry = new THREE.BoxGeometry(0.5, 0.15, 0.3);
+                const hairMaterial = new THREE.MeshBasicMaterial({ color: 0xFF0000 }); // Bright red for visibility
+                const hair = new THREE.Mesh(hairGeometry, hairMaterial);
+                
+                // Position it high and forward for maximum visibility
+                hair.position.set(0, 0.8, 0);
+                
+                // Add directly to the mole (not the facing group)
+                mole.add(hair);
+                
+                console.log(`Added visible hair to mole ${index}`);
+            } catch (error) {
+                console.error(`Error adding hair to mole ${index}:`, error);
+            }
+        });
+    }
+    
+    // Add hair to all visible moles
+    forceVisibleHairOnMoles();
+    
+    // Add a clear version indicator
+    const indicator = document.createElement('div');
+    indicator.style.position = 'fixed';
+    indicator.style.bottom = '10px';
+    indicator.style.right = '10px';
+    indicator.style.backgroundColor = 'rgba(233, 30, 99, 0.8)';
+    indicator.style.color = 'white';
+    indicator.style.padding = '8px 15px';
+    indicator.style.borderRadius = '5px';
+    indicator.style.fontFamily = 'Arial, sans-serif';
+    indicator.style.fontSize = '14px';
+    indicator.style.fontWeight = 'bold';
+    indicator.style.zIndex = '1002';
+    indicator.textContent = `RED HAIR v${versionNumber}`;
+    document.body.appendChild(indicator);
+    
+    // Force a render update
+    if (typeof renderer !== 'undefined' && typeof scene !== 'undefined' && typeof camera !== 'undefined') {
+        try {
+            renderer.render(scene, camera);
+            console.log("Forced render update");
+        } catch (error) {
+            console.error("Error during render:", error);
+        }
+    }
+    
+    console.log("Super visible hair implementation complete");
+})();
+
