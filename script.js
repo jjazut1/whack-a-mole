@@ -318,13 +318,13 @@ function updateMoleText(mole, word) {
     texture.needsUpdate = true;
 }
 
-// Function to create a realistic, varied hairstyle
-function createVariedHairstyle() {
+// Function to create a dense, dark hairstyle
+function createDenseDarkHairstyle() {
     const hairGroup = new THREE.Group();
-    const hairMaterial = new THREE.MeshLambertMaterial({ color: 0x8B4513 }); // Brown color
+    const hairMaterial = new THREE.MeshLambertMaterial({ color: 0x5A3A1B }); // Darker brown color
 
     // Create a curve for each strand
-    for (let i = 0; i < 80; i++) { // Increase quantity
+    for (let i = 0; i < 150; i++) { // Increase quantity
         const length = 0.3 + Math.random() * 0.2; // Random length
         const curve = new THREE.CatmullRomCurve3([
             new THREE.Vector3(0, 0, 0),
@@ -332,7 +332,7 @@ function createVariedHairstyle() {
             new THREE.Vector3((Math.random() - 0.5) * 0.4, length, (Math.random() - 0.5) * 0.4)
         ]);
 
-        const tubeGeometry = new THREE.TubeGeometry(curve, 20, 0.008, 8, false); // Smaller diameter
+        const tubeGeometry = new THREE.TubeGeometry(curve, 20, 0.004, 8, false); // Smaller diameter
         const hairStrand = new THREE.Mesh(tubeGeometry, hairMaterial);
 
         // Adjust position to sit slightly above the mole's head
@@ -348,7 +348,7 @@ function createVariedHairstyle() {
     return hairGroup;
 }
 
-// Modify the createMole function to add the varied hair
+// Modify the createMole function to add the dense, dark hair
 function createMole() {
     const moleGroup = new THREE.Group();
     
@@ -365,7 +365,7 @@ function createMole() {
     moleGroup.add(facingGroup);
 
     // Add hair to the facing group
-    const hair = createVariedHairstyle();
+    const hair = createDenseDarkHairstyle();
     facingGroup.add(hair);
 
     // Text plane
