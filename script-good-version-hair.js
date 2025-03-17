@@ -55,13 +55,10 @@ instructionsElement.style.textAlign = 'center';
 instructionsElement.innerHTML = 'Hit the mole when you see a word with the short "a" sound!<br>Click anywhere to start';
 document.body.appendChild(instructionsElement);
 
-// Adjust the camera position
-camera.position.set(0, 10, 12); // Move the camera up
-camera.lookAt(0, 0, 0);
-
-// Function to create a smaller terrain
-function createSmallerTerrain() {
-    const geometry = new THREE.PlaneGeometry(30, 30, 50, 50); // Smaller size
+// Simplified terrain creation
+function createTerrain() {
+    // Use PlaneGeometry instead of PlaneBufferGeometry (which is deprecated)
+    const geometry = new THREE.PlaneGeometry(40, 40, 50, 50);
     
     // Modify vertices for curved edges
     const positionAttribute = geometry.getAttribute('position');
@@ -71,42 +68,45 @@ function createSmallerTerrain() {
         const y = positionAttribute.getY(i);
         const distance = Math.sqrt(x * x + y * y);
         
-        if (distance > 7) { // Adjust falloff
-            const z = -0.5 * Math.pow((distance - 7) / 7, 2);
+        if (distance > 10) {
+            // Create curved falloff
+            const z = -0.5 * Math.pow((distance - 10) / 10, 2);
             positionAttribute.setZ(i, z);
         }
     }
     
     geometry.computeVertexNormals();
     
+    // Create material with solid color
     const material = new THREE.MeshLambertMaterial({
         color: 0x90EE90, // Light green
         side: THREE.DoubleSide
     });
     
     const terrain = new THREE.Mesh(geometry, material);
-    terrain.rotation.x = Math.PI / 2;
-    terrain.position.y = -0.1;
+    terrain.rotation.x = Math.PI / 2; // Rotate to be horizontal
+    terrain.position.y = -0.1; // Position slightly below holes
     
     return terrain;
 }
 
 // Setup scene function
 function setupScene() {
+    // Clear existing scene elements but keep lights
     const lights = scene.children.filter(child => child instanceof THREE.Light);
     scene.children.length = 0;
     lights.forEach(light => scene.add(light));
 
-    // Add smaller terrain
-    const terrain = createSmallerTerrain();
-    terrain.position.y = -0.5;
+    // Add terrain first (so it's in the background)
+    const terrain = createTerrain();
+    terrain.position.y = -0.5; // Move terrain down slightly
     scene.add(terrain);
 
     // Create and add clouds
     const cloudPositions = [
-        { x: -5, y: 8, z: -5 }, // Higher y value
-        { x: 0, y: 9, z: -4 },  // Higher y value
-        { x: 5, y: 8, z: -5 }   // Higher y value
+        { x: -5, y: 5, z: -5 },
+        { x: 0, y: 6, z: -4 },
+        { x: 5, y: 5, z: -5 }
     ];
 
     cloudPositions.forEach(pos => {
@@ -115,7 +115,12 @@ function setupScene() {
         scene.add(cloud);
     });
 
+    // Add holes and moles after terrain
     setupHolesAndMoles();
+
+    // Setup camera
+    camera.position.set(0, 8, 12);
+    camera.lookAt(0, 0, 0);
 }
 
 // Setup holes and moles
@@ -525,7 +530,7 @@ function createCloud() {
 // Explicitly add terrain and clouds to scene
 function addTerrainAndClouds() {
     // Add terrain
-    const terrain = createSmallerTerrain();
+    const terrain = createTerrain();
     scene.add(terrain);
     console.log("Terrain added:", terrain);
     
@@ -1067,7 +1072,7 @@ function addVersionIndicator() {
     );
     
     console.log(
-        "%c Version: white" + versionNumber + " | Loaded: " + versionTimestamp + " %c",
+        "%c Version: pink" + versionNumber + " | Loaded: " + versionTimestamp + " %c",
         "background: #2196F3; color: white; font-size: 14px; padding: 3px; border-radius: 3px;",
         ""
     );
