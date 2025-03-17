@@ -318,20 +318,21 @@ function updateMoleText(mole, word) {
     texture.needsUpdate = true;
 }
 
-// Function to create a realistic, dense hairstyle
-function createDenseHairstyle() {
+// Function to create a realistic, varied hairstyle
+function createVariedHairstyle() {
     const hairGroup = new THREE.Group();
     const hairMaterial = new THREE.MeshLambertMaterial({ color: 0x8B4513 }); // Brown color
 
     // Create a curve for each strand
-    for (let i = 0; i < 50; i++) { // Increase quantity
+    for (let i = 0; i < 80; i++) { // Increase quantity
+        const length = 0.3 + Math.random() * 0.2; // Random length
         const curve = new THREE.CatmullRomCurve3([
             new THREE.Vector3(0, 0, 0),
-            new THREE.Vector3((Math.random() - 0.5) * 0.2, 0.2, (Math.random() - 0.5) * 0.2),
-            new THREE.Vector3((Math.random() - 0.5) * 0.4, 0.4, (Math.random() - 0.5) * 0.4)
+            new THREE.Vector3((Math.random() - 0.5) * 0.2, length / 2, (Math.random() - 0.5) * 0.2),
+            new THREE.Vector3((Math.random() - 0.5) * 0.4, length, (Math.random() - 0.5) * 0.4)
         ]);
 
-        const tubeGeometry = new THREE.TubeGeometry(curve, 20, 0.01, 8, false); // Smaller diameter
+        const tubeGeometry = new THREE.TubeGeometry(curve, 20, 0.008, 8, false); // Smaller diameter
         const hairStrand = new THREE.Mesh(tubeGeometry, hairMaterial);
 
         // Adjust position to sit slightly above the mole's head
@@ -347,7 +348,7 @@ function createDenseHairstyle() {
     return hairGroup;
 }
 
-// Modify the createMole function to add the dense hair
+// Modify the createMole function to add the varied hair
 function createMole() {
     const moleGroup = new THREE.Group();
     
@@ -364,7 +365,7 @@ function createMole() {
     moleGroup.add(facingGroup);
 
     // Add hair to the facing group
-    const hair = createDenseHairstyle();
+    const hair = createVariedHairstyle();
     facingGroup.add(hair);
 
     // Text plane
@@ -1071,7 +1072,7 @@ function addVersionIndicator() {
     );
     
     console.log(
-        "%c Version: black" + versionNumber + " | Loaded: " + versionTimestamp + " %c",
+        "%c Version: white" + versionNumber + " | Loaded: " + versionTimestamp + " %c",
         "background: #2196F3; color: white; font-size: 14px; padding: 3px; border-radius: 3px;",
         ""
     );
