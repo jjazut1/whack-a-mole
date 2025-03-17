@@ -91,6 +91,35 @@ function createSmallerTerrain() {
     return terrain;
 }
 
+// Function to create clouds
+function createCloud() {
+    const group = new THREE.Group();
+    
+    // Create simple white spheres
+    const sphereGeometry = new THREE.SphereGeometry(1, 16, 16);
+    const material = new THREE.MeshBasicMaterial({ color: 0xFFFFFF });
+    
+    // Main sphere
+    const mainSphere = new THREE.Mesh(sphereGeometry, material);
+    group.add(mainSphere);
+    
+    // Add additional spheres
+    const positions = [
+        { x: -1, y: 0.3, z: 0 },
+        { x: 1, y: 0.3, z: 0 },
+        { x: 0, y: 0.5, z: 0 }
+    ];
+    
+    positions.forEach(pos => {
+        const sphere = new THREE.Mesh(sphereGeometry, material);
+        sphere.position.set(pos.x, pos.y, pos.z);
+        sphere.scale.set(0.7, 0.5, 0.7);
+        group.add(sphere);
+    });
+    
+    return group;
+}
+
 // Setup scene function
 function setupScene() {
     const lights = scene.children.filter(child => child instanceof THREE.Light);
@@ -102,11 +131,11 @@ function setupScene() {
     terrain.position.y = -0.5;
     scene.add(terrain);
 
-    // Create and add clouds
+    // Create and add clouds with lower y-position
     const cloudPositions = [
-        { x: -5, y: 8, z: -5 }, // Higher y value
-        { x: 0, y: 9, z: -4 },  // Higher y value
-        { x: 5, y: 8, z: -5 }   // Higher y value
+        { x: -5, y: 5, z: -5 }, // Lower y value
+        { x: 0, y: 6, z: -4 },  // Lower y value
+        { x: 5, y: 5, z: -5 }   // Lower y value
     ];
 
     cloudPositions.forEach(pos => {
@@ -491,35 +520,6 @@ function gameLoop() {
     }
     
     setTimeout(gameLoop, 2000);
-}
-
-// Simplified cloud creation
-function createCloud() {
-    const group = new THREE.Group();
-    
-    // Create simple white spheres
-    const sphereGeometry = new THREE.SphereGeometry(1, 16, 16);
-    const material = new THREE.MeshBasicMaterial({ color: 0xFFFFFF });
-    
-    // Main sphere
-    const mainSphere = new THREE.Mesh(sphereGeometry, material);
-    group.add(mainSphere);
-    
-    // Add additional spheres
-    const positions = [
-        { x: -1, y: 0.3, z: 0 },
-        { x: 1, y: 0.3, z: 0 },
-        { x: 0, y: 0.5, z: 0 }
-    ];
-    
-    positions.forEach(pos => {
-        const sphere = new THREE.Mesh(sphereGeometry, material);
-        sphere.position.set(pos.x, pos.y, pos.z);
-        sphere.scale.set(0.7, 0.5, 0.7);
-        group.add(sphere);
-    });
-    
-    return group;
 }
 
 // Explicitly add terrain and clouds to scene
@@ -1067,7 +1067,7 @@ function addVersionIndicator() {
     );
     
     console.log(
-        "%c Version: white" + versionNumber + " | Loaded: " + versionTimestamp + " %c",
+        "%c Version: green" + versionNumber + " | Loaded: " + versionTimestamp + " %c",
         "background: #2196F3; color: white; font-size: 14px; padding: 3px; border-radius: 3px;",
         ""
     );
