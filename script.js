@@ -1552,3 +1552,148 @@ if (typeof renderer !== 'undefined') {
 console.log("%c Final Hair Fix Applied! %c", 
     "background: #00FF00; color: black; font-size: 14px; padding: 3px; border-radius: 3px;",
     "");
+
+// Simplified hair fix without using traverse
+function simpleHairFix() {
+    console.log("Applying simple hair fix");
+    
+    // Direct approach to add hair to moles
+    if (typeof moles !== 'undefined' && moles.length > 0) {
+        console.log(`Found ${moles.length} moles in moles array`);
+        
+        // Add hair to each mole
+        moles.forEach((mole, index) => {
+            try {
+                // Create a simple hair spike
+                const hairMaterial = new THREE.MeshBasicMaterial({ 
+                    color: 0xFF0000 // Bright red
+                });
+                
+                const hair = new THREE.Mesh(
+                    new THREE.ConeGeometry(0.15, 0.4, 8),
+                    hairMaterial
+                );
+                
+                // Position directly on top
+                hair.position.set(0, 0.8, 0);
+                hair.rotation.x = Math.PI / 2; // Point up
+                
+                // Add to mole
+                mole.add(hair);
+                
+                console.log(`Added hair to mole ${index}`);
+            } catch (error) {
+                console.error(`Error adding hair to mole ${index}:`, error);
+            }
+        });
+    } else {
+        console.log("Moles array not found or empty");
+    }
+    
+    // Update the debug message
+    try {
+        const debugMessages = document.querySelectorAll('[style*="background: rgba(255,0,0,0.7)"]');
+        if (debugMessages.length > 0) {
+            debugMessages[0].textContent = 'Simple Hair v1.0.8 Applied';
+        }
+    } catch (e) {
+        console.error("Error updating debug message:", e);
+    }
+    
+    console.log("Simple hair fix applied");
+}
+
+// Alternative approach using direct DOM manipulation
+function addHairViaDOM() {
+    console.log("Adding hair indicator via DOM");
+    
+    // Create a hair indicator that follows moles
+    const hairIndicator = document.createElement('div');
+    hairIndicator.style.position = 'absolute';
+    hairIndicator.style.width = '20px';
+    hairIndicator.style.height = '20px';
+    hairIndicator.style.backgroundColor = 'red';
+    hairIndicator.style.borderRadius = '50% 50% 0 0';
+    hairIndicator.style.zIndex = '1000';
+    hairIndicator.style.pointerEvents = 'none'; // Don't interfere with clicks
+    document.body.appendChild(hairIndicator);
+    
+    // Update position to follow moles
+    let lastMolePosition = { x: 0, y: 0 };
+    
+    // Function to update hair position
+    function updateHairPosition() {
+        // Find visible moles
+        const visibleMoles = [];
+        if (typeof moles !== 'undefined') {
+            moles.forEach(mole => {
+                if (mole.position.y > -0.5) { // Mole is up
+                    // Convert 3D position to screen position
+                    const vector = new THREE.Vector3();
+                    vector.setFromMatrixPosition(mole.matrixWorld);
+                    vector.project(camera);
+                    
+                    const x = (vector.x * 0.5 + 0.5) * window.innerWidth;
+                    const y = (-(vector.y * 0.5) + 0.5) * window.innerHeight;
+                    
+                    visibleMoles.push({ x, y });
+                }
+            });
+        }
+        
+        // Update indicator position if moles are visible
+        if (visibleMoles.length > 0) {
+            // Use the first visible mole
+            lastMolePosition = visibleMoles[0];
+            hairIndicator.style.display = 'block';
+        } else {
+            hairIndicator.style.display = 'none';
+        }
+        
+        // Position the indicator above the mole
+        hairIndicator.style.left = `${lastMolePosition.x - 10}px`; // Center horizontally
+        hairIndicator.style.top = `${lastMolePosition.y - 30}px`; // Position above
+        
+        // Continue updating
+        requestAnimationFrame(updateHairPosition);
+    }
+    
+    // Start updating
+    updateHairPosition();
+    
+    console.log("Hair indicator added via DOM");
+}
+
+// Try both approaches
+try {
+    simpleHairFix();
+} catch (e) {
+    console.error("Error in simpleHairFix:", e);
+}
+
+try {
+    addHairViaDOM();
+} catch (e) {
+    console.error("Error in addHairViaDOM:", e);
+}
+
+// Add a simple console message that doesn't depend on any Three.js functionality
+console.log("%c Hair Fix Attempt v1.0.8 %c", 
+    "background: #FF0000; color: white; font-size: 14px; padding: 3px; border-radius: 3px;",
+    "");
+
+// Add a visible message on screen that doesn't depend on any Three.js functionality
+const simpleMessage = document.createElement('div');
+simpleMessage.style.position = 'absolute';
+simpleMessage.style.top = '100px';
+simpleMessage.style.left = '50%';
+simpleMessage.style.transform = 'translateX(-50%)';
+simpleMessage.style.background = 'rgba(0,0,255,0.7)';
+simpleMessage.style.color = 'white';
+simpleMessage.style.padding = '10px';
+simpleMessage.style.borderRadius = '5px';
+simpleMessage.style.fontFamily = 'Arial, sans-serif';
+simpleMessage.style.fontSize = '16px';
+simpleMessage.style.zIndex = '1001';
+simpleMessage.textContent = 'Hair Fix v1.0.8 - Check Console';
+document.body.appendChild(simpleMessage);
