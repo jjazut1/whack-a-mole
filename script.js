@@ -318,37 +318,36 @@ function updateMoleText(mole, word) {
     texture.needsUpdate = true;
 }
 
-// Function to create a more visible hairstyle
-function createVisibleHairstyle() {
+// Function to create a wild, line-like hairstyle
+function createWildHairstyle() {
     const hairGroup = new THREE.Group();
+    const hairMaterial = new THREE.MeshLambertMaterial({ color: 0x8B4513 }); // Brown color
 
-    // Create the main hair volume
-    const mainHairGeometry = new THREE.BoxGeometry(1.0, 0.3, 0.6); // Larger size
-    const mainHairMaterial = new THREE.MeshLambertMaterial({ color: 0x8B4513 }); // Brown color
-    const mainHair = new THREE.Mesh(mainHairGeometry, mainHairMaterial);
-    mainHair.position.set(0, 0.6, 0); // Higher position
-    hairGroup.add(mainHair);
+    // Create multiple strands of hair
+    for (let i = 0; i < 20; i++) {
+        const hairStrandGeometry = new THREE.CylinderGeometry(0.02, 0.02, 1, 8);
+        const hairStrand = new THREE.Mesh(hairStrandGeometry, hairMaterial);
 
-    // Create side hair volumes
-    const sideHairGeometry = new THREE.BoxGeometry(0.3, 0.3, 0.6); // Larger size
-    const sideHairLeft = new THREE.Mesh(sideHairGeometry, mainHairMaterial);
-    sideHairLeft.position.set(-0.6, 0.5, 0);
-    hairGroup.add(sideHairLeft);
+        // Randomize position and rotation
+        hairStrand.position.set(
+            (Math.random() - 0.5) * 1.2, // Random x position
+            0.8 + Math.random() * 0.4,   // Random y position
+            (Math.random() - 0.5) * 0.6  // Random z position
+        );
 
-    const sideHairRight = new THREE.Mesh(sideHairGeometry, mainHairMaterial);
-    sideHairRight.position.set(0.6, 0.5, 0);
-    hairGroup.add(sideHairRight);
+        hairStrand.rotation.set(
+            Math.random() * Math.PI,     // Random x rotation
+            Math.random() * Math.PI,     // Random y rotation
+            Math.random() * Math.PI      // Random z rotation
+        );
 
-    // Create front wave
-    const frontWaveGeometry = new THREE.BoxGeometry(0.8, 0.2, 0.3); // Larger size
-    const frontWave = new THREE.Mesh(frontWaveGeometry, mainHairMaterial);
-    frontWave.position.set(0, 0.7, 0.3); // Higher and more forward
-    hairGroup.add(frontWave);
+        hairGroup.add(hairStrand);
+    }
 
     return hairGroup;
 }
 
-// Modify the createMole function to add the visible hair
+// Modify the createMole function to add the wild hair
 function createMole() {
     const moleGroup = new THREE.Group();
     
@@ -365,7 +364,7 @@ function createMole() {
     moleGroup.add(facingGroup);
 
     // Add hair to the facing group
-    const hair = createVisibleHairstyle();
+    const hair = createWildHairstyle();
     facingGroup.add(hair);
 
     // Text plane
