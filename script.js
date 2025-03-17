@@ -318,37 +318,37 @@ function updateMoleText(mole, word) {
     texture.needsUpdate = true;
 }
 
-// Function to create the hairstyle
-function createHairstyle() {
+// Function to create a more visible hairstyle
+function createVisibleHairstyle() {
     const hairGroup = new THREE.Group();
 
     // Create the main hair volume
-    const mainHairGeometry = new THREE.BoxGeometry(0.8, 0.2, 0.5);
+    const mainHairGeometry = new THREE.BoxGeometry(1.0, 0.3, 0.6); // Larger size
     const mainHairMaterial = new THREE.MeshLambertMaterial({ color: 0x8B4513 }); // Brown color
     const mainHair = new THREE.Mesh(mainHairGeometry, mainHairMaterial);
-    mainHair.position.set(0, 0.5, 0);
+    mainHair.position.set(0, 0.6, 0); // Higher position
     hairGroup.add(mainHair);
 
     // Create side hair volumes
-    const sideHairGeometry = new THREE.BoxGeometry(0.2, 0.2, 0.5);
+    const sideHairGeometry = new THREE.BoxGeometry(0.3, 0.3, 0.6); // Larger size
     const sideHairLeft = new THREE.Mesh(sideHairGeometry, mainHairMaterial);
-    sideHairLeft.position.set(-0.5, 0.4, 0);
+    sideHairLeft.position.set(-0.6, 0.5, 0);
     hairGroup.add(sideHairLeft);
 
     const sideHairRight = new THREE.Mesh(sideHairGeometry, mainHairMaterial);
-    sideHairRight.position.set(0.5, 0.4, 0);
+    sideHairRight.position.set(0.6, 0.5, 0);
     hairGroup.add(sideHairRight);
 
     // Create front wave
-    const frontWaveGeometry = new THREE.BoxGeometry(0.6, 0.1, 0.2);
+    const frontWaveGeometry = new THREE.BoxGeometry(0.8, 0.2, 0.3); // Larger size
     const frontWave = new THREE.Mesh(frontWaveGeometry, mainHairMaterial);
-    frontWave.position.set(0, 0.6, 0.25);
+    frontWave.position.set(0, 0.7, 0.3); // Higher and more forward
     hairGroup.add(frontWave);
 
     return hairGroup;
 }
 
-// Modify the createMole function to add hair
+// Modify the createMole function to add the visible hair
 function createMole() {
     const moleGroup = new THREE.Group();
     
@@ -365,7 +365,7 @@ function createMole() {
     moleGroup.add(facingGroup);
 
     // Add hair to the facing group
-    const hair = createHairstyle();
+    const hair = createVisibleHairstyle();
     facingGroup.add(hair);
 
     // Text plane
