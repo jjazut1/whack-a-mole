@@ -1076,3 +1076,85 @@ addVersionIndicator();
 // You can also add this at the end of your main code
 console.log("Game initialization complete - running latest version");
 
+// Version 1.5.0 - Simple Cartoonish Hair (Clean Implementation)
+(function addSimpleCartoonishHair() {
+    // Create a unique version identifier
+    const versionNumber = "1.5.0";
+    const uniqueId = Math.random().toString(36).substring(2, 6);
+    
+    console.log(
+        `%c Clean Hair v${versionNumber}-${uniqueId} %c`,
+        "background: #3F51B5; color: white; font-size: 14px; padding: 5px; border-radius: 3px;",
+        ""
+    );
+    
+    // Function to add hair to all moles
+    function addHairToMoles() {
+        // Check if moles array exists
+        if (!moles || !Array.isArray(moles) || moles.length === 0) {
+            console.log("No moles found to add hair to");
+            return;
+        }
+        
+        // Process each mole
+        moles.forEach((mole, index) => {
+            // Skip if mole doesn't have a facing group
+            if (!mole || !mole.userData || !mole.userData.facingGroup) {
+                console.log(`Mole ${index} has no facing group`);
+                return;
+            }
+            
+            const facingGroup = mole.userData.facingGroup;
+            
+            // Create three simple hair spikes
+            const hairColor = 0x000000; // Black for visibility
+            
+            // Create hair spikes
+            for (let i = 0; i < 3; i++) {
+                // Create a simple cone for each spike
+                const spikeGeometry = new THREE.ConeGeometry(0.03, 0.12, 8);
+                const spikeMaterial = new THREE.MeshBasicMaterial({ color: hairColor });
+                const spike = new THREE.Mesh(spikeGeometry, spikeMaterial);
+                
+                // Position spikes in a row above the eyes
+                // Eyes are at y=0.4, so place hair at y=0.65
+                const xPos = -0.1 + (i * 0.1); // -0.1, 0, 0.1
+                spike.position.set(xPos, 0.65, 0.81);
+                
+                // Rotate to point upward
+                spike.rotation.x = Math.PI;
+                
+                // Add to facing group (same approach as eyes)
+                facingGroup.add(spike);
+            }
+            
+            console.log(`Added hair to mole ${index}`);
+        });
+    }
+    
+    // Add hair to all moles
+    addHairToMoles();
+    
+    // Add a small version indicator
+    const indicator = document.createElement('div');
+    indicator.style.position = 'fixed';
+    indicator.style.bottom = '10px';
+    indicator.style.right = '10px';
+    indicator.style.backgroundColor = 'rgba(63, 81, 181, 0.7)';
+    indicator.style.color = 'white';
+    indicator.style.padding = '5px 10px';
+    indicator.style.borderRadius = '5px';
+    indicator.style.fontFamily = 'Arial, sans-serif';
+    indicator.style.fontSize = '12px';
+    indicator.style.zIndex = '1002';
+    indicator.textContent = `Hair v${versionNumber}`;
+    document.body.appendChild(indicator);
+    
+    // Force a render update
+    if (typeof renderer !== 'undefined' && typeof scene !== 'undefined' && typeof camera !== 'undefined') {
+    renderer.render(scene, camera);
+}
+    
+    console.log("Simple cartoonish hair added to all moles");
+})();
+
