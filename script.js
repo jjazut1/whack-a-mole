@@ -318,20 +318,20 @@ function updateMoleText(mole, word) {
     texture.needsUpdate = true;
 }
 
-// Function to create a wild, line-like hairstyle
-function createWildHairstyle() {
+// Function to create a shorter, wild hairstyle
+function createShortWildHairstyle() {
     const hairGroup = new THREE.Group();
     const hairMaterial = new THREE.MeshLambertMaterial({ color: 0x8B4513 }); // Brown color
 
-    // Create multiple strands of hair
+    // Create multiple shorter strands of hair
     for (let i = 0; i < 20; i++) {
-        const hairStrandGeometry = new THREE.CylinderGeometry(0.02, 0.02, 1, 8);
+        const hairStrandGeometry = new THREE.CylinderGeometry(0.02, 0.02, 0.5, 8); // Shorter length
         const hairStrand = new THREE.Mesh(hairStrandGeometry, hairMaterial);
 
         // Randomize position and rotation
         hairStrand.position.set(
             (Math.random() - 0.5) * 1.2, // Random x position
-            0.8 + Math.random() * 0.4,   // Random y position
+            0.8 + Math.random() * 0.2,   // Random y position, lower range
             (Math.random() - 0.5) * 0.6  // Random z position
         );
 
@@ -347,7 +347,7 @@ function createWildHairstyle() {
     return hairGroup;
 }
 
-// Modify the createMole function to add the wild hair
+// Modify the createMole function to add the shorter wild hair
 function createMole() {
     const moleGroup = new THREE.Group();
     
@@ -364,7 +364,7 @@ function createMole() {
     moleGroup.add(facingGroup);
 
     // Add hair to the facing group
-    const hair = createWildHairstyle();
+    const hair = createShortWildHairstyle();
     facingGroup.add(hair);
 
     // Text plane
@@ -1071,7 +1071,7 @@ function addVersionIndicator() {
     );
     
     console.log(
-        "%c Version: red" + versionNumber + " | Loaded: " + versionTimestamp + " %c",
+        "%c Version: green" + versionNumber + " | Loaded: " + versionTimestamp + " %c",
         "background: #2196F3; color: white; font-size: 14px; padding: 3px; border-radius: 3px;",
         ""
     );
