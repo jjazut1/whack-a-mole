@@ -1436,3 +1436,119 @@ debugMessage.style.fontSize = '16px';
 debugMessage.style.zIndex = '1000';
 debugMessage.textContent = 'Debug Hair v1.0.6 Applied';
 document.body.appendChild(debugMessage);
+
+// Final hair fix with correct positioning
+function finalHairFix() {
+    console.log("Applying final hair fix");
+    
+    // Clear any existing debug hair
+    scene.traverse(function(object) {
+        if (object.name && (object.name.includes("debugHair") || object.name.includes("sceneHair"))) {
+            if (object.parent) {
+                object.parent.remove(object);
+            } else {
+                scene.remove(object);
+            }
+        }
+    });
+    
+    // Find all moles
+    const moleObjects = [];
+    scene.traverse(function(object) {
+        if (object.isMesh && object.geometry && 
+            object.geometry.type === 'SphereGeometry') {
+            moleObjects.push(object);
+        }
+    });
+    
+    console.log(`Found ${moleObjects.length} moles for hair application`);
+    
+    // Add hair to each mole
+    moleObjects.forEach((mole, index) => {
+        // Create a hair group
+        const hairGroup = new THREE.Group();
+        hairGroup.name = "finalHair" + index;
+        
+        // Random hair style and color
+        const hairStyle = Math.floor(Math.random() * 3); // 0, 1, or 2
+        const hairColors = [
+            0xFF0000, // Red
+            0x00FF00, // Green
+            0x0000FF, // Blue
+            0xFF00FF, // Magenta
+            0xFFFF00  // Yellow
+        ];
+        const hairColor = hairColors[Math.floor(Math.random() * hairColors.length)];
+        
+        // Create hair based on style
+        if (hairStyle === 0) {
+            // Mohawk - 3 spikes in a row
+            for (let i = 0; i < 3; i++) {
+                const spike = new THREE.Mesh(
+                    new THREE.ConeGeometry(0.1, 0.3, 8),
+                    new THREE.MeshBasicMaterial({ color: hairColor })
+                );
+                
+                spike.position.set(0, 0, -0.2 + i * 0.2);
+                spike.rotation.x = Math.PI / 2; // Point up
+                
+                hairGroup.add(spike);
+            }
+        } else if (hairStyle === 1) {
+            // Single large spike
+            const spike = new THREE.Mesh(
+                new THREE.ConeGeometry(0.15, 0.4, 8),
+                new THREE.MeshBasicMaterial({ color: hairColor })
+            );
+            
+            spike.position.set(0, 0, 0);
+            spike.rotation.x = Math.PI / 2; // Point up
+            
+            hairGroup.add(spike);
+        } else {
+            // Multiple small spikes
+            for (let i = 0; i < 5; i++) {
+                const spike = new THREE.Mesh(
+                    new THREE.ConeGeometry(0.08, 0.25, 8),
+                    new THREE.MeshBasicMaterial({ color: hairColor })
+                );
+                
+                const angle = (i / 5) * Math.PI;
+                spike.position.set(Math.sin(angle) * 0.15, 0, Math.cos(angle) * 0.15);
+                spike.rotation.x = Math.PI / 2; // Point up
+                spike.rotation.z = angle;
+                
+                hairGroup.add(spike);
+            }
+        }
+        
+        // Position the hair group on top of the mole
+        hairGroup.position.set(0, 0.5, 0);
+        
+        // Add the hair group to the mole
+        mole.add(hairGroup);
+        
+        console.log(`Added final hair style ${hairStyle} to mole ${index}`);
+    });
+    
+    console.log("Final hair fix applied");
+    
+    // Update the debug message
+    const debugMessages = document.querySelectorAll('[style*="background: rgba(255,0,0,0.7)"]');
+    if (debugMessages.length > 0) {
+        debugMessages[0].textContent = 'Final Hair v1.0.7 Applied';
+        debugMessages[0].style.background = 'rgba(0,255,0,0.7)'; // Change to green
+    }
+}
+
+// Call the final fix
+finalHairFix();
+
+// Force a render update
+if (typeof renderer !== 'undefined') {
+    renderer.render(scene, camera);
+}
+
+console.log("%c Final Hair Fix Applied! %c", 
+    "background: #00FF00; color: black; font-size: 14px; padding: 3px; border-radius: 3px;",
+    "");
