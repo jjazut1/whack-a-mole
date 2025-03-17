@@ -318,27 +318,27 @@ function updateMoleText(mole, word) {
     texture.needsUpdate = true;
 }
 
-// Function to create a shorter, wild hairstyle
-function createShortWildHairstyle() {
+// Function to create a realistic, curved hairstyle
+function createRealisticHairstyle() {
     const hairGroup = new THREE.Group();
     const hairMaterial = new THREE.MeshLambertMaterial({ color: 0x8B4513 }); // Brown color
 
-    // Create multiple shorter strands of hair
+    // Create a curve for each strand
     for (let i = 0; i < 20; i++) {
-        const hairStrandGeometry = new THREE.CylinderGeometry(0.02, 0.02, 0.3, 8); // Shorter length
-        const hairStrand = new THREE.Mesh(hairStrandGeometry, hairMaterial);
+        const curve = new THREE.CatmullRomCurve3([
+            new THREE.Vector3(0, 0, 0),
+            new THREE.Vector3((Math.random() - 0.5) * 0.2, 0.2, (Math.random() - 0.5) * 0.2),
+            new THREE.Vector3((Math.random() - 0.5) * 0.4, 0.4, (Math.random() - 0.5) * 0.4)
+        ]);
 
-        // Randomize position and rotation
+        const tubeGeometry = new THREE.TubeGeometry(curve, 20, 0.02, 8, false);
+        const hairStrand = new THREE.Mesh(tubeGeometry, hairMaterial);
+
+        // Randomize position
         hairStrand.position.set(
-            (Math.random() - 0.5) * 1.2, // Random x position
-            0.8 + Math.random() * 0.2,   // Random y position, lower range
-            (Math.random() - 0.5) * 0.6  // Random z position
-        );
-
-        hairStrand.rotation.set(
-            Math.random() * Math.PI,     // Random x rotation
-            Math.random() * Math.PI,     // Random y rotation
-            Math.random() * Math.PI      // Random z rotation
+            (Math.random() - 0.5) * 0.8, // Random x position
+            0.8,                        // Fixed y position
+            (Math.random() - 0.5) * 0.4 // Random z position
         );
 
         hairGroup.add(hairStrand);
@@ -347,7 +347,7 @@ function createShortWildHairstyle() {
     return hairGroup;
 }
 
-// Modify the createMole function to add the shorter wild hair
+// Modify the createMole function to add the realistic hair
 function createMole() {
     const moleGroup = new THREE.Group();
     
@@ -364,7 +364,7 @@ function createMole() {
     moleGroup.add(facingGroup);
 
     // Add hair to the facing group
-    const hair = createShortWildHairstyle();
+    const hair = createRealisticHairstyle();
     facingGroup.add(hair);
 
     // Text plane
@@ -1071,7 +1071,7 @@ function addVersionIndicator() {
     );
     
     console.log(
-        "%c Version: blue" + versionNumber + " | Loaded: " + versionTimestamp + " %c",
+        "%c Version: pink" + versionNumber + " | Loaded: " + versionTimestamp + " %c",
         "background: #2196F3; color: white; font-size: 14px; padding: 3px; border-radius: 3px;",
         ""
     );
