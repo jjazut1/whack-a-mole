@@ -325,7 +325,7 @@ function createShortWildHairstyle() {
 
     // Create multiple shorter strands of hair
     for (let i = 0; i < 20; i++) {
-        const hairStrandGeometry = new THREE.CylinderGeometry(0.02, 0.02, 0.5, 8); // Shorter length
+        const hairStrandGeometry = new THREE.CylinderGeometry(0.02, 0.02, 0.3, 8); // Shorter length
         const hairStrand = new THREE.Mesh(hairStrandGeometry, hairMaterial);
 
         // Randomize position and rotation
@@ -1071,7 +1071,7 @@ function addVersionIndicator() {
     );
     
     console.log(
-        "%c Version: green" + versionNumber + " | Loaded: " + versionTimestamp + " %c",
+        "%c Version: blue" + versionNumber + " | Loaded: " + versionTimestamp + " %c",
         "background: #2196F3; color: white; font-size: 14px; padding: 3px; border-radius: 3px;",
         ""
     );
