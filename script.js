@@ -1076,20 +1076,20 @@ addVersionIndicator();
 // You can also add this at the end of your main code
 console.log("Game initialization complete - running latest version");
 
-// Version 1.5.0 - Simple Cartoonish Hair (Clean Implementation)
-(function addSimpleCartoonishHair() {
+// Version 1.5.1 - Realistic Styled Hair
+(function addRealisticStyledHair() {
     // Create a unique version identifier
-    const versionNumber = "1.5.0";
+    const versionNumber = "1.5.1";
     const uniqueId = Math.random().toString(36).substring(2, 6);
     
     console.log(
-        `%c Clean Hair v${versionNumber}-${uniqueId} %c`,
-        "background: #3F51B5; color: white; font-size: 14px; padding: 5px; border-radius: 3px;",
+        `%c Styled Hair v${versionNumber}-${uniqueId} %c`,
+        "background: #795548; color: white; font-size: 14px; padding: 5px; border-radius: 3px;",
         ""
     );
     
-    // Function to add hair to all moles
-    function addHairToMoles() {
+    // Function to add styled hair to all moles
+    function addStyledHairToMoles() {
         // Check if moles array exists
         if (!moles || !Array.isArray(moles) || moles.length === 0) {
             console.log("No moles found to add hair to");
@@ -1106,48 +1106,107 @@ console.log("Game initialization complete - running latest version");
             
             const facingGroup = mole.userData.facingGroup;
             
-            // Create three simple hair spikes
-            const hairColor = 0x000000; // Black for visibility
-            
-            // Create hair spikes
-            for (let i = 0; i < 3; i++) {
-                // Create a simple cone for each spike
-                const spikeGeometry = new THREE.ConeGeometry(0.03, 0.12, 8);
-                const spikeMaterial = new THREE.MeshBasicMaterial({ color: hairColor });
-                const spike = new THREE.Mesh(spikeGeometry, spikeMaterial);
-                
-                // Position spikes in a row above the eyes
-                // Eyes are at y=0.4, so place hair at y=0.65
-                const xPos = -0.1 + (i * 0.1); // -0.1, 0, 0.1
-                spike.position.set(xPos, 0.65, 0.81);
-                
-                // Rotate to point upward
-                spike.rotation.x = Math.PI;
-                
-                // Add to facing group (same approach as eyes)
-                facingGroup.add(spike);
+            // Remove any existing hair first
+            for (let i = facingGroup.children.length - 1; i >= 0; i--) {
+                const child = facingGroup.children[i];
+                if (child && child.userData && child.userData.isHair) {
+                    facingGroup.remove(child);
+                }
             }
             
-            console.log(`Added hair to mole ${index}`);
+            // Create a hair group to hold all hair elements
+            const hairGroup = new THREE.Group();
+            hairGroup.userData = { isHair: true };
+            
+            // Hair colors - brown shades
+            const hairColors = [
+                0x8B4513, // SaddleBrown
+                0xA0522D, // Sienna
+                0xCD853F  // Peru
+            ];
+            const hairColor = hairColors[Math.floor(Math.random() * hairColors.length)];
+            
+            // Create center part (main volume)
+            const centerGeometry = new THREE.BoxGeometry(0.4, 0.15, 0.2);
+            const hairMaterial = new THREE.MeshBasicMaterial({ color: hairColor });
+            const centerHair = new THREE.Mesh(centerGeometry, hairMaterial);
+            centerHair.position.set(0, 0.65, 0.7);
+            centerHair.userData = { isHair: true };
+            hairGroup.add(centerHair);
+            
+            // Create front wave
+            const frontWaveGeometry = new THREE.BoxGeometry(0.5, 0.08, 0.15);
+            const frontWave = new THREE.Mesh(frontWaveGeometry, hairMaterial);
+            frontWave.position.set(0, 0.7, 0.82);
+            frontWave.rotation.x = -0.2; // Tilt forward slightly
+            frontWave.userData = { isHair: true };
+            hairGroup.add(frontWave);
+            
+            // Create side volumes (left and right)
+            const sideGeometry = new THREE.BoxGeometry(0.15, 0.12, 0.25);
+            
+            // Left side
+            const leftSide = new THREE.Mesh(sideGeometry, hairMaterial);
+            leftSide.position.set(-0.2, 0.63, 0.7);
+            leftSide.rotation.z = 0.2; // Tilt outward slightly
+            leftSide.userData = { isHair: true };
+            hairGroup.add(leftSide);
+            
+            // Right side
+            const rightSide = new THREE.Mesh(sideGeometry, hairMaterial);
+            rightSide.position.set(0.2, 0.63, 0.7);
+            rightSide.rotation.z = -0.2; // Tilt outward slightly
+            rightSide.userData = { isHair: true };
+            hairGroup.add(rightSide);
+            
+            // Create styled waves on top
+            for (let i = 0; i < 5; i++) {
+                const waveGeometry = new THREE.BoxGeometry(0.08, 0.04 + Math.random() * 0.04, 0.1);
+                const wave = new THREE.Mesh(waveGeometry, hairMaterial);
+                
+                // Position waves across the top
+                const xPos = -0.2 + (i * 0.1);
+                const yPos = 0.72 + Math.sin(i * 1.5) * 0.03; // Wavy pattern
+                wave.position.set(xPos, yPos, 0.75);
+                
+                // Rotate to create styled look
+                wave.rotation.z = Math.sin(i * 1.2) * 0.3;
+                wave.rotation.x = -0.1;
+                
+                wave.userData = { isHair: true };
+                hairGroup.add(wave);
+            }
+            
+            // Add some volume to the back
+            const backGeometry = new THREE.BoxGeometry(0.4, 0.12, 0.15);
+            const backHair = new THREE.Mesh(backGeometry, hairMaterial);
+            backHair.position.set(0, 0.65, 0.6);
+            backHair.userData = { isHair: true };
+            hairGroup.add(backHair);
+            
+            // Add the hair group to the facing group
+            facingGroup.add(hairGroup);
+            
+            console.log(`Added styled hair to mole ${index}`);
         });
     }
     
     // Add hair to all moles
-    addHairToMoles();
+    addStyledHairToMoles();
     
     // Add a small version indicator
     const indicator = document.createElement('div');
     indicator.style.position = 'fixed';
     indicator.style.bottom = '10px';
     indicator.style.right = '10px';
-    indicator.style.backgroundColor = 'rgba(63, 81, 181, 0.7)';
+    indicator.style.backgroundColor = 'rgba(121, 85, 72, 0.7)';
     indicator.style.color = 'white';
     indicator.style.padding = '5px 10px';
     indicator.style.borderRadius = '5px';
     indicator.style.fontFamily = 'Arial, sans-serif';
     indicator.style.fontSize = '12px';
     indicator.style.zIndex = '1002';
-    indicator.textContent = `Hair v${versionNumber}`;
+    indicator.textContent = `Styled Hair v${versionNumber}`;
     document.body.appendChild(indicator);
     
     // Force a render update
@@ -1155,6 +1214,33 @@ console.log("Game initialization complete - running latest version");
     renderer.render(scene, camera);
 }
     
-    console.log("Simple cartoonish hair added to all moles");
+    // Hook into the animateMole function to ensure hair is only visible on visible moles
+    if (typeof window.animateMole === 'function') {
+        const originalAnimateMole = window.animateMole;
+        
+        window.animateMole = function(mole, goingUp) {
+            // Call original function
+            originalAnimateMole.apply(this, arguments);
+            
+            // Handle hair visibility after a short delay
+            setTimeout(() => {
+                if (mole && mole.userData && mole.userData.facingGroup) {
+                    const facingGroup = mole.userData.facingGroup;
+                    
+                    // Find hair group
+                    const hairGroup = facingGroup.children.find(child => 
+                        child instanceof THREE.Group && child.userData && child.userData.isHair
+                    );
+                    
+                    // Set visibility based on mole state
+                    if (hairGroup) {
+                        hairGroup.visible = goingUp || mole.userData.isUp;
+                    }
+                }
+            }, 50);
+        };
+    }
+    
+    console.log("Realistic styled hair added to all moles");
 })();
 
