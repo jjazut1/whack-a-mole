@@ -1024,724 +1024,156 @@ function improveRendererSettings() {
     }
 }
 
-// Create a distinctive version indicator with timestamp
-(function createVersionIndicator() {
-    // Remove any existing version indicators
-    document.querySelectorAll('[data-version-indicator="true"]').forEach(el => {
-        el.remove();
-    });
-    
+// Version 1.1.0 - DOM-only approach for hair
+(function createFinalVersion() {
     // Create a unique version identifier
-    const versionNumber = "1.0.9";
+    const versionNumber = "1.1.0";
     const timestamp = new Date().toISOString();
     const uniqueId = Math.random().toString(36).substring(2, 8);
     
-    // Create the indicator element
-    const indicator = document.createElement('div');
-    indicator.setAttribute('data-version-indicator', 'true');
-    indicator.style.position = 'fixed';
-    indicator.style.bottom = '10px';
-    indicator.style.right = '10px';
-    indicator.style.backgroundColor = 'purple';
-    indicator.style.color = 'white';
-    indicator.style.padding = '8px 12px';
-    indicator.style.borderRadius = '5px';
-    indicator.style.fontFamily = 'monospace';
-    indicator.style.fontSize = '14px';
-    indicator.style.zIndex = '10000';
-    indicator.style.boxShadow = '0 0 10px rgba(0,0,0,0.5)';
-    indicator.style.userSelect = 'none';
-    
-    // Set the content
-    indicator.textContent = `v${versionNumber}-${uniqueId}`;
-    
-    // Add hover effect to show more details
-    indicator.title = `Loaded: ${timestamp}`;
-    indicator.addEventListener('click', function() {
-        alert(`Version: ${versionNumber}\nLoaded: ${timestamp}\nID: ${uniqueId}\nCache Status: Fresh Load`);
+    // Update version indicator
+    document.querySelectorAll('[data-version-indicator="true"]').forEach(el => {
+        if (el.style.backgroundColor === 'blue') {
+            el.textContent = `Final Version ${versionNumber}-${uniqueId.substring(0, 4)}`;
+            el.style.backgroundColor = 'green';
+        }
     });
-    
-    // Add to document
-    document.body.appendChild(indicator);
-    
-    // Also add a more prominent indicator at the top
-    const topIndicator = document.createElement('div');
-    topIndicator.setAttribute('data-version-indicator', 'true');
-    topIndicator.style.position = 'fixed';
-    topIndicator.style.top = '10px';
-    topIndicator.style.left = '50%';
-    topIndicator.style.transform = 'translateX(-50%)';
-    topIndicator.style.backgroundColor = 'blue';
-    topIndicator.style.color = 'white';
-    topIndicator.style.padding = '10px 20px';
-    topIndicator.style.borderRadius = '5px';
-    topIndicator.style.fontFamily = 'Arial, sans-serif';
-    topIndicator.style.fontSize = '16px';
-    topIndicator.style.fontWeight = 'bold';
-    topIndicator.style.zIndex = '10001';
-    topIndicator.style.boxShadow = '0 0 10px rgba(0,0,0,0.5)';
-    
-    // Set the content with unique ID to ensure cache is cleared
-    topIndicator.textContent = `Fresh Version ${versionNumber}-${uniqueId.substring(0, 4)}`;
-    
-    // Add to document
-    document.body.appendChild(topIndicator);
-    
-    // Log to console
-    console.log(
-        `%c Version ${versionNumber}-${uniqueId} loaded at ${timestamp} %c`,
-        "background: #9C27B0; color: white; font-size: 14px; padding: 5px; border-radius: 3px;",
-        ""
-    );
     
     // Store in window object for verification
     window.versionInfo = {
         version: versionNumber,
         timestamp: timestamp,
         id: uniqueId,
-        status: "Fresh Load"
+        status: "Final DOM-only Version"
     };
     
-    return `Version indicator ${versionNumber}-${uniqueId} created`;
-})();
-
-// Add a function to check version from console
-window.checkVersion = function() {
-    if (window.versionInfo) {
-        console.log(
-            `%c Current Version: ${window.versionInfo.version}-${window.versionInfo.id} %c`,
-            "background: #4CAF50; color: white; font-size: 14px; padding: 5px; border-radius: 3px;",
-            ""
-        );
-        return window.versionInfo;
-    } else {
-        console.log(
-            `%c No version info available %c`,
-            "background: #F44336; color: white; font-size: 14px; padding: 5px; border-radius: 3px;",
-            ""
-        );
-        return "No version info available";
-    }
-};
-
-// Complete overhaul of hair positioning using local coordinates
-function fixHairPositioningCompletely() {
-    // Remove any existing hair first
-    moles.forEach(mole => {
-        for (let i = mole.children.length - 1; i >= 0; i--) {
-            const child = mole.children[i];
-            if (child.userData && child.userData.isHair) {
-                mole.remove(child);
-            }
-        }
+    // Log to console
+    console.log(
+        `%c Final Version ${versionNumber}-${uniqueId} loaded %c`,
+        "background: #4CAF50; color: white; font-size: 14px; padding: 5px; border-radius: 3px;",
+        ""
+    );
+    
+    // Remove any existing hair elements
+    document.querySelectorAll('[data-mole-hair="true"]').forEach(el => {
+        el.remove();
     });
     
-    // Get mole orientation to determine "up" direction
-    function getMoleUpDirection(mole) {
-        // Default up vector (for debugging)
-        return new THREE.Vector3(0, 1, 0);
-    }
-    
-    // Hair styles with correct positioning relative to mole orientation
-    const hairStyles = [
-        // Spiky hair
-        function(mole) {
-            const hairGroup = new THREE.Group();
-            hairGroup.userData.isHair = true;
-            
-            const spikeCount = 5 + Math.floor(Math.random() * 3);
-            const hairColor = new THREE.Color(0x3D2314); // Brown
-            
-            // Create a container positioned at the center of the mole
-            hairGroup.position.set(0, 0, 0);
-            
-            for (let i = 0; i < spikeCount; i++) {
-                const spike = new THREE.Mesh(
-                    new THREE.ConeGeometry(0.08, 0.3, 8),
-                    new THREE.MeshLambertMaterial({ color: hairColor })
-                );
-                
-                const angle = (i / spikeCount) * Math.PI * 2;
-                
-                // Position spikes in a circle on top of the head
-                spike.position.set(
-                    Math.sin(angle) * 0.2,
-                    0.5, // Directly on top
-                    Math.cos(angle) * 0.2
-                );
-                
-                // Orient spikes outward
-                spike.lookAt(new THREE.Vector3(
-                    Math.sin(angle) * 2,
-                    1.5,
-                    Math.cos(angle) * 2
-                ));
-                
-                hairGroup.add(spike);
-            }
-            
-            mole.add(hairGroup);
-            console.log("Added spiky hair with absolute positioning");
-        },
+    // Create DOM-based hair elements that follow moles
+    function createDOMHair() {
+        // Create container for all hair elements
+        const hairContainer = document.createElement('div');
+        hairContainer.style.position = 'absolute';
+        hairContainer.style.top = '0';
+        hairContainer.style.left = '0';
+        hairContainer.style.width = '100%';
+        hairContainer.style.height = '100%';
+        hairContainer.style.pointerEvents = 'none';
+        hairContainer.style.zIndex = '1000';
+        document.body.appendChild(hairContainer);
         
-        // Mohawk
-        function(mole) {
-            const hairGroup = new THREE.Group();
-            hairGroup.userData.isHair = true;
+        // Create 4 hair elements (one for each potential mole)
+        for (let i = 0; i < 4; i++) {
+            const hairElement = document.createElement('div');
+            hairElement.setAttribute('data-mole-hair', 'true');
+            hairElement.setAttribute('data-mole-index', i);
             
-            // Bright colors for mohawk
-            const hairColor = new THREE.Color(
-                [0xFF00FF, 0x00FF00, 0xFF0000, 0x00FFFF][Math.floor(Math.random() * 4)]
-            );
+            // Style the hair
+            hairElement.style.position = 'absolute';
+            hairElement.style.width = '30px';
+            hairElement.style.height = '20px';
+            hairElement.style.display = 'none'; // Hidden by default
             
-            // Create a container positioned at the center of the mole
-            hairGroup.position.set(0, 0, 0);
+            // Random hair style
+            const hairStyle = Math.floor(Math.random() * 3);
+            const hairColors = ['red', 'blue', 'green', 'purple', 'orange'];
+            const hairColor = hairColors[Math.floor(Math.random() * hairColors.length)];
             
-            const mohawkCount = 5;
-            for (let i = 0; i < mohawkCount; i++) {
-                const spike = new THREE.Mesh(
-                    new THREE.ConeGeometry(0.07, 0.35, 8),
-                    new THREE.MeshLambertMaterial({ color: hairColor })
-                );
-                
-                // Position in a line on top
-                spike.position.set(
-                    0,
-                    0.5, // Directly on top
-                    -0.2 + (i / (mohawkCount - 1)) * 0.4
-                );
-                
-                // Point upward
-                spike.rotation.x = 0;
-                
-                hairGroup.add(spike);
-            }
-            
-            mole.add(hairGroup);
-            console.log("Added mohawk with absolute positioning");
-        },
-        
-        // Curly hair
-        function(mole) {
-            const hairGroup = new THREE.Group();
-            hairGroup.userData.isHair = true;
-            
-            const curlCount = 6;
-            const hairColor = new THREE.Color(0x3D2314); // Brown
-            
-            // Create a container positioned at the center of the mole
-            hairGroup.position.set(0, 0, 0);
-            
-            for (let i = 0; i < curlCount; i++) {
-                const curl = new THREE.Mesh(
-                    new THREE.TorusGeometry(0.08, 0.03, 8, 8, Math.PI),
-                    new THREE.MeshLambertMaterial({ color: hairColor })
-                );
-                
-                const angle = (i / curlCount) * Math.PI * 2;
-                
-                // Position curls in a circle on top
-                curl.position.set(
-                    Math.sin(angle) * 0.2,
-                    0.5, // Directly on top
-                    Math.cos(angle) * 0.2
-                );
-                
-                // Random orientation
-                curl.rotation.set(
-                    Math.random() * Math.PI,
-                    Math.random() * Math.PI,
-                    Math.random() * Math.PI
-                );
-                
-                hairGroup.add(curl);
-            }
-            
-            mole.add(hairGroup);
-            console.log("Added curly hair with absolute positioning");
-        }
-    ];
-    
-    // Apply hair to each mole with debugging
-    moles.forEach((mole, index) => {
-        console.log(`Mole ${index} position:`, mole.position);
-        console.log(`Mole ${index} rotation:`, mole.rotation);
-        
-        // Choose a random hair style
-        const randomStyle = hairStyles[Math.floor(Math.random() * hairStyles.length)];
-        
-        // Apply the hair style
-        randomStyle(mole);
-    });
-    
-    console.log("Complete hair positioning overhaul applied");
-}
-
-// Add a function to manually position hair on top
-function addManualHair() {
-    moles.forEach((mole, index) => {
-        // Remove any existing hair
-        for (let i = mole.children.length - 1; i >= 0; i--) {
-            const child = mole.children[i];
-            if (child.userData && child.userData.isHair) {
-                mole.remove(child);
-            }
-        }
-        
-        // Create a simple hair tuft directly on top
-        const hairMaterial = new THREE.MeshLambertMaterial({ 
-            color: [0x3D2314, 0xFF00FF, 0x00FF00, 0xFF0000][Math.floor(Math.random() * 4)]
-        });
-        
-        // Create 3-5 spikes in a tight group on top
-        const spikeCount = 3 + Math.floor(Math.random() * 3);
-        
-        for (let i = 0; i < spikeCount; i++) {
-            const spike = new THREE.Mesh(
-                new THREE.ConeGeometry(0.06, 0.25, 8),
-                hairMaterial
-            );
-            
-            // Position directly on top with slight variation
-            spike.position.set(
-                (Math.random() - 0.5) * 0.1,
-                0.5, // Top of sphere
-                (Math.random() - 0.5) * 0.1
-            );
-            
-            // Point upward with slight variation
-            spike.rotation.x = (Math.random() - 0.5) * 0.3;
-            spike.rotation.z = (Math.random() - 0.5) * 0.3;
-            
-            spike.userData.isHair = true;
-            mole.add(spike);
-        }
-        
-        console.log(`Added manual hair to mole ${index}`);
-    });
-}
-
-// Call the manual hair function for most reliable positioning
-addManualHair();
-
-// Update the version indicator
-if (window.gameVersionInfo) {
-    window.gameVersionInfo.version = "1.0.5";
-    window.gameVersionInfo.timestamp = new Date().toISOString();
-    window.gameVersionInfo.cacheStatus = "Fresh Load - Manual Hair Fix";
-}
-
-// Update the version display if it exists
-document.querySelectorAll('[style*="position: absolute"][style*="bottom: 10px"][style*="right: 10px"]').forEach(el => {
-    el.textContent = 'v1.0.5';
-});
-
-console.log("%c Manual Hair Positioning Applied! %c", 
-    "background: #4CAF50; color: white; font-size: 14px; padding: 3px; border-radius: 3px;",
-    "");
-
-// Debug function to add very visible hair to moles
-function addDebugHair() {
-    console.log("Starting debug hair function");
-    console.log("Number of moles:", moles ? moles.length : "moles array not found");
-    
-    // If moles array doesn't exist or is empty, try to find moles in the scene
-    if (!moles || moles.length === 0) {
-        console.log("Moles array not found or empty, searching scene...");
-        moles = [];
-        scene.traverse(function(object) {
-            if (object.isMesh && object.geometry && 
-                object.geometry.type === 'SphereGeometry') {
-                console.log("Found potential mole:", object);
-                moles.push(object);
-            }
-        });
-        console.log("Found", moles.length, "potential moles in scene");
-    }
-    
-    // Process each mole
-    moles.forEach((mole, index) => {
-        console.log(`Processing mole ${index}:`, mole);
-        
-        // Create extremely visible hair
-        const hairMaterial = new THREE.MeshBasicMaterial({ 
-            color: 0xFF0000, // Bright red
-            emissive: 0xFF0000,
-            emissiveIntensity: 1
-        });
-        
-        // Create a single large cone on top
-        const hair = new THREE.Mesh(
-            new THREE.ConeGeometry(0.2, 0.5, 8),
-            hairMaterial
-        );
-        
-        // Position directly on top of mole
-        hair.position.set(0, 0.8, 0);
-        
-        // Add to mole
-        hair.name = "debugHair";
-        mole.add(hair);
-        
-        console.log(`Added debug hair to mole ${index}`);
-    });
-    
-    console.log("Debug hair added to all moles");
-    
-    // Force a render update
-    if (renderer) {
-        renderer.render(scene, camera);
-        console.log("Forced render update");
-    }
-}
-
-// Alternative approach: add hair directly to scene
-function addSceneHair() {
-    console.log("Adding hair directly to scene");
-    
-    // Find all mole positions
-    const molePositions = [];
-    scene.traverse(function(object) {
-        if (object.isMesh && object.geometry && 
-            object.geometry.type === 'SphereGeometry') {
-            // Get world position
-            const position = new THREE.Vector3();
-            object.getWorldPosition(position);
-            molePositions.push({
-                position: position,
-                mole: object
-            });
-            console.log("Found mole at position:", position);
-        }
-    });
-    
-    // Add hair at each mole position
-    molePositions.forEach((data, index) => {
-        const hairMaterial = new THREE.MeshBasicMaterial({ 
-            color: 0xFF00FF, // Bright magenta
-            emissive: 0xFF00FF,
-            emissiveIntensity: 1
-        });
-        
-        // Create a group of cones
-        const hairGroup = new THREE.Group();
-        hairGroup.name = "sceneHair" + index;
-        
-        // Add 3 cones in a mohawk
-        for (let i = 0; i < 3; i++) {
-            const hair = new THREE.Mesh(
-                new THREE.ConeGeometry(0.1, 0.4, 8),
-                hairMaterial
-            );
-            
-            // Position in a row
-            hair.position.set(0, 0, -0.2 + i * 0.2);
-            hair.rotation.x = -Math.PI / 2; // Point up
-            
-            hairGroup.add(hair);
-        }
-        
-        // Position above the mole
-        const pos = data.position.clone();
-        pos.y += 0.8; // Move up
-        hairGroup.position.copy(pos);
-        
-        // Add to scene
-        scene.add(hairGroup);
-        console.log(`Added scene hair at position:`, pos);
-    });
-    
-    console.log("Scene hair added");
-    
-    // Force a render update
-    if (renderer) {
-        renderer.render(scene, camera);
-    }
-}
-
-// Try both approaches
-console.log("Attempting hair fixes with multiple approaches");
-addDebugHair();
-addSceneHair();
-
-// Update the version indicator
-console.log("%c Debug Hair Fix Applied! %c", 
-    "background: #FF0000; color: white; font-size: 14px; padding: 3px; border-radius: 3px;",
-    "");
-
-// Add a visible message on screen
-const debugMessage = document.createElement('div');
-debugMessage.style.position = 'absolute';
-debugMessage.style.top = '50px';
-debugMessage.style.left = '50%';
-debugMessage.style.transform = 'translateX(-50%)';
-debugMessage.style.background = 'rgba(255,0,0,0.7)';
-debugMessage.style.color = 'white';
-debugMessage.style.padding = '10px';
-debugMessage.style.borderRadius = '5px';
-debugMessage.style.fontFamily = 'Arial, sans-serif';
-debugMessage.style.fontSize = '16px';
-debugMessage.style.zIndex = '1000';
-debugMessage.textContent = 'Debug Hair v1.0.6 Applied';
-document.body.appendChild(debugMessage);
-
-// Final hair fix with correct positioning
-function finalHairFix() {
-    console.log("Applying final hair fix");
-    
-    // Clear any existing debug hair
-    scene.traverse(function(object) {
-        if (object.name && (object.name.includes("debugHair") || object.name.includes("sceneHair"))) {
-            if (object.parent) {
-                object.parent.remove(object);
+            if (hairStyle === 0) {
+                // Spiky hair
+                hairElement.style.borderBottom = `20px solid ${hairColor}`;
+                hairElement.style.borderLeft = '15px solid transparent';
+                hairElement.style.borderRight = '15px solid transparent';
+            } else if (hairStyle === 1) {
+                // Mohawk
+                hairElement.style.backgroundColor = hairColor;
+                hairElement.style.borderRadius = '5px 5px 0 0';
             } else {
-                scene.remove(object);
+                // Curly hair
+                hairElement.style.backgroundColor = hairColor;
+                hairElement.style.borderRadius = '50% 50% 0 0';
             }
-        }
-    });
-    
-    // Find all moles
-    const moleObjects = [];
-    scene.traverse(function(object) {
-        if (object.isMesh && object.geometry && 
-            object.geometry.type === 'SphereGeometry') {
-            moleObjects.push(object);
-        }
-    });
-    
-    console.log(`Found ${moleObjects.length} moles for hair application`);
-    
-    // Add hair to each mole
-    moleObjects.forEach((mole, index) => {
-        // Create a hair group
-        const hairGroup = new THREE.Group();
-        hairGroup.name = "finalHair" + index;
-        
-        // Random hair style and color
-        const hairStyle = Math.floor(Math.random() * 3); // 0, 1, or 2
-        const hairColors = [
-            0xFF0000, // Red
-            0x00FF00, // Green
-            0x0000FF, // Blue
-            0xFF00FF, // Magenta
-            0xFFFF00  // Yellow
-        ];
-        const hairColor = hairColors[Math.floor(Math.random() * hairColors.length)];
-        
-        // Create hair based on style
-        if (hairStyle === 0) {
-            // Mohawk - 3 spikes in a row
-            for (let i = 0; i < 3; i++) {
-                const spike = new THREE.Mesh(
-                    new THREE.ConeGeometry(0.1, 0.3, 8),
-                    new THREE.MeshBasicMaterial({ color: hairColor })
-                );
-                
-                spike.position.set(0, 0, -0.2 + i * 0.2);
-                spike.rotation.x = Math.PI / 2; // Point up
-                
-                hairGroup.add(spike);
-            }
-        } else if (hairStyle === 1) {
-            // Single large spike
-            const spike = new THREE.Mesh(
-                new THREE.ConeGeometry(0.15, 0.4, 8),
-                new THREE.MeshBasicMaterial({ color: hairColor })
-            );
             
-            spike.position.set(0, 0, 0);
-            spike.rotation.x = Math.PI / 2; // Point up
-            
-            hairGroup.add(spike);
-        } else {
-            // Multiple small spikes
-            for (let i = 0; i < 5; i++) {
-                const spike = new THREE.Mesh(
-                    new THREE.ConeGeometry(0.08, 0.25, 8),
-                    new THREE.MeshBasicMaterial({ color: hairColor })
-                );
-                
-                const angle = (i / 5) * Math.PI;
-                spike.position.set(Math.sin(angle) * 0.15, 0, Math.cos(angle) * 0.15);
-                spike.rotation.x = Math.PI / 2; // Point up
-                spike.rotation.z = angle;
-                
-                hairGroup.add(spike);
-            }
+            // Add to container
+            hairContainer.appendChild(hairElement);
         }
         
-        // Position the hair group on top of the mole
-        hairGroup.position.set(0, 0.5, 0);
-        
-        // Add the hair group to the mole
-        mole.add(hairGroup);
-        
-        console.log(`Added final hair style ${hairStyle} to mole ${index}`);
-    });
-    
-    console.log("Final hair fix applied");
-    
-    // Update the debug message
-    const debugMessages = document.querySelectorAll('[style*="background: rgba(255,0,0,0.7)"]');
-    if (debugMessages.length > 0) {
-        debugMessages[0].textContent = 'Final Hair v1.0.7 Applied';
-        debugMessages[0].style.background = 'rgba(0,255,0,0.7)'; // Change to green
-    }
-}
-
-// Call the final fix
-finalHairFix();
-
-// Force a render update
-if (typeof renderer !== 'undefined') {
-    renderer.render(scene, camera);
-}
-
-console.log("%c Final Hair Fix Applied! %c", 
-    "background: #00FF00; color: black; font-size: 14px; padding: 3px; border-radius: 3px;",
-    "");
-
-// Simplified hair fix without using traverse
-function simpleHairFix() {
-    console.log("Applying simple hair fix");
-    
-    // Direct approach to add hair to moles
-    if (typeof moles !== 'undefined' && moles.length > 0) {
-        console.log(`Found ${moles.length} moles in moles array`);
-        
-        // Add hair to each mole
-        moles.forEach((mole, index) => {
-            try {
-                // Create a simple hair spike
-                const hairMaterial = new THREE.MeshBasicMaterial({ 
-                    color: 0xFF0000 // Bright red
-                });
-                
-                const hair = new THREE.Mesh(
-                    new THREE.ConeGeometry(0.15, 0.4, 8),
-                    hairMaterial
-                );
-                
-                // Position directly on top
-                hair.position.set(0, 0.8, 0);
-                hair.rotation.x = Math.PI / 2; // Point up
-                
-                // Add to mole
-                mole.add(hair);
-                
-                console.log(`Added hair to mole ${index}`);
-            } catch (error) {
-                console.error(`Error adding hair to mole ${index}:`, error);
-            }
-        });
-    } else {
-        console.log("Moles array not found or empty");
+        return hairContainer;
     }
     
-    // Update the debug message
-    try {
-        const debugMessages = document.querySelectorAll('[style*="background: rgba(255,0,0,0.7)"]');
-        if (debugMessages.length > 0) {
-            debugMessages[0].textContent = 'Simple Hair v1.0.8 Applied';
-        }
-    } catch (e) {
-        console.error("Error updating debug message:", e);
-    }
+    // Create the hair elements
+    const hairContainer = createDOMHair();
     
-    console.log("Simple hair fix applied");
-}
-
-// Alternative approach using direct DOM manipulation
-function addHairViaDOM() {
-    console.log("Adding hair indicator via DOM");
-    
-    // Create a hair indicator that follows moles
-    const hairIndicator = document.createElement('div');
-    hairIndicator.style.position = 'absolute';
-    hairIndicator.style.width = '20px';
-    hairIndicator.style.height = '20px';
-    hairIndicator.style.backgroundColor = 'red';
-    hairIndicator.style.borderRadius = '50% 50% 0 0';
-    hairIndicator.style.zIndex = '1000';
-    hairIndicator.style.pointerEvents = 'none'; // Don't interfere with clicks
-    document.body.appendChild(hairIndicator);
-    
-    // Update position to follow moles
-    let lastMolePosition = { x: 0, y: 0 };
-    
-    // Function to update hair position
-    function updateHairPosition() {
-        // Find visible moles
+    // Function to update hair positions based on mole positions
+    function updateHairPositions() {
+        // Find all visible moles
         const visibleMoles = [];
-        if (typeof moles !== 'undefined') {
-            moles.forEach(mole => {
-                if (mole.position.y > -0.5) { // Mole is up
-                    // Convert 3D position to screen position
-                    const vector = new THREE.Vector3();
-                    vector.setFromMatrixPosition(mole.matrixWorld);
-                    vector.project(camera);
+        
+        // Use querySelectorAll to find mole elements in the DOM
+        const moleElements = document.querySelectorAll('canvas');
+        if (moleElements.length > 0) {
+            // Get the canvas element
+            const canvas = moleElements[0];
+            
+            // Get canvas position
+            const canvasRect = canvas.getBoundingClientRect();
+            
+            // Predefined mole positions (approximate)
+            const molePositions = [
+                { x: canvasRect.width * 0.3, y: canvasRect.height * 0.4 },
+                { x: canvasRect.width * 0.7, y: canvasRect.height * 0.4 },
+                { x: canvasRect.width * 0.3, y: canvasRect.height * 0.7 },
+                { x: canvasRect.width * 0.7, y: canvasRect.height * 0.7 }
+            ];
+            
+            // Update hair positions
+            const hairElements = document.querySelectorAll('[data-mole-hair="true"]');
+            hairElements.forEach((hair, index) => {
+                if (index < molePositions.length) {
+                    const pos = molePositions[index];
                     
-                    const x = (vector.x * 0.5 + 0.5) * window.innerWidth;
-                    const y = (-(vector.y * 0.5) + 0.5) * window.innerHeight;
+                    // Position hair above potential mole position
+                    hair.style.left = `${canvasRect.left + pos.x - 15}px`;
+                    hair.style.top = `${canvasRect.top + pos.y - 30}px`;
                     
-                    visibleMoles.push({ x, y });
+                    // Show hair
+                    hair.style.display = 'block';
                 }
             });
         }
         
-        // Update indicator position if moles are visible
-        if (visibleMoles.length > 0) {
-            // Use the first visible mole
-            lastMolePosition = visibleMoles[0];
-            hairIndicator.style.display = 'block';
-        } else {
-            hairIndicator.style.display = 'none';
-        }
-        
-        // Position the indicator above the mole
-        hairIndicator.style.left = `${lastMolePosition.x - 10}px`; // Center horizontally
-        hairIndicator.style.top = `${lastMolePosition.y - 30}px`; // Position above
-        
         // Continue updating
-        requestAnimationFrame(updateHairPosition);
+        requestAnimationFrame(updateHairPositions);
     }
     
-    // Start updating
-    updateHairPosition();
+    // Start updating hair positions
+    updateHairPositions();
     
-    console.log("Hair indicator added via DOM");
-}
-
-// Try both approaches
-try {
-    simpleHairFix();
-} catch (e) {
-    console.error("Error in simpleHairFix:", e);
-}
-
-try {
-    addHairViaDOM();
-} catch (e) {
-    console.error("Error in addHairViaDOM:", e);
-}
-
-// Add a simple console message that doesn't depend on any Three.js functionality
-console.log("%c Hair Fix Attempt v1.0.8 %c", 
-    "background: #FF0000; color: white; font-size: 14px; padding: 3px; border-radius: 3px;",
-    "");
-
-// Add a visible message on screen that doesn't depend on any Three.js functionality
-const simpleMessage = document.createElement('div');
-simpleMessage.style.position = 'absolute';
-simpleMessage.style.top = '100px';
-simpleMessage.style.left = '50%';
-simpleMessage.style.transform = 'translateX(-50%)';
-simpleMessage.style.background = 'rgba(0,0,255,0.7)';
-simpleMessage.style.color = 'white';
-simpleMessage.style.padding = '10px';
-simpleMessage.style.borderRadius = '5px';
-simpleMessage.style.fontFamily = 'Arial, sans-serif';
-simpleMessage.style.fontSize = '16px';
-simpleMessage.style.zIndex = '1001';
-simpleMessage.textContent = 'Hair Fix v1.0.8 - Check Console';
-document.body.appendChild(simpleMessage);
+    // Add a message to indicate DOM hair is active
+    const hairMessage = document.createElement('div');
+    hairMessage.style.position = 'fixed';
+    hairMessage.style.bottom = '50px';
+    hairMessage.style.left = '50%';
+    hairMessage.style.transform = 'translateX(-50%)';
+    hairMessage.style.backgroundColor = 'rgba(0,0,0,0.7)';
+    hairMessage.style.color = 'white';
+    hairMessage.style.padding = '10px';
+    hairMessage.style.borderRadius = '5px';
+    hairMessage.style.fontFamily = 'Arial, sans-serif';
+    hairMessage.style.fontSize = '14px';
+    hairMessage.style.zIndex = '1002';
+    hairMessage.textContent = 'DOM Hair Active';
+    document.body.appendChild(hairMessage);
+    
+    return "Final DOM-only version applied";
+})();
