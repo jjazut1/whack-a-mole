@@ -1291,3 +1291,148 @@ document.querySelectorAll('[style*="position: absolute"][style*="bottom: 10px"][
 console.log("%c Manual Hair Positioning Applied! %c", 
     "background: #4CAF50; color: white; font-size: 14px; padding: 3px; border-radius: 3px;",
     "");
+
+// Debug function to add very visible hair to moles
+function addDebugHair() {
+    console.log("Starting debug hair function");
+    console.log("Number of moles:", moles ? moles.length : "moles array not found");
+    
+    // If moles array doesn't exist or is empty, try to find moles in the scene
+    if (!moles || moles.length === 0) {
+        console.log("Moles array not found or empty, searching scene...");
+        moles = [];
+        scene.traverse(function(object) {
+            if (object.isMesh && object.geometry && 
+                object.geometry.type === 'SphereGeometry') {
+                console.log("Found potential mole:", object);
+                moles.push(object);
+            }
+        });
+        console.log("Found", moles.length, "potential moles in scene");
+    }
+    
+    // Process each mole
+    moles.forEach((mole, index) => {
+        console.log(`Processing mole ${index}:`, mole);
+        
+        // Create extremely visible hair
+        const hairMaterial = new THREE.MeshBasicMaterial({ 
+            color: 0xFF0000, // Bright red
+            emissive: 0xFF0000,
+            emissiveIntensity: 1
+        });
+        
+        // Create a single large cone on top
+        const hair = new THREE.Mesh(
+            new THREE.ConeGeometry(0.2, 0.5, 8),
+            hairMaterial
+        );
+        
+        // Position directly on top of mole
+        hair.position.set(0, 0.8, 0);
+        
+        // Add to mole
+        hair.name = "debugHair";
+        mole.add(hair);
+        
+        console.log(`Added debug hair to mole ${index}`);
+    });
+    
+    console.log("Debug hair added to all moles");
+    
+    // Force a render update
+    if (renderer) {
+        renderer.render(scene, camera);
+        console.log("Forced render update");
+    }
+}
+
+// Alternative approach: add hair directly to scene
+function addSceneHair() {
+    console.log("Adding hair directly to scene");
+    
+    // Find all mole positions
+    const molePositions = [];
+    scene.traverse(function(object) {
+        if (object.isMesh && object.geometry && 
+            object.geometry.type === 'SphereGeometry') {
+            // Get world position
+            const position = new THREE.Vector3();
+            object.getWorldPosition(position);
+            molePositions.push({
+                position: position,
+                mole: object
+            });
+            console.log("Found mole at position:", position);
+        }
+    });
+    
+    // Add hair at each mole position
+    molePositions.forEach((data, index) => {
+        const hairMaterial = new THREE.MeshBasicMaterial({ 
+            color: 0xFF00FF, // Bright magenta
+            emissive: 0xFF00FF,
+            emissiveIntensity: 1
+        });
+        
+        // Create a group of cones
+        const hairGroup = new THREE.Group();
+        hairGroup.name = "sceneHair" + index;
+        
+        // Add 3 cones in a mohawk
+        for (let i = 0; i < 3; i++) {
+            const hair = new THREE.Mesh(
+                new THREE.ConeGeometry(0.1, 0.4, 8),
+                hairMaterial
+            );
+            
+            // Position in a row
+            hair.position.set(0, 0, -0.2 + i * 0.2);
+            hair.rotation.x = -Math.PI / 2; // Point up
+            
+            hairGroup.add(hair);
+        }
+        
+        // Position above the mole
+        const pos = data.position.clone();
+        pos.y += 0.8; // Move up
+        hairGroup.position.copy(pos);
+        
+        // Add to scene
+        scene.add(hairGroup);
+        console.log(`Added scene hair at position:`, pos);
+    });
+    
+    console.log("Scene hair added");
+    
+    // Force a render update
+    if (renderer) {
+        renderer.render(scene, camera);
+    }
+}
+
+// Try both approaches
+console.log("Attempting hair fixes with multiple approaches");
+addDebugHair();
+addSceneHair();
+
+// Update the version indicator
+console.log("%c Debug Hair Fix Applied! %c", 
+    "background: #FF0000; color: white; font-size: 14px; padding: 3px; border-radius: 3px;",
+    "");
+
+// Add a visible message on screen
+const debugMessage = document.createElement('div');
+debugMessage.style.position = 'absolute';
+debugMessage.style.top = '50px';
+debugMessage.style.left = '50%';
+debugMessage.style.transform = 'translateX(-50%)';
+debugMessage.style.background = 'rgba(255,0,0,0.7)';
+debugMessage.style.color = 'white';
+debugMessage.style.padding = '10px';
+debugMessage.style.borderRadius = '5px';
+debugMessage.style.fontFamily = 'Arial, sans-serif';
+debugMessage.style.fontSize = '16px';
+debugMessage.style.zIndex = '1000';
+debugMessage.textContent = 'Debug Hair v1.0.6 Applied';
+document.body.appendChild(debugMessage);
