@@ -1076,523 +1076,179 @@ addVersionIndicator();
 // You can also add this at the end of your main code
 console.log("Game initialization complete - running latest version");
 
-// Version 1.3.0 - Simple Cartoonish Hair
-function addSimpleCartoonishHair() {
+// Version 1.4.0 - Standalone Hair Implementation
+(function() {
     // Create a unique version identifier
-    const versionNumber = "1.3.0";
+    const versionNumber = "1.4.0";
     const uniqueId = Math.random().toString(36).substring(2, 6);
     
     console.log(
-        `%c Simple Hair v${versionNumber}-${uniqueId} %c`,
-        "background: #9C27B0; color: white; font-size: 14px; padding: 5px; border-radius: 3px;",
+        `%c Standalone Hair v${versionNumber}-${uniqueId} %c`,
+        "background: #E91E63; color: white; font-size: 14px; padding: 5px; border-radius: 3px;",
         ""
     );
     
-    // First, remove any existing hair
-    moles.forEach(mole => {
-        if (mole.userData.facingGroup) {
-            // Remove any existing hair elements from the facing group
-            const hairElements = mole.userData.facingGroup.children.filter(
-                child => child.userData && child.userData.isHair
-            );
-            
-            hairElements.forEach(hair => {
-                mole.userData.facingGroup.remove(hair);
-            });
+    // Function to add hair to visible moles
+    function addHairToVisibleMoles() {
+        // Check if moles array exists
+        if (typeof moles === 'undefined' || !Array.isArray(moles)) {
+            console.log("Moles array not found or not an array");
+            return;
         }
-    });
-    
-    // Function to add simple hair to moles
-    function addHairToMoles() {
+        
+        console.log(`Found ${moles.length} moles in array`);
+        
+        // Process each mole
         moles.forEach((mole, index) => {
-            if (!mole.userData.facingGroup) return;
-            
-            const facingGroup = mole.userData.facingGroup;
-            
-            // Create simple hair - 3 triangular spikes
-            const hairColors = [0x000000, 0x3D2314, 0x654321]; // Black, dark brown, brown
-            const hairColor = hairColors[Math.floor(Math.random() * hairColors.length)];
-            
-            // Create 3 hair spikes
-            for (let i = 0; i < 3; i++) {
-                // Create a triangle shape for each spike
-                const spikeGeometry = new THREE.ConeGeometry(0.05, 0.15, 8);
-                const spikeMaterial = new THREE.MeshBasicMaterial({ color: hairColor });
-                const spike = new THREE.Mesh(spikeGeometry, spikeMaterial);
-                
-                // Position spikes in a row just above the eyes
-                // Eyes are at y=0.4, so place hair at y=0.55
-                const xPos = -0.15 + (i * 0.15); // -0.15, 0, 0.15
-                spike.position.set(xPos, 0.55, 0.81);
-                
-                // Rotate to point upward
-                spike.rotation.x = Math.PI;
-                
-                // Mark as hair for future reference
-                spike.userData = { isHair: true };
-                
-                // Add to facing group (same as eyes)
-                facingGroup.add(spike);
-            }
-            
-            console.log(`Added hair to mole ${index}`);
-        });
-    }
-    
-    // Add hair to all moles
-    addHairToMoles();
-    
-    // Update version indicator
-    const existingIndicator = document.querySelector('[data-version-indicator="true"]');
-    if (existingIndicator) {
-        existingIndicator.textContent = `Simple Hair v${versionNumber}`;
-        existingIndicator.style.backgroundColor = 'rgba(156, 39, 176, 0.7)';
-    } else {
-        // Create new indicator if none exists
-        const indicator = document.createElement('div');
-        indicator.setAttribute('data-version-indicator', 'true');
-        indicator.style.position = 'fixed';
-        indicator.style.bottom = '40px';
-        indicator.style.right = '10px';
-        indicator.style.backgroundColor = 'rgba(156, 39, 176, 0.7)';
-        indicator.style.color = 'white';
-        indicator.style.padding = '5px 10px';
-        indicator.style.borderRadius = '5px';
-        indicator.style.fontFamily = 'Arial, sans-serif';
-        indicator.style.fontSize = '12px';
-        indicator.style.zIndex = '1002';
-        indicator.textContent = `Simple Hair v${versionNumber}`;
-        document.body.appendChild(indicator);
-    }
-    
-    // Force a render update
-    if (typeof renderer !== 'undefined' && typeof scene !== 'undefined' && typeof camera !== 'undefined') {
-    renderer.render(scene, camera);
-}
-    
-    return "Simple cartoonish hair added";
-}
-
-// Execute the function
-addSimpleCartoonishHair();
-
-// Version 1.3.1 - Improved Hair Placement
-function improveCartoonishHair() {
-    // Create a unique version identifier
-    const versionNumber = "1.3.1";
-    const uniqueId = Math.random().toString(36).substring(2, 6);
-    
-    console.log(
-        `%c Improved Hair v${versionNumber}-${uniqueId} %c`,
-        "background: #673AB7; color: white; font-size: 14px; padding: 5px; border-radius: 3px;",
-        ""
-    );
-    
-    // First, remove any existing hair from all objects in the scene
-    scene.traverse(object => {
-        if (object.userData && object.userData.isHair) {
-            if (object.parent) {
-                object.parent.remove(object);
-            }
-        }
-    });
-    
-    // Function to add improved hair to moles
-    function addImprovedHairToMoles() {
-        moles.forEach((mole, index) => {
-            if (!mole.userData.facingGroup) return;
-            
-            const facingGroup = mole.userData.facingGroup;
-            
-            // Only add hair to moles that are visible (up)
-            if (!mole.userData.isUp) {
-                console.log(`Skipping hair for mole ${index} - not visible`);
-                return;
-            }
-            
-            // Create more realistic hair - curved strands
-            const hairColors = [0x000000, 0x3D2314, 0x654321]; // Black, dark brown, brown
-            const hairColor = hairColors[Math.floor(Math.random() * hairColors.length)];
-            
-            // Create a hair group
-            const hairGroup = new THREE.Group();
-            hairGroup.userData = { isHair: true };
-            
-            // Create 5 hair strands
-            const strandCount = 5;
-            for (let i = 0; i < strandCount; i++) {
-                // Create a curved cylinder for each strand
-                const strandGeometry = new THREE.CylinderGeometry(0.02, 0.01, 0.2, 8);
-                const strandMaterial = new THREE.MeshBasicMaterial({ color: hairColor });
-                const strand = new THREE.Mesh(strandGeometry, strandMaterial);
-                
-                // Position strands in an arc above the eyes (not overlapping)
-                // Eyes are at y=0.4, so place hair at y=0.65 (higher than before)
-                const angle = (i / (strandCount - 1)) * Math.PI * 0.6 - Math.PI * 0.3;
-                const radius = 0.25;
-                const xPos = Math.sin(angle) * radius;
-                strand.position.set(xPos, 0.65, 0.81);
-                
-                // Rotate to point outward from the head
-                strand.rotation.x = Math.PI / 2 - angle * 0.5;
-                strand.rotation.z = angle;
-                
-                // Add slight random variation
-                strand.rotation.x += (Math.random() - 0.5) * 0.2;
-                strand.rotation.z += (Math.random() - 0.5) * 0.2;
-                
-                // Mark as hair for future reference
-                strand.userData = { isHair: true };
-                
-                // Add to hair group
-                hairGroup.add(strand);
-            }
-            
-            // Add hair group to facing group
-            facingGroup.add(hairGroup);
-            
-            console.log(`Added improved hair to mole ${index}`);
-        });
-    }
-    
-    // Add hair to visible moles
-    addImprovedHairToMoles();
-    
-    // Hook into the animateMole function to add/remove hair when moles move
-    const originalAnimateMole = window.animateMole;
-    if (originalAnimateMole) {
-        window.animateMole = function(mole, goingUp) {
-            // Call the original function first
-            originalAnimateMole.apply(this, arguments);
-            
-            // After animation starts, add or remove hair based on mole state
-            setTimeout(() => {
-                if (goingUp) {
-                    // Mole is coming up - add hair after a delay
-                    setTimeout(() => {
-                        if (mole.userData.facingGroup) {
-                            // Remove any existing hair
-                            mole.userData.facingGroup.children.forEach(child => {
-                                if (child.userData && child.userData.isHair) {
-                                    mole.userData.facingGroup.remove(child);
-                                }
-                            });
-                            
-                            // Create hair group
-                            const hairGroup = new THREE.Group();
-                            hairGroup.userData = { isHair: true };
-                            
-                            // Add hair strands
-                            const hairColor = 0x3D2314; // Dark brown
-                            const strandCount = 5;
-                            
-                            for (let i = 0; i < strandCount; i++) {
-                                const strandGeometry = new THREE.CylinderGeometry(0.02, 0.01, 0.2, 8);
-                                const strandMaterial = new THREE.MeshBasicMaterial({ color: hairColor });
-                                const strand = new THREE.Mesh(strandGeometry, strandMaterial);
-                                
-                                const angle = (i / (strandCount - 1)) * Math.PI * 0.6 - Math.PI * 0.3;
-                                const radius = 0.25;
-                                const xPos = Math.sin(angle) * radius;
-                                strand.position.set(xPos, 0.65, 0.81);
-                                
-                                strand.rotation.x = Math.PI / 2 - angle * 0.5;
-                                strand.rotation.z = angle;
-                                
-                                strand.userData = { isHair: true };
-                                hairGroup.add(strand);
-                            }
-                            
-                            mole.userData.facingGroup.add(hairGroup);
-                        }
-                    }, 100);
-                } else {
-                    // Mole is going down - remove hair
-                    if (mole.userData.facingGroup) {
-                        mole.userData.facingGroup.children.forEach(child => {
-                            if (child.userData && child.userData.isHair) {
-                                mole.userData.facingGroup.remove(child);
-                            }
-                        });
-                    }
-                }
-            }, 10);
-        };
-    }
-    
-    // Update version indicator
-    const existingIndicator = document.querySelector('[data-version-indicator="true"]');
-    if (existingIndicator) {
-        existingIndicator.textContent = `Improved Hair v${versionNumber}`;
-        existingIndicator.style.backgroundColor = 'rgba(103, 58, 183, 0.7)';
-    } else {
-        // Create new indicator if none exists
-        const indicator = document.createElement('div');
-        indicator.setAttribute('data-version-indicator', 'true');
-        indicator.style.position = 'fixed';
-        indicator.style.bottom = '40px';
-        indicator.style.right = '10px';
-        indicator.style.backgroundColor = 'rgba(103, 58, 183, 0.7)';
-        indicator.style.color = 'white';
-        indicator.style.padding = '5px 10px';
-        indicator.style.borderRadius = '5px';
-        indicator.style.fontFamily = 'Arial, sans-serif';
-        indicator.style.fontSize = '12px';
-        indicator.style.zIndex = '1002';
-        indicator.textContent = `Improved Hair v${versionNumber}`;
-        document.body.appendChild(indicator);
-    }
-    
-    // Force a render update
-    if (typeof renderer !== 'undefined' && typeof scene !== 'undefined' && typeof camera !== 'undefined') {
-        renderer.render(scene, camera);
-    }
-    
-    return "Improved cartoonish hair added";
-}
-
-// Execute the function
-improveCartoonishHair();
-
-// Version 1.3.3 - Definitive Hair Implementation
-function definitiveMoleHair() {
-    // Create a unique version identifier
-    const versionNumber = "1.3.3";
-    const uniqueId = Math.random().toString(36).substring(2, 6);
-    
-    console.log(
-        `%c Definitive Hair v${versionNumber}-${uniqueId} %c`,
-        "background: #4CAF50; color: white; font-size: 14px; padding: 5px; border-radius: 3px;",
-        ""
-    );
-    
-    // Check if we've already applied this version to avoid duplicates
-    if (window.currentHairVersion === versionNumber) {
-        console.log("This version is already applied. Skipping to avoid duplicates.");
-        return "Already applied";
-    }
-    
-    // Store current version in window object
-    window.currentHairVersion = versionNumber;
-    
-    // Function to clean up any existing hair implementations
-    function cleanupExistingHair() {
-        try {
-            // Remove hair from all moles
-            if (moles && moles.length > 0) {
-                moles.forEach((mole, index) => {
-                    if (mole && mole.userData && mole.userData.facingGroup) {
-                        const facingGroup = mole.userData.facingGroup;
-                        
-                        // Remove any elements marked as hair
-                        for (let i = facingGroup.children.length - 1; i >= 0; i--) {
-                            const child = facingGroup.children[i];
-                            if (child && child.userData && child.userData.isHair) {
-                                facingGroup.remove(child);
-                            }
-                        }
-                        
-                        // Also check direct children of mole
-                        for (let i = mole.children.length - 1; i >= 0; i--) {
-                            const child = mole.children[i];
-                            if (child && child.userData && child.userData.isHair) {
-                                mole.remove(child);
-                            }
-                        }
-                    }
-                });
-                console.log("Cleaned up existing hair from all moles");
-            }
-            
-            // Remove any existing animation hooks
-            if (window.originalAnimateMole) {
-                window.animateMole = window.originalAnimateMole;
-                console.log("Restored original animateMole function");
-            }
-        } catch (error) {
-            console.error("Error cleaning up existing hair:", error);
-        }
-    }
-    
-    // Function to add definitive hair to visible moles
-    function addDefinitiveHair() {
-        try {
-            if (!moles || moles.length === 0) {
-                console.log("No moles found to add hair to");
-                return;
-            }
-            
-            console.log(`Found ${moles.length} moles`);
-            
-            moles.forEach((mole, index) => {
-                if (!mole.userData || !mole.userData.facingGroup) {
-                    console.log(`Mole ${index} has no facing group`);
+            try {
+                // Skip if mole doesn't have required properties
+                if (!mole || !mole.userData || !mole.userData.facingGroup) {
+                    console.log(`Mole ${index} missing required properties`);
                     return;
                 }
                 
                 const facingGroup = mole.userData.facingGroup;
                 
-                // Only add hair to moles that are visible (up)
+                // Remove any existing hair first
+                for (let i = facingGroup.children.length - 1; i >= 0; i--) {
+                    const child = facingGroup.children[i];
+                    if (child && child.userData && child.userData.isHair) {
+                        facingGroup.remove(child);
+                    }
+                }
+                
+                // Only add hair to visible moles
                 if (!mole.userData.isUp) {
-                    console.log(`Skipping hair for mole ${index} - not visible`);
+                    console.log(`Mole ${index} is not up, skipping`);
                     return;
                 }
                 
                 console.log(`Adding hair to mole ${index}`);
                 
-                // Create simple, effective hair - three small spikes
-                const hairColor = 0x3D2314; // Dark brown
+                // Create three simple hair spikes
+                const hairColor = 0x000000; // Black for maximum visibility
                 
-                // Create 3 hair spikes
                 for (let i = 0; i < 3; i++) {
-                    // Create a simple cone for each spike
-                    const spikeGeometry = new THREE.ConeGeometry(0.03, 0.15, 8);
+                    const spikeGeometry = new THREE.ConeGeometry(0.03, 0.12, 8);
                     const spikeMaterial = new THREE.MeshBasicMaterial({ color: hairColor });
                     const spike = new THREE.Mesh(spikeGeometry, spikeMaterial);
                     
                     // Position spikes in a row above the eyes
-                    // Eyes are at y=0.4, so place hair at y=0.65
                     const xPos = -0.1 + (i * 0.1); // -0.1, 0, 0.1
                     spike.position.set(xPos, 0.65, 0.81);
                     
                     // Rotate to point upward
                     spike.rotation.x = Math.PI;
                     
-                    // Add slight random variation
-                    spike.rotation.x += (Math.random() - 0.5) * 0.1;
-                    spike.rotation.z += (Math.random() - 0.5) * 0.1;
+                    // Mark as hair
+                    spike.userData = { isHair: true, version: versionNumber };
                     
-                    // Mark as hair for future reference
-                    spike.userData = { isHair: true };
-                    
-                    // Add directly to facing group
+                    // Add to facing group
                     facingGroup.add(spike);
                 }
-            });
-        } catch (error) {
-            console.error("Error adding hair to moles:", error);
-        }
-    }
-    
-    // First clean up any existing implementations
-    cleanupExistingHair();
-    
-    // Then add new hair to visible moles
-    addDefinitiveHair();
-    
-    // Store the original animateMole function if we haven't already
-    if (!window.originalAnimateMole && window.animateMole) {
-        window.originalAnimateMole = window.animateMole;
-    }
-    
-    // Hook into the animateMole function to add/remove hair when moles move
-    try {
-        if (window.animateMole) {
-            window.animateMole = function(mole, goingUp) {
-                // Call the original function first
-                window.originalAnimateMole.apply(this, arguments);
-                
-                // After animation starts, add or remove hair based on mole state
-                setTimeout(() => {
-                    try {
-                        if (goingUp) {
-                            // Mole is coming up - add hair after a delay
-                            setTimeout(() => {
-                                if (mole.userData && mole.userData.facingGroup) {
-                                    // Remove any existing hair
-                                    const facingGroup = mole.userData.facingGroup;
-                                    for (let i = facingGroup.children.length - 1; i >= 0; i--) {
-                                        const child = facingGroup.children[i];
-                                        if (child.userData && child.userData.isHair) {
-                                            facingGroup.remove(child);
-                                        }
-                                    }
-                                    
-                                    // Add hair spikes
-                                    const hairColor = 0x3D2314; // Dark brown
-                                    
-                                    // Create 3 hair spikes
-                                    for (let i = 0; i < 3; i++) {
-                                        const spikeGeometry = new THREE.ConeGeometry(0.03, 0.15, 8);
-                                        const spikeMaterial = new THREE.MeshBasicMaterial({ color: hairColor });
-                                        const spike = new THREE.Mesh(spikeGeometry, spikeMaterial);
-                                        
-                                        const xPos = -0.1 + (i * 0.1);
-                                        spike.position.set(xPos, 0.65, 0.81);
-                                        
-                                        spike.rotation.x = Math.PI;
-                                        spike.rotation.x += (Math.random() - 0.5) * 0.1;
-                                        spike.rotation.z += (Math.random() - 0.5) * 0.1;
-                                        
-                                        spike.userData = { isHair: true };
-                                        facingGroup.add(spike);
-                                    }
-                                }
-                            }, 100);
-                        } else {
-                            // Mole is going down - remove hair
-                            if (mole.userData && mole.userData.facingGroup) {
-                                const facingGroup = mole.userData.facingGroup;
-                                for (let i = facingGroup.children.length - 1; i >= 0; i--) {
-                                    const child = facingGroup.children[i];
-                                    if (child.userData && child.userData.isHair) {
-                                        facingGroup.remove(child);
-                                    }
-                                }
-                            }
-                        }
-                    } catch (error) {
-                        console.error("Error in animateMole hook:", error);
-                    }
-                }, 10);
-            };
-            console.log("Successfully hooked into animateMole function");
-        } else {
-            console.log("Could not find animateMole function to hook into");
-        }
-    } catch (error) {
-        console.error("Error setting up animateMole hook:", error);
-    }
-    
-    // Update or create version indicator
-    try {
-        // Remove all existing version indicators
-        document.querySelectorAll('[data-version-indicator="true"]').forEach(el => {
-            el.remove();
+            } catch (error) {
+                console.error(`Error processing mole ${index}:`, error);
+            }
         });
-        
-        // Create new definitive indicator
-        const indicator = document.createElement('div');
-        indicator.setAttribute('data-version-indicator', 'true');
-        indicator.style.position = 'fixed';
-        indicator.style.bottom = '40px';
-        indicator.style.right = '10px';
-        indicator.style.backgroundColor = 'rgba(76, 175, 80, 0.7)';
-        indicator.style.color = 'white';
-        indicator.style.padding = '5px 10px';
-        indicator.style.borderRadius = '5px';
-        indicator.style.fontFamily = 'Arial, sans-serif';
-        indicator.style.fontSize = '12px';
-        indicator.style.zIndex = '1002';
-        indicator.textContent = `Definitive Hair v${versionNumber}`;
-        document.body.appendChild(indicator);
-    } catch (error) {
-        console.error("Error updating version indicator:", error);
     }
     
-    // Force a render update
-    try {
-        if (typeof renderer !== 'undefined' && typeof scene !== 'undefined' && typeof camera !== 'undefined') {
-            renderer.render(scene, camera);
-            console.log("Forced render update");
+    // Add a simple version indicator
+    function addVersionIndicator() {
+        try {
+            // Create a unique indicator
+            const indicator = document.createElement('div');
+            indicator.id = `hair-version-${uniqueId}`;
+            indicator.style.position = 'fixed';
+            indicator.style.bottom = '40px';
+            indicator.style.right = '10px';
+            indicator.style.backgroundColor = 'rgba(233, 30, 99, 0.7)';
+            indicator.style.color = 'white';
+            indicator.style.padding = '5px 10px';
+            indicator.style.borderRadius = '5px';
+            indicator.style.fontFamily = 'Arial, sans-serif';
+            indicator.style.fontSize = '12px';
+            indicator.style.zIndex = '1002';
+            indicator.textContent = `Hair v${versionNumber}`;
+            document.body.appendChild(indicator);
+            
+            console.log("Added version indicator");
+        } catch (error) {
+            console.error("Error adding version indicator:", error);
         }
-    } catch (error) {
-        console.error("Error forcing render update:", error);
     }
     
-    console.log("Definitive hair implementation complete");
-    return "Definitive cartoonish hair added";
+    // Add hair to currently visible moles
+    addHairToVisibleMoles();
+    
+    // Add version indicator
+    addVersionIndicator();
+    
+    // Store original animateMole function if it exists
+    let originalAnimateMole = null;
+    if (typeof window.animateMole === 'function') {
+        originalAnimateMole = window.animateMole;
+        
+        // Replace with our version that handles hair
+        window.animateMole = function(mole, goingUp) {
+            // Call original function
+            originalAnimateMole.apply(this, arguments);
+            
+            // Handle hair after a short delay
+            setTimeout(() => {
+                try {
+                    if (!mole || !mole.userData || !mole.userData.facingGroup) return;
+                    
+                    const facingGroup = mole.userData.facingGroup;
+                    
+                    // Remove existing hair
+                    for (let i = facingGroup.children.length - 1; i >= 0; i--) {
+                        const child = facingGroup.children[i];
+                        if (child && child.userData && child.userData.isHair) {
+                            facingGroup.remove(child);
+                        }
+                    }
+                    
+                    // Add new hair if mole is going up
+                    if (goingUp) {
+                        setTimeout(() => {
+                            if (!mole.userData.isUp) return;
+                            
+                            const hairColor = 0x000000; // Black
+                            
+                            for (let i = 0; i < 3; i++) {
+                                const spikeGeometry = new THREE.ConeGeometry(0.03, 0.12, 8);
+                                const spikeMaterial = new THREE.MeshBasicMaterial({ color: hairColor });
+                                const spike = new THREE.Mesh(spikeGeometry, spikeMaterial);
+                                
+                                const xPos = -0.1 + (i * 0.1);
+                                spike.position.set(xPos, 0.65, 0.81);
+                                spike.rotation.x = Math.PI;
+                                
+                                spike.userData = { isHair: true, version: versionNumber };
+                                facingGroup.add(spike);
+                            }
+                        }, 100);
+                    }
+                } catch (error) {
+                    console.error("Error in animateMole hook:", error);
+                }
+            }, 10);
+        };
+        
+        console.log("Successfully hooked into animateMole function");
+    } else {
+        console.log("animateMole function not found, hair will only be added to currently visible moles");
+    }
+    
+    // Force a render update if renderer is available
+    if (typeof renderer !== 'undefined' && typeof scene !== 'undefined' && typeof camera !== 'undefined') {
+        try {
+    renderer.render(scene, camera);
+            console.log("Forced render update");
+        } catch (error) {
+            console.error("Error forcing render update:", error);
+        }
 }
-
-// Execute the function
-definitiveMoleHair();
+    
+    console.log("Standalone hair implementation complete");
+})();
