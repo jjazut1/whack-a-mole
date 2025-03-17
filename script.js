@@ -1076,13 +1076,25 @@ addVersionIndicator();
 // You can also add this at the end of your main code
 console.log("Game initialization complete - running latest version");
 
-// Function to add cartoonish hair to moles
-function addCartoonHairToMoles() {
-    // Hair style options
+// Improved function to add cartoonish hair to moles with better positioning
+function fixMoleHair() {
+    // Remove any existing hair first
+    moles.forEach(mole => {
+        for (let i = mole.children.length - 1; i >= 0; i--) {
+            const child = mole.children[i];
+            if (child.isGroup && child !== mole.userData.facingGroup) {
+                mole.remove(child);
+            }
+        }
+    });
+    
+    // Hair style options with corrected positioning
     const hairStyles = [
         // Spiky hair
         function(mole) {
             const hairGroup = new THREE.Group();
+            hairGroup.userData.isHair = true;
+            
             const spikeCount = 5 + Math.floor(Math.random() * 4);
             const hairColor = new THREE.Color(
                 Math.random() > 0.7 ? 0x000000 : 0x3D2314 // Black or brown
@@ -1095,24 +1107,35 @@ function addCartoonHairToMoles() {
                 );
                 
                 const angle = (i / spikeCount) * Math.PI * 2;
+                // Position spikes on top of the head
                 spike.position.set(
-                    Math.sin(angle) * 0.2,
-                    0.7 + Math.random() * 0.1,
-                    Math.cos(angle) * 0.2
+                    Math.sin(angle) * 0.3,
+                    0.6, // Position on top
+                    Math.cos(angle) * 0.3
                 );
                 
-                spike.rotation.x = Math.random() * 0.5 - 0.7;
-                spike.rotation.z = Math.random() * 0.5 - 0.25;
+                // Orient spikes outward from center of head
+                spike.lookAt(spike.position.clone().add(new THREE.Vector3(
+                    Math.sin(angle),
+                    1.5,
+                    Math.cos(angle)
+                )));
                 
                 hairGroup.add(spike);
             }
             
+            // Position the entire hair group on top of the head
+            hairGroup.position.set(0, 0.3, 0);
             mole.add(hairGroup);
+            
+            console.log("Added spiky hair");
         },
         
         // Mohawk
         function(mole) {
             const hairGroup = new THREE.Group();
+            hairGroup.userData.isHair = true;
+            
             const hairColor = new THREE.Color(
                 [0xFF0000, 0x00FF00, 0x0000FF, 0xFF00FF][Math.floor(Math.random() * 4)]
             );
@@ -1124,23 +1147,32 @@ function addCartoonHairToMoles() {
                     new THREE.MeshLambertMaterial({ color: hairColor })
                 );
                 
+                // Position spikes in a line on top of the head
+                const progress = i / (mohawkCount - 1);
                 spike.position.set(
                     0,
-                    0.7 + Math.random() * 0.1,
-                    -0.3 + (i / (mohawkCount - 1)) * 0.6
+                    0.7,
+                    -0.3 + progress * 0.6
                 );
                 
+                // Orient spikes upward
                 spike.rotation.x = -Math.PI / 2;
                 
                 hairGroup.add(spike);
             }
             
+            // Position the entire hair group on top of the head
+            hairGroup.position.set(0, 0.3, 0);
             mole.add(hairGroup);
+            
+            console.log("Added mohawk");
         },
         
         // Curly hair
         function(mole) {
             const hairGroup = new THREE.Group();
+            hairGroup.userData.isHair = true;
+            
             const curlCount = 8 + Math.floor(Math.random() * 5);
             const hairColor = new THREE.Color(0x3D2314); // Brown
             
@@ -1151,27 +1183,37 @@ function addCartoonHairToMoles() {
                 );
                 
                 const angle = (i / curlCount) * Math.PI * 2;
-                const radius = 0.3 + Math.random() * 0.1;
+                const radius = 0.3;
                 
+                // Position curls around the top of the head
                 curl.position.set(
                     Math.sin(angle) * radius,
-                    0.6 + Math.random() * 0.2,
+                    0.7,
                     Math.cos(angle) * radius
                 );
                 
-                curl.rotation.x = Math.random() * Math.PI;
-                curl.rotation.y = Math.random() * Math.PI;
-                curl.rotation.z = Math.random() * Math.PI;
+                // Random orientation for curls
+                curl.rotation.set(
+                    Math.random() * Math.PI,
+                    Math.random() * Math.PI,
+                    Math.random() * Math.PI
+                );
                 
                 hairGroup.add(curl);
             }
             
+            // Position the entire hair group on top of the head
+            hairGroup.position.set(0, 0.3, 0);
             mole.add(hairGroup);
+            
+            console.log("Added curly hair");
         },
         
         // Single strand
         function(mole) {
             const hairGroup = new THREE.Group();
+            hairGroup.userData.isHair = true;
+            
             const hairColor = new THREE.Color(0x000000); // Black
             
             const strand = new THREE.Mesh(
@@ -1179,9 +1221,12 @@ function addCartoonHairToMoles() {
                 new THREE.MeshLambertMaterial({ color: hairColor })
             );
             
-            strand.position.set(0, 0.8, 0);
-            strand.rotation.x = Math.random() * 0.5 - 0.25;
-            strand.rotation.z = Math.random() * 0.5 - 0.25;
+            // Position strand on top of the head
+            strand.position.set(0, 0.9, 0);
+            
+            // Slight random tilt
+            strand.rotation.x = Math.random() * 0.3 - 0.15;
+            strand.rotation.z = Math.random() * 0.3 - 0.15;
             
             hairGroup.add(strand);
             
@@ -1191,50 +1236,48 @@ function addCartoonHairToMoles() {
                 new THREE.MeshLambertMaterial({ color: hairColor })
             );
             
-            curl.position.set(0, 1.0, 0);
+            curl.position.set(0, 1.1, 0);
             curl.rotation.x = Math.PI / 2;
             
             hairGroup.add(curl);
+            
+            // Position the entire hair group on top of the head
+            hairGroup.position.set(0, 0.3, 0);
             mole.add(hairGroup);
+            
+            console.log("Added single strand");
         }
     ];
     
     // Apply random hair styles to each mole
     moles.forEach((mole, index) => {
-        // Remove any existing hair
-        mole.children.forEach(child => {
-            if (child.userData && child.userData.isHair) {
-                mole.remove(child);
-            }
-        });
-        
         // Choose a random hair style
         const randomStyle = hairStyles[Math.floor(Math.random() * hairStyles.length)];
         
         // Apply the hair style
         randomStyle(mole);
         
-        console.log(`Added hair to mole ${index}`);
+        console.log(`Fixed hair on mole ${index}`);
     });
     
-    console.log("Cartoonish hair added to all moles");
+    console.log("Hair positioning fixed on all moles");
 }
 
-// Call the function to add hair
-addCartoonHairToMoles();
+// Call the function to fix hair positioning
+fixMoleHair();
 
 // Update the version indicator
-window.gameVersionInfo = {
-    version: "1.0.2",
-    timestamp: new Date().toISOString(),
-    cacheStatus: "Fresh Load - Added Cartoonish Hair"
-};
+if (window.gameVersionInfo) {
+    window.gameVersionInfo.version = "1.0.3";
+    window.gameVersionInfo.timestamp = new Date().toISOString();
+    window.gameVersionInfo.cacheStatus = "Fresh Load - Fixed Hair Positioning";
+}
 
 // Update the version display if it exists
 document.querySelectorAll('[style*="position: absolute"][style*="bottom: 10px"][style*="right: 10px"]').forEach(el => {
-    el.textContent = 'v1.0.2';
+    el.textContent = 'v1.0.3';
 });
 
-console.log("%c Mole Hair Update Applied! %c", 
+console.log("%c Mole Hair Positioning Fixed! %c", 
     "background: #FF9800; color: white; font-size: 14px; padding: 3px; border-radius: 3px;",
     "");
