@@ -1024,156 +1024,55 @@ function improveRendererSettings() {
     }
 }
 
-// Version 1.1.0 - DOM-only approach for hair
-(function createFinalVersion() {
-    // Create a unique version identifier
-    const versionNumber = "1.1.0";
-    const timestamp = new Date().toISOString();
-    const uniqueId = Math.random().toString(36).substring(2, 8);
+// Version indicator that doesn't interfere with constants
+function addVersionIndicator() {
+    // Create a unique version timestamp
+    const versionTimestamp = new Date().toISOString();
+    const versionNumber = "1.0.1"; // Incremented to reflect the fix
     
-    // Update version indicator
-    document.querySelectorAll('[data-version-indicator="true"]').forEach(el => {
-        if (el.style.backgroundColor === 'blue') {
-            el.textContent = `Final Version ${versionNumber}-${uniqueId.substring(0, 4)}`;
-            el.style.backgroundColor = 'green';
-        }
-    });
-    
-    // Store in window object for verification
-    window.versionInfo = {
-        version: versionNumber,
-        timestamp: timestamp,
-        id: uniqueId,
-        status: "Final DOM-only Version"
-    };
-    
-    // Log to console
+    // Create a distinctive console message
     console.log(
-        `%c Final Version ${versionNumber}-${uniqueId} loaded %c`,
-        "background: #4CAF50; color: white; font-size: 14px; padding: 5px; border-radius: 3px;",
+        "%c Whack-a-Mole Educational Game - Latest Version Running %c",
+        "background: #4CAF50; color: white; font-size: 16px; padding: 5px; border-radius: 5px;",
         ""
     );
     
-    // Remove any existing hair elements
-    document.querySelectorAll('[data-mole-hair="true"]').forEach(el => {
-        el.remove();
-    });
+    console.log(
+        "%c Version: " + versionNumber + " | Loaded: " + versionTimestamp + " %c",
+        "background: #2196F3; color: white; font-size: 14px; padding: 3px; border-radius: 3px;",
+        ""
+    );
     
-    // Create DOM-based hair elements that follow moles
-    function createDOMHair() {
-        // Create container for all hair elements
-        const hairContainer = document.createElement('div');
-        hairContainer.style.position = 'absolute';
-        hairContainer.style.top = '0';
-        hairContainer.style.left = '0';
-        hairContainer.style.width = '100%';
-        hairContainer.style.height = '100%';
-        hairContainer.style.pointerEvents = 'none';
-        hairContainer.style.zIndex = '1000';
-        document.body.appendChild(hairContainer);
-        
-        // Create 4 hair elements (one for each potential mole)
-        for (let i = 0; i < 4; i++) {
-            const hairElement = document.createElement('div');
-            hairElement.setAttribute('data-mole-hair', 'true');
-            hairElement.setAttribute('data-mole-index', i);
-            
-            // Style the hair
-            hairElement.style.position = 'absolute';
-            hairElement.style.width = '30px';
-            hairElement.style.height = '20px';
-            hairElement.style.display = 'none'; // Hidden by default
-            
-            // Random hair style
-            const hairStyle = Math.floor(Math.random() * 3);
-            const hairColors = ['red', 'blue', 'green', 'purple', 'orange'];
-            const hairColor = hairColors[Math.floor(Math.random() * hairColors.length)];
-            
-            if (hairStyle === 0) {
-                // Spiky hair
-                hairElement.style.borderBottom = `20px solid ${hairColor}`;
-                hairElement.style.borderLeft = '15px solid transparent';
-                hairElement.style.borderRight = '15px solid transparent';
-            } else if (hairStyle === 1) {
-                // Mohawk
-                hairElement.style.backgroundColor = hairColor;
-                hairElement.style.borderRadius = '5px 5px 0 0';
-            } else {
-                // Curly hair
-                hairElement.style.backgroundColor = hairColor;
-                hairElement.style.borderRadius = '50% 50% 0 0';
-            }
-            
-            // Add to container
-            hairContainer.appendChild(hairElement);
-        }
-        
-        return hairContainer;
-    }
+    // Add a global variable to check in the console
+    window.gameVersionInfo = {
+        version: versionNumber,
+        timestamp: versionTimestamp,
+        cacheStatus: "Fresh Load - Fixed Constant Error"
+    };
     
-    // Create the hair elements
-    const hairContainer = createDOMHair();
+    // Add a visual indicator on the screen
+    const versionIndicator = document.createElement('div');
+    versionIndicator.style.position = 'absolute';
+    versionIndicator.style.bottom = '10px';
+    versionIndicator.style.right = '10px';
+    versionIndicator.style.background = 'rgba(0,0,0,0.5)';
+    versionIndicator.style.color = 'white';
+    versionIndicator.style.padding = '5px';
+    versionIndicator.style.borderRadius = '3px';
+    versionIndicator.style.fontSize = '12px';
+    versionIndicator.style.fontFamily = 'monospace';
+    versionIndicator.textContent = 'v' + versionNumber;
+    document.body.appendChild(versionIndicator);
     
-    // Function to update hair positions based on mole positions
-    function updateHairPositions() {
-        // Find all visible moles
-        const visibleMoles = [];
-        
-        // Use querySelectorAll to find mole elements in the DOM
-        const moleElements = document.querySelectorAll('canvas');
-        if (moleElements.length > 0) {
-            // Get the canvas element
-            const canvas = moleElements[0];
-            
-            // Get canvas position
-            const canvasRect = canvas.getBoundingClientRect();
-            
-            // Predefined mole positions (approximate)
-            const molePositions = [
-                { x: canvasRect.width * 0.3, y: canvasRect.height * 0.4 },
-                { x: canvasRect.width * 0.7, y: canvasRect.height * 0.4 },
-                { x: canvasRect.width * 0.3, y: canvasRect.height * 0.7 },
-                { x: canvasRect.width * 0.7, y: canvasRect.height * 0.7 }
-            ];
-            
-            // Update hair positions
-            const hairElements = document.querySelectorAll('[data-mole-hair="true"]');
-            hairElements.forEach((hair, index) => {
-                if (index < molePositions.length) {
-                    const pos = molePositions[index];
-                    
-                    // Position hair above potential mole position
-                    hair.style.left = `${canvasRect.left + pos.x - 15}px`;
-                    hair.style.top = `${canvasRect.top + pos.y - 30}px`;
-                    
-                    // Show hair
-                    hair.style.display = 'block';
-                }
-            });
-        }
-        
-        // Continue updating
-        requestAnimationFrame(updateHairPositions);
-    }
+    console.log("Version indicator added - running latest version with fixes");
     
-    // Start updating hair positions
-    updateHairPositions();
-    
-    // Add a message to indicate DOM hair is active
-    const hairMessage = document.createElement('div');
-    hairMessage.style.position = 'fixed';
-    hairMessage.style.bottom = '50px';
-    hairMessage.style.left = '50%';
-    hairMessage.style.transform = 'translateX(-50%)';
-    hairMessage.style.backgroundColor = 'rgba(0,0,0,0.7)';
-    hairMessage.style.color = 'white';
-    hairMessage.style.padding = '10px';
-    hairMessage.style.borderRadius = '5px';
-    hairMessage.style.fontFamily = 'Arial, sans-serif';
-    hairMessage.style.fontSize = '14px';
-    hairMessage.style.zIndex = '1002';
-    hairMessage.textContent = 'DOM Hair Active';
-    document.body.appendChild(hairMessage);
-    
-    return "Final DOM-only version applied";
-})();
+    return "Version indicator added successfully";
+}
+
+// Call the fixed functions
+improveRendererSettings();
+addVersionIndicator();
+
+// You can also add this at the end of your main code
+console.log("Game initialization complete - running latest version");
+
