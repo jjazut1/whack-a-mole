@@ -59,11 +59,11 @@ document.body.appendChild(instructionsElement);
 camera.position.set(0, 10, 12); // Move the camera up
 camera.lookAt(0, 0, 0);
 
-// Function to create a smaller terrain
-function createSmallerTerrain() {
-    const geometry = new THREE.PlaneGeometry(30, 30, 50, 50); // Smaller size
+// Function to create a smoother terrain
+function createSmootherTerrain() {
+    const geometry = new THREE.PlaneGeometry(30, 30, 100, 100); // More segments for smoother edges
     
-    // Modify vertices for curved edges
+    // Modify vertices for smoother curved edges
     const positionAttribute = geometry.getAttribute('position');
     
     for (let i = 0; i < positionAttribute.count; i++) {
@@ -126,16 +126,16 @@ function setupScene() {
     scene.children.length = 0;
     lights.forEach(light => scene.add(light));
 
-    // Add smaller terrain
-    const terrain = createSmallerTerrain();
+    // Add smoother terrain
+    const terrain = createSmootherTerrain();
     terrain.position.y = -0.5;
     scene.add(terrain);
 
-    // Create and add clouds with lower y-position
+    // Create and add clouds
     const cloudPositions = [
-        { x: -5, y: 5, z: -5 }, // Lower y value
-        { x: 0, y: 6, z: -4 },  // Lower y value
-        { x: 5, y: 5, z: -5 }   // Lower y value
+        { x: -5, y: 5, z: -5 },
+        { x: 0, y: 6, z: -4 },
+        { x: 5, y: 5, z: -5 }
     ];
 
     cloudPositions.forEach(pos => {
@@ -525,7 +525,7 @@ function gameLoop() {
 // Explicitly add terrain and clouds to scene
 function addTerrainAndClouds() {
     // Add terrain
-    const terrain = createSmallerTerrain();
+    const terrain = createSmootherTerrain();
     scene.add(terrain);
     console.log("Terrain added:", terrain);
     
@@ -1067,7 +1067,7 @@ function addVersionIndicator() {
     );
     
     console.log(
-        "%c Version: green" + versionNumber + " | Loaded: " + versionTimestamp + " %c",
+        "%c Version: blue" + versionNumber + " | Loaded: " + versionTimestamp + " %c",
         "background: #2196F3; color: white; font-size: 14px; padding: 3px; border-radius: 3px;",
         ""
     );
