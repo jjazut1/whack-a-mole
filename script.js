@@ -1353,3 +1353,226 @@ function improveCartoonishHair() {
 
 // Execute the function
 improveCartoonishHair();
+
+// Version 1.3.2 - Fixed Hair Implementation
+function fixCartoonishHair() {
+    // Create a unique version identifier
+    const versionNumber = "1.3.2";
+    const uniqueId = Math.random().toString(36).substring(2, 6);
+    
+    console.log(
+        `%c Fixed Hair v${versionNumber}-${uniqueId} %c`,
+        "background: #FF5722; color: white; font-size: 14px; padding: 5px; border-radius: 3px;",
+        ""
+    );
+    
+    // Function to remove existing hair from moles
+    function removeExistingHair() {
+        try {
+            // Directly access moles array instead of traversing scene
+            if (moles && moles.length > 0) {
+                moles.forEach((mole, index) => {
+                    if (mole.userData && mole.userData.facingGroup) {
+                        // Find and remove hair elements from facing group
+                        const facingGroup = mole.userData.facingGroup;
+                        for (let i = facingGroup.children.length - 1; i >= 0; i--) {
+                            const child = facingGroup.children[i];
+                            if (child.userData && child.userData.isHair) {
+                                facingGroup.remove(child);
+                                console.log(`Removed hair from mole ${index}`);
+                            }
+                        }
+                    }
+                });
+            } else {
+                console.log("No moles found in moles array");
+            }
+        } catch (error) {
+            console.error("Error removing existing hair:", error);
+        }
+    }
+    
+    // Function to add improved hair to visible moles
+    function addImprovedHairToMoles() {
+        try {
+            if (!moles || moles.length === 0) {
+                console.log("No moles found to add hair to");
+                return;
+            }
+            
+            console.log(`Found ${moles.length} moles`);
+            
+            moles.forEach((mole, index) => {
+                if (!mole.userData || !mole.userData.facingGroup) {
+                    console.log(`Mole ${index} has no facing group`);
+                    return;
+                }
+                
+                const facingGroup = mole.userData.facingGroup;
+                
+                // Only add hair to moles that are visible (up)
+                if (!mole.userData.isUp) {
+                    console.log(`Skipping hair for mole ${index} - not visible`);
+                    return;
+                }
+                
+                console.log(`Adding hair to mole ${index}`);
+                
+                // Create more realistic hair - curved strands
+                const hairColor = 0x3D2314; // Dark brown
+                
+                // Create 5 hair strands
+                const strandCount = 5;
+                for (let i = 0; i < strandCount; i++) {
+                    // Create a curved cylinder for each strand
+                    const strandGeometry = new THREE.CylinderGeometry(0.02, 0.01, 0.2, 8);
+                    const strandMaterial = new THREE.MeshBasicMaterial({ color: hairColor });
+                    const strand = new THREE.Mesh(strandGeometry, strandMaterial);
+                    
+                    // Position strands in an arc above the eyes (not overlapping)
+                    // Eyes are at y=0.4, so place hair at y=0.65 (higher than before)
+                    const angle = (i / (strandCount - 1)) * Math.PI * 0.6 - Math.PI * 0.3;
+                    const radius = 0.25;
+                    const xPos = Math.sin(angle) * radius;
+                    strand.position.set(xPos, 0.65, 0.81);
+                    
+                    // Rotate to point outward from the head
+                    strand.rotation.x = Math.PI / 2 - angle * 0.5;
+                    strand.rotation.z = angle;
+                    
+                    // Add slight random variation
+                    strand.rotation.x += (Math.random() - 0.5) * 0.2;
+                    strand.rotation.z += (Math.random() - 0.5) * 0.2;
+                    
+                    // Mark as hair for future reference
+                    strand.userData = { isHair: true };
+                    
+                    // Add directly to facing group
+                    facingGroup.add(strand);
+                }
+            });
+        } catch (error) {
+            console.error("Error adding hair to moles:", error);
+        }
+    }
+    
+    // First remove existing hair
+    removeExistingHair();
+    
+    // Then add new hair to visible moles
+    addImprovedHairToMoles();
+    
+    // Hook into the animateMole function to add/remove hair when moles move
+    try {
+        const originalAnimateMole = window.animateMole;
+        if (originalAnimateMole) {
+            window.animateMole = function(mole, goingUp) {
+                // Call the original function first
+                originalAnimateMole.apply(this, arguments);
+                
+                // After animation starts, add or remove hair based on mole state
+                setTimeout(() => {
+                    try {
+                        if (goingUp) {
+                            // Mole is coming up - add hair after a delay
+                            setTimeout(() => {
+                                if (mole.userData && mole.userData.facingGroup) {
+                                    // Remove any existing hair
+                                    const facingGroup = mole.userData.facingGroup;
+                                    for (let i = facingGroup.children.length - 1; i >= 0; i--) {
+                                        const child = facingGroup.children[i];
+                                        if (child.userData && child.userData.isHair) {
+                                            facingGroup.remove(child);
+                                        }
+                                    }
+                                    
+                                    // Add hair strands
+                                    const hairColor = 0x3D2314; // Dark brown
+                                    const strandCount = 5;
+                                    
+                                    for (let i = 0; i < strandCount; i++) {
+                                        const strandGeometry = new THREE.CylinderGeometry(0.02, 0.01, 0.2, 8);
+                                        const strandMaterial = new THREE.MeshBasicMaterial({ color: hairColor });
+                                        const strand = new THREE.Mesh(strandGeometry, strandMaterial);
+                                        
+                                        const angle = (i / (strandCount - 1)) * Math.PI * 0.6 - Math.PI * 0.3;
+                                        const radius = 0.25;
+                                        const xPos = Math.sin(angle) * radius;
+                                        strand.position.set(xPos, 0.65, 0.81);
+                                        
+                                        strand.rotation.x = Math.PI / 2 - angle * 0.5;
+                                        strand.rotation.z = angle;
+                                        
+                                        strand.userData = { isHair: true };
+                                        facingGroup.add(strand);
+                                    }
+                                }
+                            }, 100);
+                        } else {
+                            // Mole is going down - remove hair
+                            if (mole.userData && mole.userData.facingGroup) {
+                                const facingGroup = mole.userData.facingGroup;
+                                for (let i = facingGroup.children.length - 1; i >= 0; i--) {
+                                    const child = facingGroup.children[i];
+                                    if (child.userData && child.userData.isHair) {
+                                        facingGroup.remove(child);
+                                    }
+                                }
+                            }
+                        }
+                    } catch (error) {
+                        console.error("Error in animateMole hook:", error);
+                    }
+                }, 10);
+            };
+            console.log("Successfully hooked into animateMole function");
+        } else {
+            console.log("Could not find animateMole function to hook into");
+        }
+    } catch (error) {
+        console.error("Error setting up animateMole hook:", error);
+    }
+    
+    // Update version indicator
+    try {
+        const existingIndicator = document.querySelector('[data-version-indicator="true"]');
+        if (existingIndicator) {
+            existingIndicator.textContent = `Fixed Hair v${versionNumber}`;
+            existingIndicator.style.backgroundColor = 'rgba(255, 87, 34, 0.7)';
+        } else {
+            // Create new indicator if none exists
+            const indicator = document.createElement('div');
+            indicator.setAttribute('data-version-indicator', 'true');
+            indicator.style.position = 'fixed';
+            indicator.style.bottom = '40px';
+            indicator.style.right = '10px';
+            indicator.style.backgroundColor = 'rgba(255, 87, 34, 0.7)';
+            indicator.style.color = 'white';
+            indicator.style.padding = '5px 10px';
+            indicator.style.borderRadius = '5px';
+            indicator.style.fontFamily = 'Arial, sans-serif';
+            indicator.style.fontSize = '12px';
+            indicator.style.zIndex = '1002';
+            indicator.textContent = `Fixed Hair v${versionNumber}`;
+            document.body.appendChild(indicator);
+        }
+    } catch (error) {
+        console.error("Error updating version indicator:", error);
+    }
+    
+    // Force a render update
+    try {
+        if (typeof renderer !== 'undefined' && typeof scene !== 'undefined' && typeof camera !== 'undefined') {
+            renderer.render(scene, camera);
+            console.log("Forced render update");
+        }
+    } catch (error) {
+        console.error("Error forcing render update:", error);
+    }
+    
+    console.log("Fixed hair implementation complete");
+    return "Fixed cartoonish hair added";
+}
+
+// Execute the function
+fixCartoonishHair();
