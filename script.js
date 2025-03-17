@@ -1076,3 +1076,217 @@ addVersionIndicator();
 // You can also add this at the end of your main code
 console.log("Game initialization complete - running latest version");
 
+// Version 1.2.0 - Add cartoonish mouths and hair to moles
+function enhanceMoleAppearance() {
+    // Create a unique version identifier
+    const versionNumber = "1.2.0";
+    const uniqueId = Math.random().toString(36).substring(2, 6);
+    
+    console.log(
+        `%c Mole Enhancement v${versionNumber}-${uniqueId} %c`,
+        "background: #9C27B0; color: white; font-size: 14px; padding: 5px; border-radius: 3px;",
+        ""
+    );
+    
+    // Function to add cartoonish features to moles
+    function addCartoonFeatures() {
+        moles.forEach((mole, index) => {
+            if (!mole.userData.facingGroup) return;
+            
+            const facingGroup = mole.userData.facingGroup;
+            
+            // Check if features already exist
+            if (mole.userData.hasCartoonFeatures) return;
+            
+            // Add mouth if it doesn't exist
+            if (!facingGroup.children.find(child => child.userData && child.userData.isMouth)) {
+                // Create mouth
+                const mouthGeometry = new THREE.CircleGeometry(0.15, 32, 0, Math.PI);
+                const mouthMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
+                const mouth = new THREE.Mesh(mouthGeometry, mouthMaterial);
+                
+                // Position mouth below eyes
+                mouth.position.set(0, 0.15, 0.82);
+                mouth.rotation.z = Math.PI; // Flip to make a smile
+                mouth.userData = { isMouth: true };
+                
+                // Randomly choose mouth style
+                const mouthStyle = Math.floor(Math.random() * 4);
+                
+                if (mouthStyle === 0) {
+                    // Standard smile
+                    mouth.scale.set(1, 1, 1);
+                } else if (mouthStyle === 1) {
+                    // Wide grin
+                    mouth.scale.set(1.5, 1, 1);
+                } else if (mouthStyle === 2) {
+                    // Small cute mouth
+                    mouth.scale.set(0.7, 0.7, 1);
+                } else {
+                    // Surprised O mouth
+                    const oMouthGeometry = new THREE.CircleGeometry(0.1, 32);
+                    mouth.geometry = oMouthGeometry;
+                    mouth.rotation.z = 0;
+                }
+                
+                facingGroup.add(mouth);
+            }
+            
+            // Add hair
+            if (!mole.children.find(child => child.userData && child.userData.isHair)) {
+                // Create hair group
+                const hairGroup = new THREE.Group();
+                hairGroup.userData = { isHair: true };
+                
+                // Randomly choose hair style
+                const hairStyle = Math.floor(Math.random() * 4);
+                const hairColors = [0x3D2314, 0x000000, 0x8B4513, 0x654321]; // Brown, black, etc.
+                const hairColor = hairColors[Math.floor(Math.random() * hairColors.length)];
+                
+                if (hairStyle === 0) {
+                    // Spiky hair
+                    const spikeCount = 3 + Math.floor(Math.random() * 3);
+                    
+                    for (let i = 0; i < spikeCount; i++) {
+                        const spikeGeometry = new THREE.ConeGeometry(0.1, 0.3, 8);
+                        const spikeMaterial = new THREE.MeshBasicMaterial({ color: hairColor });
+                        const spike = new THREE.Mesh(spikeGeometry, spikeMaterial);
+                        
+                        // Position spikes on top of head
+                        const angle = (i / spikeCount) * Math.PI;
+                        spike.position.set(
+                            0.3 * Math.cos(angle), 
+                            0.7, // Top of head
+                            0.3 * Math.sin(angle)
+                        );
+                        
+                        // Rotate spikes to point outward
+                        spike.rotation.x = Math.PI / 2;
+                        spike.rotation.y = -angle;
+                        
+                        hairGroup.add(spike);
+                    }
+                } else if (hairStyle === 1) {
+                    // Mohawk
+                    const mohawkCount = 5;
+                    const mohawkColors = [0xFF0000, 0x00FF00, 0x0000FF, 0xFF00FF, 0xFFFF00];
+                    
+                    for (let i = 0; i < mohawkCount; i++) {
+                        const spikeGeometry = new THREE.ConeGeometry(0.08, 0.4, 8);
+                        const spikeMaterial = new THREE.MeshBasicMaterial({ 
+                            color: mohawkColors[i % mohawkColors.length] 
+                        });
+                        const spike = new THREE.Mesh(spikeGeometry, spikeMaterial);
+                        
+                        // Position spikes in a line on top
+                        spike.position.set(
+                            0.2 - (i * 0.1), 
+                            0.7, // Top of head
+                            0
+                        );
+                        
+                        // Rotate spikes to point up
+                        spike.rotation.x = 0;
+                        
+                        hairGroup.add(spike);
+                    }
+                } else if (hairStyle === 2) {
+                    // Curly hair
+                    const curlCount = 4 + Math.floor(Math.random() * 3);
+                    
+                    for (let i = 0; i < curlCount; i++) {
+                        const curlGeometry = new THREE.TorusGeometry(0.08, 0.03, 8, 16, Math.PI);
+                        const curlMaterial = new THREE.MeshBasicMaterial({ color: hairColor });
+                        const curl = new THREE.Mesh(curlGeometry, curlMaterial);
+                        
+                        // Position curls around top of head
+                        const angle = (i / curlCount) * Math.PI * 2;
+                        curl.position.set(
+                            0.4 * Math.cos(angle), 
+                            0.6 + Math.random() * 0.2, // Varied height
+                            0.4 * Math.sin(angle)
+                        );
+                        
+                        // Random rotation for variety
+                        curl.rotation.x = Math.random() * Math.PI;
+                        curl.rotation.y = Math.random() * Math.PI;
+                        curl.rotation.z = Math.random() * Math.PI;
+                        
+                        hairGroup.add(curl);
+                    }
+                } else {
+                    // Single strand with curl on end
+                    const strandGeometry = new THREE.CylinderGeometry(0.03, 0.03, 0.4, 8);
+                    const strandMaterial = new THREE.MeshBasicMaterial({ color: hairColor });
+                    const strand = new THREE.Mesh(strandGeometry, strandMaterial);
+                    
+                    // Position strand on top of head
+                    strand.position.set(0, 0.8, 0);
+                    
+                    // Rotate strand to stick up
+                    strand.rotation.x = Math.PI / 2;
+                    
+                    hairGroup.add(strand);
+                    
+                    // Add curl at the end
+                    const curlGeometry = new THREE.TorusGeometry(0.1, 0.03, 8, 16, Math.PI * 1.5);
+                    const curlMaterial = new THREE.MeshBasicMaterial({ color: hairColor });
+                    const curl = new THREE.Mesh(curlGeometry, curlMaterial);
+                    
+                    // Position curl at end of strand
+                    curl.position.set(0, 0.8, -0.2);
+                    curl.rotation.x = Math.PI / 2;
+                    
+                    hairGroup.add(curl);
+                }
+                
+                // Add hair group to mole
+                mole.add(hairGroup);
+            }
+            
+            // Mark mole as having cartoon features
+            mole.userData.hasCartoonFeatures = true;
+        });
+        
+        console.log("Cartoonish features added to moles");
+    }
+    
+    // Add features to existing moles
+    addCartoonFeatures();
+    
+    // Add a small indicator
+    const indicator = document.createElement('div');
+    indicator.style.position = 'fixed';
+    indicator.style.bottom = '40px';
+    indicator.style.right = '10px';
+    indicator.style.backgroundColor = 'rgba(156, 39, 176, 0.7)';
+    indicator.style.color = 'white';
+    indicator.style.padding = '5px 10px';
+    indicator.style.borderRadius = '5px';
+    indicator.style.fontFamily = 'Arial, sans-serif';
+    indicator.style.fontSize = '12px';
+    indicator.style.zIndex = '1002';
+    indicator.textContent = `Cartoon Moles v${versionNumber}`;
+    document.body.appendChild(indicator);
+    
+    // Also hook into the mole creation function to ensure new moles get features
+    const originalCreateMole = window.createMole;
+    if (originalCreateMole) {
+        window.createMole = function() {
+            const mole = originalCreateMole.apply(this, arguments);
+            
+            // Add a slight delay to ensure the mole is fully created
+            setTimeout(() => {
+                addCartoonFeatures();
+            }, 100);
+            
+            return mole;
+        };
+    }
+    
+    return "Cartoonish mole features applied";
+}
+
+// Execute the enhancement
+enhanceMoleAppearance();
+
