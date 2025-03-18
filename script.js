@@ -59,15 +59,9 @@ document.body.appendChild(instructionsElement);
 camera.position.set(0, 10, 12); // Move the camera up
 camera.lookAt(0, 0, 0);
 
-// Load a grass texture
-const textureLoader = new THREE.TextureLoader();
-const grassTexture = textureLoader.load('path/to/grass_texture.jpg');
-grassTexture.wrapS = grassTexture.wrapT = THREE.RepeatWrapping;
-grassTexture.repeat.set(10, 10); // Adjust repeat for desired effect
-
-// Function to create a terrain with a grass texture
-function createTexturedTerrain() {
-    const geometry = new THREE.PlaneGeometry(30, 30, 100, 100);
+// Function to create a terrain with a custom equation
+function createCustomTerrain() {
+    const geometry = new THREE.PlaneGeometry(30, 30, 100, 100); // More segments for smoother edges
     
     // Constants for the equation
     const A = 0.1; // Amplitude
@@ -84,11 +78,11 @@ function createTexturedTerrain() {
         const z = A * Math.sin(B * x) + A * Math.cos(B * y);
         positionAttribute.setZ(i, z);
     }
+    
     geometry.computeVertexNormals();
     
-    // Apply the grass texture
     const material = new THREE.MeshLambertMaterial({
-        map: grassTexture,
+        color: 0x90EE90, // Light green
         side: THREE.DoubleSide
     });
     
@@ -134,21 +128,22 @@ function setupScene() {
     scene.children.length = 0;
     lights.forEach(light => scene.add(light));
 
-    // Add textured terrain
-    const terrain = createTexturedTerrain();
+    // Add custom terrain
+    const terrain = createCustomTerrain();
     terrain.position.y = -0.5;
     scene.add(terrain);
 
-    // Create and add clouds
+    // Create and add clouds with lower y-position
     const cloudPositions = [
-        { x: -5, y: 2, z: -5 },
-        { x: 0, y: 3, z: -4 },
-        { x: 5, y: 2, z: -5 }
+        { x: -5, y: 2, z: -5 }, // Lower y value
+        { x: 0, y: 3, z: -4 },  // Lower y value
+        { x: 5, y: 2, z: -5 }   // Lower y value
     ];
 
     cloudPositions.forEach(pos => {
         const cloud = createCloud();
         cloud.position.set(pos.x, pos.y, pos.z);
+        cloud.scale.set(1, 1, 1); // Increase scale for visibility
         scene.add(cloud);
     });
 
@@ -536,7 +531,7 @@ function gameLoop() {
 // Explicitly add terrain and clouds to scene
 function addTerrainAndClouds() {
     // Add terrain
-    const terrain = createTexturedTerrain();
+    const terrain = createCustomTerrain();
     scene.add(terrain);
     console.log("Terrain added:", terrain);
     
@@ -1078,7 +1073,7 @@ function addVersionIndicator() {
     );
     
     console.log(
-        "%c Version: yellow" + versionNumber + " | Loaded: " + versionTimestamp + " %c",
+        "%c Version: maroon" + versionNumber + " | Loaded: " + versionTimestamp + " %c",
         "background: #2196F3; color: white; font-size: 14px; padding: 3px; border-radius: 3px;",
         ""
     );
@@ -1115,3 +1110,42 @@ addVersionIndicator();
 
 // You can also add this at the end of your main code
 console.log("Game initialization complete - running latest version");
+
+// Load the alpha texture for a grass blade
+const textureLoader = new THREE.TextureLoader();
+const grassAlphaTexture = textureLoader.load('https://jjazut1.github.io/whack-a-mole/grass.png');
+
+// Create a plane geometry for a single grass blade
+const bladeGeometry = new THREE.PlaneGeometry(0.1, 0.5); // Adjust size as needed
+
+// Create a material with transparency
+const grassMaterial = new THREE.MeshBasicMaterial({
+    map: grassAlphaTexture,
+    transparent: true,
+    side: THREE.DoubleSide // Ensure both sides of the blade are visible
+});
+
+// Number of grass blades
+const numBlades = 1000;
+
+// Create an InstancedMesh for the grass blades
+const grassMesh = new THREE.InstancedMesh(bladeGeometry, grassMaterial, numBlades);
+
+// Set up the instance matrix for each blade
+const dummy = new THREE.Object3D();
+for (let i = 0; i < numBlades; i++) {
+    // Randomly position each blade on the terrain
+    const x = (Math.random() - 0.5) * 30; // Adjust range to match terrain size
+    const z = (Math.random() - 0.5) * 30;
+    const y = 0; // Adjust y if needed based on terrain height
+
+    dummy.position.set(x, y, z);
+    dummy.rotation.y = Math.random() * Math.PI; // Random rotation for variety
+    dummy.updateMatrix();
+
+    // Set the matrix for each instance
+    grassMesh.setMatrixAt(i, dummy.matrix);
+}
+
+// Add the grass mesh to the scene
+scene.add(grassMesh);

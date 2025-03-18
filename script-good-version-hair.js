@@ -55,72 +55,99 @@ instructionsElement.style.textAlign = 'center';
 instructionsElement.innerHTML = 'Hit the mole when you see a word with the short "a" sound!<br>Click anywhere to start';
 document.body.appendChild(instructionsElement);
 
-// Simplified terrain creation
-function createTerrain() {
-    // Use PlaneGeometry instead of PlaneBufferGeometry (which is deprecated)
-    const geometry = new THREE.PlaneGeometry(40, 40, 50, 50);
+// Adjust the camera position
+camera.position.set(0, 10, 12); // Move the camera up
+camera.lookAt(0, 0, 0);
+
+// Function to create a terrain with a custom equation
+function createCustomTerrain() {
+    const geometry = new THREE.PlaneGeometry(30, 30, 100, 100); // More segments for smoother edges
     
-    // Modify vertices for curved edges
+    // Constants for the equation
+    const A = 0.1; // Amplitude
+    const B = 0.4; // Frequency
+
+    // Modify vertices using the custom equation
     const positionAttribute = geometry.getAttribute('position');
     
     for (let i = 0; i < positionAttribute.count; i++) {
         const x = positionAttribute.getX(i);
         const y = positionAttribute.getY(i);
-        const distance = Math.sqrt(x * x + y * y);
         
-        if (distance > 10) {
-            // Create curved falloff
-            const z = -0.5 * Math.pow((distance - 10) / 10, 2);
-            positionAttribute.setZ(i, z);
-        }
+        // Apply the custom equation
+        const z = A * Math.sin(B * x) + A * Math.cos(B * y);
+        positionAttribute.setZ(i, z);
     }
     
     geometry.computeVertexNormals();
     
-    // Create material with solid color
     const material = new THREE.MeshLambertMaterial({
         color: 0x90EE90, // Light green
         side: THREE.DoubleSide
     });
     
     const terrain = new THREE.Mesh(geometry, material);
-    terrain.rotation.x = Math.PI / 2; // Rotate to be horizontal
-    terrain.position.y = -0.1; // Position slightly below holes
+    terrain.rotation.x = Math.PI / 2;
+    terrain.position.y = -0.1;
     
     return terrain;
 }
 
+// Function to create clouds
+function createCloud() {
+    const group = new THREE.Group();
+    
+    // Create simple white spheres
+    const sphereGeometry = new THREE.SphereGeometry(1, 16, 16);
+    const material = new THREE.MeshBasicMaterial({ color: 0xFFFFFF });
+    
+    // Main sphere
+    const mainSphere = new THREE.Mesh(sphereGeometry, material);
+    group.add(mainSphere);
+    
+    // Add additional spheres
+    const positions = [
+        { x: -1, y: 0.3, z: 0 },
+        { x: 1, y: 0.3, z: 0 },
+        { x: 0, y: 0.5, z: 0 }
+    ];
+    
+    positions.forEach(pos => {
+        const sphere = new THREE.Mesh(sphereGeometry, material);
+        sphere.position.set(pos.x, pos.y, pos.z);
+        sphere.scale.set(0.7, 0.5, 0.7);
+        group.add(sphere);
+    });
+    
+    return group;
+}
+
 // Setup scene function
 function setupScene() {
-    // Clear existing scene elements but keep lights
     const lights = scene.children.filter(child => child instanceof THREE.Light);
     scene.children.length = 0;
     lights.forEach(light => scene.add(light));
 
-    // Add terrain first (so it's in the background)
-    const terrain = createTerrain();
-    terrain.position.y = -0.5; // Move terrain down slightly
+    // Add custom terrain
+    const terrain = createCustomTerrain();
+    terrain.position.y = -0.5;
     scene.add(terrain);
 
-    // Create and add clouds
+    // Create and add clouds with lower y-position
     const cloudPositions = [
-        { x: -5, y: 5, z: -5 },
-        { x: 0, y: 6, z: -4 },
-        { x: 5, y: 5, z: -5 }
+        { x: -5, y: 2, z: -5 }, // Lower y value
+        { x: 0, y: 3, z: -4 },  // Lower y value
+        { x: 5, y: 2, z: -5 }   // Lower y value
     ];
 
     cloudPositions.forEach(pos => {
         const cloud = createCloud();
         cloud.position.set(pos.x, pos.y, pos.z);
+        cloud.scale.set(1, 1, 1); // Increase scale for visibility
         scene.add(cloud);
     });
 
-    // Add holes and moles after terrain
     setupHolesAndMoles();
-
-    // Setup camera
-    camera.position.set(0, 8, 12);
-    camera.lookAt(0, 0, 0);
 }
 
 // Setup holes and moles
@@ -130,14 +157,16 @@ function setupHolesAndMoles() {
         color: 0x404040  // Dark gray
     });
 
-const holes = [
-        { x: -2, z: -2, rotation: Math.PI * 0.25 + 0.175 },
-        { x: 2, z: -2, rotation: -Math.PI * 0.25 - 0.175 },
-        { x: -2, z: 2, rotation: Math.PI * 0.75 + 0.175 },
-        { x: 2, z: 2, rotation: -Math.PI * 0.75 - 0.175 }
+    const holes = [
+        { x: -1.5, z: -1.5, rotation: Math.PI * 0.25 + 0.175, description: "back Left" },
+        { x: 2, z: -1.5, rotation: -Math.PI * 0.25 - 0.175, description: "Front Right" },
+        { x: -2, z: 1.5, rotation: Math.PI * 0.75 + 0.175, description: "front Left" },
+        { x: 2, z: 2, rotation: -Math.PI * 0.75 - 0.175, description: "Back Right" }
     ];
 
     holes.forEach(pos => {
+        console.log(`Creating hole at ${pos.description}`);
+
         // Create hole
         const hole = new THREE.Mesh(holeGeometry, holeMaterial);
         hole.rotation.x = -Math.PI / 2;
@@ -161,9 +190,9 @@ const holes = [
         
         mole.userData.isUp = false;
         mole.userData.isMoving = false;
-    scene.add(mole);
-    moles.push(mole);
-});
+        scene.add(mole);
+        moles.push(mole);
+    });
 }
 
 // Initialize scene
@@ -318,21 +347,22 @@ function updateMoleText(mole, word) {
     texture.needsUpdate = true;
 }
 
-// Function to create a dense, dark hairstyle
-function createDenseDarkHairstyle() {
+// Function to create curly hair
+function createCurlyHairstyle() {
     const hairGroup = new THREE.Group();
     const hairMaterial = new THREE.MeshLambertMaterial({ color: 0x5A3A1B }); // Darker brown color
 
     // Create a curve for each strand
-    for (let i = 0; i < 250; i++) { // Increase quantity
+    for (let i = 0; i < 500; i++) { // Increase quantity
         const length = 0.3 + Math.random() * 0.2; // Random length
         const curve = new THREE.CatmullRomCurve3([
             new THREE.Vector3(0, 0, 0),
+            new THREE.Vector3((Math.random() - 0.5) * 0.1, length / 3, (Math.random() - 0.5) * 0.1),
             new THREE.Vector3((Math.random() - 0.5) * 0.2, length / 2, (Math.random() - 0.5) * 0.2),
-            new THREE.Vector3((Math.random() - 0.5) * 0.4, length, (Math.random() - 0.5) * 0.4)
+            new THREE.Vector3((Math.random() - 0.5) * 0.3, length, (Math.random() - 0.5) * 0.3)
         ]);
 
-        const tubeGeometry = new THREE.TubeGeometry(curve, 20, 0.002, 8, false); // Smaller diameter
+        const tubeGeometry = new THREE.TubeGeometry(curve, 20, 0.001, 8, false); // Smaller diameter
         const hairStrand = new THREE.Mesh(tubeGeometry, hairMaterial);
 
         // Adjust position to sit slightly above the mole's head
@@ -348,7 +378,7 @@ function createDenseDarkHairstyle() {
     return hairGroup;
 }
 
-// Modify the createMole function to add the dense, dark hair
+// Modify the createMole function to add the curly hair
 function createMole() {
     const moleGroup = new THREE.Group();
     
@@ -365,7 +395,7 @@ function createMole() {
     moleGroup.add(facingGroup);
 
     // Add hair to the facing group
-    const hair = createDenseDarkHairstyle();
+    const hair = createCurlyHairstyle();
     facingGroup.add(hair);
 
     // Text plane
@@ -423,9 +453,9 @@ function animateMole(mole, goingUp) {
     if (mole.userData.isMoving) return;
     
     mole.userData.isMoving = true;
-    const targetY = goingUp ? 1.0 : -1.0; // Higher up position
-    const duration = 200;
+    const targetY = goingUp ? 1.0 : -2.0; // Move below ground when not up
     const startY = mole.position.y;
+    const duration = 200;
     const startTime = Date.now();
     
     if (goingUp) {
@@ -498,39 +528,10 @@ function gameLoop() {
     setTimeout(gameLoop, 2000);
 }
 
-// Simplified cloud creation
-function createCloud() {
-    const group = new THREE.Group();
-    
-    // Create simple white spheres
-    const sphereGeometry = new THREE.SphereGeometry(1, 16, 16);
-    const material = new THREE.MeshBasicMaterial({ color: 0xFFFFFF });
-    
-    // Main sphere
-    const mainSphere = new THREE.Mesh(sphereGeometry, material);
-    group.add(mainSphere);
-    
-    // Add additional spheres
-    const positions = [
-        { x: -1, y: 0.3, z: 0 },
-        { x: 1, y: 0.3, z: 0 },
-        { x: 0, y: 0.5, z: 0 }
-    ];
-    
-    positions.forEach(pos => {
-        const sphere = new THREE.Mesh(sphereGeometry, material);
-        sphere.position.set(pos.x, pos.y, pos.z);
-        sphere.scale.set(0.7, 0.5, 0.7);
-        group.add(sphere);
-    });
-    
-    return group;
-}
-
 // Explicitly add terrain and clouds to scene
 function addTerrainAndClouds() {
     // Add terrain
-    const terrain = createTerrain();
+    const terrain = createCustomTerrain();
     scene.add(terrain);
     console.log("Terrain added:", terrain);
     
@@ -769,7 +770,7 @@ console.log("Scene after fixes:", scene);
 function zoomInCamera() {
     // Move camera closer to the scene
     camera.position.set(0, 5, 6); // Reduced z value to zoom in
-camera.lookAt(0, 0, 0);
+    camera.lookAt(0, 0, 0);
     console.log("Camera zoomed in:", camera.position);
 }
 
@@ -1072,7 +1073,7 @@ function addVersionIndicator() {
     );
     
     console.log(
-        "%c Version: pink" + versionNumber + " | Loaded: " + versionTimestamp + " %c",
+        "%c Version: yellow" + versionNumber + " | Loaded: " + versionTimestamp + " %c",
         "background: #2196F3; color: white; font-size: 14px; padding: 3px; border-radius: 3px;",
         ""
     );
