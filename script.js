@@ -55,11 +55,9 @@ instructionsElement.style.textAlign = 'center';
 instructionsElement.innerHTML = 'Hit the mole when you see a word with the short "a" sound!<br>Click anywhere to start';
 document.body.appendChild(instructionsElement);
 
-// Adjust the camera position and field of view
-camera.position.set(0, 10, 15); // Move the camera back
+// Adjust the camera position
+camera.position.set(0, 10, 12); // Move the camera up
 camera.lookAt(0, 0, 0);
-camera.fov = 60; // Adjust field of view
-camera.updateProjectionMatrix();
 
 // Function to create a refined rolling hill terrain
 function createRefinedRollingHillTerrain() {
@@ -128,7 +126,7 @@ function setupScene() {
 
     // Add refined rolling hill terrain
     const terrain = createRefinedRollingHillTerrain();
-    terrain.position.y = -0.5;
+    terrain.position.y = -1; // Lower the terrain
     scene.add(terrain);
 
     // Create and add clouds
@@ -1067,7 +1065,7 @@ function addVersionIndicator() {
     );
     
     console.log(
-        "%c Version: blue" + versionNumber + " | Loaded: " + versionTimestamp + " %c",
+        "%c Version: white" + versionNumber + " | Loaded: " + versionTimestamp + " %c",
         "background: #2196F3; color: white; font-size: 14px; padding: 3px; border-radius: 3px;",
         ""
     );
