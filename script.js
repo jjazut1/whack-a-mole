@@ -445,13 +445,12 @@ function animateMole(mole, goingUp) {
     if (mole.userData.isMoving) return;
     
     mole.userData.isMoving = true;
-    const targetY = goingUp ? 1.0 : -1.0; // Higher up position
+    const targetY = goingUp ? 1.0 : -2.0; // Move below ground when not up
     const startY = mole.position.y;
     const duration = 200;
     const startTime = Date.now();
     
     if (goingUp) {
-        mole.visible = true; // Make visible when going up
         assignNewWord(mole);
     } else {
         updateMoleText(mole, '');
@@ -473,9 +472,6 @@ function animateMole(mole, goingUp) {
         } else {
             mole.userData.isMoving = false;
             mole.userData.isUp = goingUp;
-            if (!goingUp) {
-                mole.visible = false; // Hide when not up
-            }
         }
     }
     update();
@@ -1069,7 +1065,7 @@ function addVersionIndicator() {
     );
     
     console.log(
-        "%c Version: maroon" + versionNumber + " | Loaded: " + versionTimestamp + " %c",
+        "%c Version: black" + versionNumber + " | Loaded: " + versionTimestamp + " %c",
         "background: #2196F3; color: white; font-size: 14px; padding: 3px; border-radius: 3px;",
         ""
     );
