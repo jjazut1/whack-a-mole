@@ -143,7 +143,7 @@ function setupScene() {
     cloudPositions.forEach(pos => {
         const cloud = createCloud();
         cloud.position.set(pos.x, pos.y, pos.z);
-        cloud.scale.set(2, 2, 2); // Increase scale for visibility
+        cloud.scale.set(1, 1, 1); // Increase scale for visibility
         scene.add(cloud);
     });
 
@@ -1075,7 +1075,7 @@ function addVersionIndicator() {
     );
     
     console.log(
-        "%c Version: yellow" + versionNumber + " | Loaded: " + versionTimestamp + " %c",
+        "%c Version: blue" + versionNumber + " | Loaded: " + versionTimestamp + " %c",
         "background: #2196F3; color: white; font-size: 14px; padding: 3px; border-radius: 3px;",
         ""
     );
