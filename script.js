@@ -1073,7 +1073,7 @@ function addVersionIndicator() {
     );
     
     console.log(
-        "%c Version: maroon" + versionNumber + " | Loaded: " + versionTimestamp + " %c",
+        "%c Version: purple" + versionNumber + " | Loaded: " + versionTimestamp + " %c",
         "background: #2196F3; color: white; font-size: 14px; padding: 3px; border-radius: 3px;",
         ""
     );
@@ -1116,17 +1116,18 @@ const textureLoader = new THREE.TextureLoader();
 const grassAlphaTexture = textureLoader.load('https://jjazut1.github.io/whack-a-mole/grass.png');
 
 // Create a plane geometry for a single grass blade
-const bladeGeometry = new THREE.PlaneGeometry(0.1, 0.5); // Adjust size as needed
+const bladeGeometry = new THREE.PlaneGeometry(0.1, 0.5);
 
-// Create a material with transparency
+// Create a material with transparency and color variation
 const grassMaterial = new THREE.MeshBasicMaterial({
     map: grassAlphaTexture,
     transparent: true,
-    side: THREE.DoubleSide // Ensure both sides of the blade are visible
+    side: THREE.DoubleSide,
+    color: new THREE.Color(0x228B22) // Base green color
 });
 
 // Number of grass blades
-const numBlades = 1000;
+const numBlades = 5000;
 
 // Create an InstancedMesh for the grass blades
 const grassMesh = new THREE.InstancedMesh(bladeGeometry, grassMaterial, numBlades);
@@ -1134,16 +1135,15 @@ const grassMesh = new THREE.InstancedMesh(bladeGeometry, grassMaterial, numBlade
 // Set up the instance matrix for each blade
 const dummy = new THREE.Object3D();
 for (let i = 0; i < numBlades; i++) {
-    // Randomly position each blade on the terrain
-    const x = (Math.random() - 0.5) * 30; // Adjust range to match terrain size
+    const x = (Math.random() - 0.5) * 30;
     const z = (Math.random() - 0.5) * 30;
-    const y = 0; // Adjust y if needed based on terrain height
+    const y = 0;
 
     dummy.position.set(x, y, z);
-    dummy.rotation.y = Math.random() * Math.PI; // Random rotation for variety
+    dummy.rotation.y = Math.random() * Math.PI;
+    dummy.scale.setScalar(0.8 + Math.random() * 0.4); // Random size variation
     dummy.updateMatrix();
 
-    // Set the matrix for each instance
     grassMesh.setMatrixAt(i, dummy.matrix);
 }
 
