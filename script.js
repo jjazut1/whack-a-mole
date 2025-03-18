@@ -135,14 +135,15 @@ function setupScene() {
 
     // Create and add clouds with lower y-position
     const cloudPositions = [
-        { x: -5, y: 3, z: -5 }, // Lower y value
-        { x: 0, y: 4, z: -4 },  // Lower y value
-        { x: 5, y: 3, z: -5 }   // Lower y value
+        { x: -5, y: 2, z: -5 }, // Lower y value
+        { x: 0, y: 3, z: -4 },  // Lower y value
+        { x: 5, y: 2, z: -5 }   // Lower y value
     ];
 
     cloudPositions.forEach(pos => {
         const cloud = createCloud();
         cloud.position.set(pos.x, pos.y, pos.z);
+        cloud.scale.set(2, 2, 2); // Increase scale for visibility
         scene.add(cloud);
     });
 
@@ -1074,7 +1075,7 @@ function addVersionIndicator() {
     );
     
     console.log(
-        "%c Version: purple" + versionNumber + " | Loaded: " + versionTimestamp + " %c",
+        "%c Version: yellow" + versionNumber + " | Loaded: " + versionTimestamp + " %c",
         "background: #2196F3; color: white; font-size: 14px; padding: 3px; border-radius: 3px;",
         ""
     );
