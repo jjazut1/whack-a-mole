@@ -157,13 +157,15 @@ function setupHolesAndMoles() {
     });
 
     const holes = [
-        { x: -1.5, z: -2.5, rotation: Math.PI * 0.25 + 0.175 },
-        { x: 2, z: -1.5, rotation: -Math.PI * 0.25 - 0.175 },
-        { x: -2, z: 2, rotation: Math.PI * 0.75 + 0.175 },
-        { x: 2, z: 2, rotation: -Math.PI * 0.75 - 0.175 }
+        { x: -1.5, z: -2.5, rotation: Math.PI * 0.25 + 0.175, description: "Front Left" },
+        { x: 2, z: -1.5, rotation: -Math.PI * 0.25 - 0.175, description: "Front Right" },
+        { x: -2, z: 2, rotation: Math.PI * 0.75 + 0.175, description: "Back Left" },
+        { x: 2, z: 2, rotation: -Math.PI * 0.75 - 0.175, description: "Back Right" }
     ];
 
     holes.forEach(pos => {
+        console.log(`Creating hole at ${pos.description}`);
+
         // Create hole
         const hole = new THREE.Mesh(holeGeometry, holeMaterial);
         hole.rotation.x = -Math.PI / 2;
@@ -1072,7 +1074,7 @@ function addVersionIndicator() {
     );
     
     console.log(
-        "%c Version: purple" + versionNumber + " | Loaded: " + versionTimestamp + " %c",
+        "%c Version: blue" + versionNumber + " | Loaded: " + versionTimestamp + " %c",
         "background: #2196F3; color: white; font-size: 14px; padding: 3px; border-radius: 3px;",
         ""
     );
