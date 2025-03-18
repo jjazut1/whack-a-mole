@@ -133,11 +133,11 @@ function setupScene() {
     terrain.position.y = -0.5;
     scene.add(terrain);
 
-    // Create and add clouds
+    // Create and add clouds with lower y-position
     const cloudPositions = [
-        { x: -5, y: 5, z: -5 },
-        { x: 0, y: 6, z: -4 },
-        { x: 5, y: 5, z: -5 }
+        { x: -5, y: 3, z: -5 }, // Lower y value
+        { x: 0, y: 4, z: -4 },  // Lower y value
+        { x: 5, y: 3, z: -5 }   // Lower y value
     ];
 
     cloudPositions.forEach(pos => {
@@ -1074,7 +1074,7 @@ function addVersionIndicator() {
     );
     
     console.log(
-        "%c Version: yellow" + versionNumber + " | Loaded: " + versionTimestamp + " %c",
+        "%c Version: purple" + versionNumber + " | Loaded: " + versionTimestamp + " %c",
         "background: #2196F3; color: white; font-size: 14px; padding: 3px; border-radius: 3px;",
         ""
     );
