@@ -157,8 +157,8 @@ function setupHolesAndMoles() {
     });
 
     const holes = [
-        { x: -1.0, z: -2, rotation: Math.PI * 0.25 + 0.175 },
-        { x: 1.5, z: -2, rotation: -Math.PI * 0.25 - 0.175 },
+        { x: -1.5, z: -1.5, rotation: Math.PI * 0.25 + 0.175 },
+        { x: 2, z: -1.5, rotation: -Math.PI * 0.25 - 0.175 },
         { x: -2, z: 2, rotation: Math.PI * 0.75 + 0.175 },
         { x: 2, z: 2, rotation: -Math.PI * 0.75 - 0.175 }
     ];
@@ -1072,7 +1072,7 @@ function addVersionIndicator() {
     );
     
     console.log(
-        "%c Version: blue" + versionNumber + " | Loaded: " + versionTimestamp + " %c",
+        "%c Version: black" + versionNumber + " | Loaded: " + versionTimestamp + " %c",
         "background: #2196F3; color: white; font-size: 14px; padding: 3px; border-radius: 3px;",
         ""
     );
