@@ -353,7 +353,7 @@ function createDenseDarkHairstyle() {
     const hairMaterial = new THREE.MeshLambertMaterial({ color: 0x5A3A1B }); // Darker brown color
 
     // Create a curve for each strand
-    for (let i = 0; i < 250; i++) { // Increase quantity
+    for (let i = 0; i < 500; i++) { // Increase quantity
         const length = 0.3 + Math.random() * 0.2; // Random length
         const curve = new THREE.CatmullRomCurve3([
             new THREE.Vector3(0, 0, 0),
@@ -361,7 +361,7 @@ function createDenseDarkHairstyle() {
             new THREE.Vector3((Math.random() - 0.5) * 0.4, length, (Math.random() - 0.5) * 0.4)
         ]);
 
-        const tubeGeometry = new THREE.TubeGeometry(curve, 20, 0.002, 8, false); // Smaller diameter
+        const tubeGeometry = new THREE.TubeGeometry(curve, 20, 0.001, 8, false); // Smaller diameter
         const hairStrand = new THREE.Mesh(tubeGeometry, hairMaterial);
 
         // Adjust position to sit slightly above the mole's head
@@ -1075,7 +1075,7 @@ function addVersionIndicator() {
     );
     
     console.log(
-        "%c Version: blue" + versionNumber + " | Loaded: " + versionTimestamp + " %c",
+        "%c Version: red" + versionNumber + " | Loaded: " + versionTimestamp + " %c",
         "background: #2196F3; color: white; font-size: 14px; padding: 3px; border-radius: 3px;",
         ""
     );
