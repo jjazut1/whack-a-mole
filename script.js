@@ -59,30 +59,19 @@ document.body.appendChild(instructionsElement);
 camera.position.set(0, 10, 12); // Move the camera up
 camera.lookAt(0, 0, 0);
 
-// Function to create a terrain with a custom equation
-function createCustomTerrain() {
-    const geometry = new THREE.PlaneGeometry(30, 30, 100, 100); // More segments for smoother edges
-    
-    // Constants for the equation
-    const A = 0.1; // Amplitude
-    const B = 0.4; // Frequency
+// Load a grass texture
+const textureLoader = new THREE.TextureLoader();
+const grassTexture = textureLoader.load('path/to/grass_texture.jpg');
+grassTexture.wrapS = grassTexture.wrapT = THREE.RepeatWrapping;
+grassTexture.repeat.set(10, 10);
 
-    // Modify vertices using the custom equation
-    const positionAttribute = geometry.getAttribute('position');
+// Function to create a textured terrain
+function createTexturedTerrain() {
+    const geometry = new THREE.PlaneGeometry(30, 30, 100, 100);
     
-    for (let i = 0; i < positionAttribute.count; i++) {
-        const x = positionAttribute.getX(i);
-        const y = positionAttribute.getY(i);
-        
-        // Apply the custom equation
-        const z = A * Math.sin(B * x) + A * Math.cos(B * y);
-        positionAttribute.setZ(i, z);
-    }
-    
-    geometry.computeVertexNormals();
-    
+    // Apply the grass texture
     const material = new THREE.MeshLambertMaterial({
-        color: 0x90EE90, // Light green
+        map: grassTexture,
         side: THREE.DoubleSide
     });
     
@@ -129,7 +118,7 @@ function setupScene() {
     lights.forEach(light => scene.add(light));
 
     // Add custom terrain
-    const terrain = createCustomTerrain();
+    const terrain = createTexturedTerrain();
     terrain.position.y = -0.5;
     scene.add(terrain);
 
@@ -531,7 +520,7 @@ function gameLoop() {
 // Explicitly add terrain and clouds to scene
 function addTerrainAndClouds() {
     // Add terrain
-    const terrain = createCustomTerrain();
+    const terrain = createTexturedTerrain();
     scene.add(terrain);
     console.log("Terrain added:", terrain);
     
@@ -1073,7 +1062,7 @@ function addVersionIndicator() {
     );
     
     console.log(
-        "%c Version: purple" + versionNumber + " | Loaded: " + versionTimestamp + " %c",
+        "%c Version: white" + versionNumber + " | Loaded: " + versionTimestamp + " %c",
         "background: #2196F3; color: white; font-size: 14px; padding: 3px; border-radius: 3px;",
         ""
     );
