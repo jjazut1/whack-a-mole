@@ -63,11 +63,28 @@ camera.lookAt(0, 0, 0);
 const textureLoader = new THREE.TextureLoader();
 const grassTexture = textureLoader.load('path/to/grass_texture.jpg');
 grassTexture.wrapS = grassTexture.wrapT = THREE.RepeatWrapping;
-grassTexture.repeat.set(10, 10);
+grassTexture.repeat.set(10, 10); // Adjust repeat for desired effect
 
-// Function to create a textured terrain
+// Function to create a terrain with a grass texture
 function createTexturedTerrain() {
     const geometry = new THREE.PlaneGeometry(30, 30, 100, 100);
+    
+    // Constants for the equation
+    const A = 0.1; // Amplitude
+    const B = 0.4; // Frequency
+
+    // Modify vertices using the custom equation
+    const positionAttribute = geometry.getAttribute('position');
+    
+    for (let i = 0; i < positionAttribute.count; i++) {
+        const x = positionAttribute.getX(i);
+        const y = positionAttribute.getY(i);
+        
+        // Apply the custom equation
+        const z = A * Math.sin(B * x) + A * Math.cos(B * y);
+        positionAttribute.setZ(i, z);
+    }
+    geometry.computeVertexNormals();
     
     // Apply the grass texture
     const material = new THREE.MeshLambertMaterial({
@@ -117,22 +134,21 @@ function setupScene() {
     scene.children.length = 0;
     lights.forEach(light => scene.add(light));
 
-    // Add custom terrain
+    // Add textured terrain
     const terrain = createTexturedTerrain();
     terrain.position.y = -0.5;
     scene.add(terrain);
 
-    // Create and add clouds with lower y-position
+    // Create and add clouds
     const cloudPositions = [
-        { x: -5, y: 2, z: -5 }, // Lower y value
-        { x: 0, y: 3, z: -4 },  // Lower y value
-        { x: 5, y: 2, z: -5 }   // Lower y value
+        { x: -5, y: 2, z: -5 },
+        { x: 0, y: 3, z: -4 },
+        { x: 5, y: 2, z: -5 }
     ];
 
     cloudPositions.forEach(pos => {
         const cloud = createCloud();
         cloud.position.set(pos.x, pos.y, pos.z);
-        cloud.scale.set(1, 1, 1); // Increase scale for visibility
         scene.add(cloud);
     });
 
@@ -1062,7 +1078,7 @@ function addVersionIndicator() {
     );
     
     console.log(
-        "%c Version: white" + versionNumber + " | Loaded: " + versionTimestamp + " %c",
+        "%c Version: yellow" + versionNumber + " | Loaded: " + versionTimestamp + " %c",
         "background: #2196F3; color: white; font-size: 14px; padding: 3px; border-radius: 3px;",
         ""
     );
