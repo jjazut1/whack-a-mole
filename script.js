@@ -59,8 +59,8 @@ document.body.appendChild(instructionsElement);
 camera.position.set(0, 10, 12); // Move the camera up
 camera.lookAt(0, 0, 0);
 
-// Function to create a rolling hill terrain
-function createRollingHillTerrain() {
+// Function to create a refined rolling hill terrain
+function createRefinedRollingHillTerrain() {
     const geometry = new THREE.PlaneGeometry(30, 30, 100, 100); // More segments for smoother edges
     
     // Modify vertices for rolling hills
@@ -71,7 +71,7 @@ function createRollingHillTerrain() {
         const y = positionAttribute.getY(i);
         
         // Create a rolling hill effect using a sine wave
-        const z = Math.sin(x * 0.2) * 0.5 + Math.cos(y * 0.2) * 0.5;
+        const z = Math.sin(x * 0.1) * 0.3 + Math.cos(y * 0.1) * 0.3; // Adjusted amplitude and frequency
         positionAttribute.setZ(i, z);
     }
     
@@ -124,8 +124,8 @@ function setupScene() {
     scene.children.length = 0;
     lights.forEach(light => scene.add(light));
 
-    // Add rolling hill terrain
-    const terrain = createRollingHillTerrain();
+    // Add refined rolling hill terrain
+    const terrain = createRefinedRollingHillTerrain();
     terrain.position.y = -0.5;
     scene.add(terrain);
 
@@ -523,7 +523,7 @@ function gameLoop() {
 // Explicitly add terrain and clouds to scene
 function addTerrainAndClouds() {
     // Add terrain
-    const terrain = createRollingHillTerrain();
+    const terrain = createRefinedRollingHillTerrain();
     scene.add(terrain);
     console.log("Terrain added:", terrain);
     
@@ -1065,7 +1065,7 @@ function addVersionIndicator() {
     );
     
     console.log(
-        "%c Version: maroon" + versionNumber + " | Loaded: " + versionTimestamp + " %c",
+        "%c Version: red" + versionNumber + " | Loaded: " + versionTimestamp + " %c",
         "background: #2196F3; color: white; font-size: 14px; padding: 3px; border-radius: 3px;",
         ""
     );
