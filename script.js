@@ -59,22 +59,20 @@ document.body.appendChild(instructionsElement);
 camera.position.set(0, 10, 12); // Move the camera up
 camera.lookAt(0, 0, 0);
 
-// Function to create a smoother terrain
-function createSmootherTerrain() {
+// Function to create a rolling hill terrain
+function createRollingHillTerrain() {
     const geometry = new THREE.PlaneGeometry(30, 30, 100, 100); // More segments for smoother edges
     
-    // Modify vertices for smoother curved edges
+    // Modify vertices for rolling hills
     const positionAttribute = geometry.getAttribute('position');
     
     for (let i = 0; i < positionAttribute.count; i++) {
         const x = positionAttribute.getX(i);
         const y = positionAttribute.getY(i);
-        const distance = Math.sqrt(x * x + y * y);
         
-        if (distance > 7) { // Adjust falloff
-            const z = -0.5 * Math.pow((distance - 7) / 7, 2);
-            positionAttribute.setZ(i, z);
-        }
+        // Create a rolling hill effect using a sine wave
+        const z = Math.sin(x * 0.2) * 0.5 + Math.cos(y * 0.2) * 0.5;
+        positionAttribute.setZ(i, z);
     }
     
     geometry.computeVertexNormals();
@@ -126,8 +124,8 @@ function setupScene() {
     scene.children.length = 0;
     lights.forEach(light => scene.add(light));
 
-    // Add smoother terrain
-    const terrain = createSmootherTerrain();
+    // Add rolling hill terrain
+    const terrain = createRollingHillTerrain();
     terrain.position.y = -0.5;
     scene.add(terrain);
 
@@ -525,7 +523,7 @@ function gameLoop() {
 // Explicitly add terrain and clouds to scene
 function addTerrainAndClouds() {
     // Add terrain
-    const terrain = createSmootherTerrain();
+    const terrain = createRollingHillTerrain();
     scene.add(terrain);
     console.log("Terrain added:", terrain);
     
@@ -1067,7 +1065,7 @@ function addVersionIndicator() {
     );
     
     console.log(
-        "%c Version: blue" + versionNumber + " | Loaded: " + versionTimestamp + " %c",
+        "%c Version: maroon" + versionNumber + " | Loaded: " + versionTimestamp + " %c",
         "background: #2196F3; color: white; font-size: 14px; padding: 3px; border-radius: 3px;",
         ""
     );
