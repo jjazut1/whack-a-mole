@@ -64,8 +64,8 @@ function createCustomTerrain() {
     const geometry = new THREE.PlaneGeometry(30, 30, 100, 100); // More segments for smoother edges
     
     // Constants for the equation
-    const A = 0.2; // Amplitude
-    const B = 0.4; // Frequency
+    const A = 0.1; // Amplitude
+    const B = 0.6; // Frequency
 
     // Modify vertices using the custom equation
     const positionAttribute = geometry.getAttribute('position');
@@ -1072,7 +1072,7 @@ function addVersionIndicator() {
     );
     
     console.log(
-        "%c Version: blue" + versionNumber + " | Loaded: " + versionTimestamp + " %c",
+        "%c Version: white" + versionNumber + " | Loaded: " + versionTimestamp + " %c",
         "background: #2196F3; color: white; font-size: 14px; padding: 3px; border-radius: 3px;",
         ""
     );
