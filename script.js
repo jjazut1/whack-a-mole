@@ -65,7 +65,7 @@ function createCustomTerrain() {
     
     // Constants for the equation
     const A = 0.5; // Amplitude
-    const B = 0.1; // Frequency
+    const C = 50;  // Controls the spread
 
     // Modify vertices using the custom equation
     const positionAttribute = geometry.getAttribute('position');
@@ -75,7 +75,7 @@ function createCustomTerrain() {
         const y = positionAttribute.getY(i);
         
         // Apply the custom equation
-        const z = A * Math.sin(B * Math.sqrt(x * x + y * y));
+        const z = A * Math.exp(-(x * x + y * y) / C);
         positionAttribute.setZ(i, z);
     }
     
@@ -1072,7 +1072,7 @@ function addVersionIndicator() {
     );
     
     console.log(
-        "%c Version: blue" + versionNumber + " | Loaded: " + versionTimestamp + " %c",
+        "%c Version: red" + versionNumber + " | Loaded: " + versionTimestamp + " %c",
         "background: #2196F3; color: white; font-size: 14px; padding: 3px; border-radius: 3px;",
         ""
     );
