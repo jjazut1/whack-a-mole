@@ -70,8 +70,8 @@ function createRefinedRollingHillTerrain() {
         const x = positionAttribute.getX(i);
         const y = positionAttribute.getY(i);
         
-        // Create a rolling hill effect using a sine wave
-        const z = Math.sin(x * 0.1) * 0.3 + Math.cos(y * 0.1) * 0.3; // Adjusted amplitude and frequency
+        // Increase frequency to add more hills
+        const z = Math.sin(x * 0.3) * 0.3 + Math.cos(y * 0.3) * 0.3; // Higher frequency
         positionAttribute.setZ(i, z);
     }
     
@@ -1065,7 +1065,7 @@ function addVersionIndicator() {
     );
     
     console.log(
-        "%c Version: red" + versionNumber + " | Loaded: " + versionTimestamp + " %c",
+        "%c Version: green" + versionNumber + " | Loaded: " + versionTimestamp + " %c",
         "background: #2196F3; color: white; font-size: 14px; padding: 3px; border-radius: 3px;",
         ""
     );
