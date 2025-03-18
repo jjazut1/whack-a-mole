@@ -382,6 +382,9 @@ function createMole() {
     const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
     moleGroup.add(body);
 
+    // Set initial position below ground
+    moleGroup.position.y = -2.0; // Ensure it's below the ground
+
     // Create a front-facing group for text and facial features
     const facingGroup = new THREE.Group();
     moleGroup.add(facingGroup);
@@ -1065,7 +1068,7 @@ function addVersionIndicator() {
     );
     
     console.log(
-        "%c Version: black" + versionNumber + " | Loaded: " + versionTimestamp + " %c",
+        "%c Version: blue" + versionNumber + " | Loaded: " + versionTimestamp + " %c",
         "background: #2196F3; color: white; font-size: 14px; padding: 3px; border-radius: 3px;",
         ""
     );
