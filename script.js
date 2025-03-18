@@ -347,8 +347,8 @@ function updateMoleText(mole, word) {
     texture.needsUpdate = true;
 }
 
-// Function to create a dense, dark hairstyle
-function createDenseDarkHairstyle() {
+// Function to create curly hair
+function createCurlyHairstyle() {
     const hairGroup = new THREE.Group();
     const hairMaterial = new THREE.MeshLambertMaterial({ color: 0x5A3A1B }); // Darker brown color
 
@@ -357,8 +357,9 @@ function createDenseDarkHairstyle() {
         const length = 0.3 + Math.random() * 0.2; // Random length
         const curve = new THREE.CatmullRomCurve3([
             new THREE.Vector3(0, 0, 0),
+            new THREE.Vector3((Math.random() - 0.5) * 0.1, length / 3, (Math.random() - 0.5) * 0.1),
             new THREE.Vector3((Math.random() - 0.5) * 0.2, length / 2, (Math.random() - 0.5) * 0.2),
-            new THREE.Vector3((Math.random() - 0.5) * 0.4, length, (Math.random() - 0.5) * 0.4)
+            new THREE.Vector3((Math.random() - 0.5) * 0.3, length, (Math.random() - 0.5) * 0.3)
         ]);
 
         const tubeGeometry = new THREE.TubeGeometry(curve, 20, 0.001, 8, false); // Smaller diameter
@@ -377,7 +378,7 @@ function createDenseDarkHairstyle() {
     return hairGroup;
 }
 
-// Modify the createMole function to add the dense, dark hair
+// Modify the createMole function to add the curly hair
 function createMole() {
     const moleGroup = new THREE.Group();
     
@@ -389,15 +390,12 @@ function createMole() {
     const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
     moleGroup.add(body);
 
-    // Set initial position below ground
-    moleGroup.position.y = -2.0; // Ensure it's below the ground
-
     // Create a front-facing group for text and facial features
     const facingGroup = new THREE.Group();
     moleGroup.add(facingGroup);
 
     // Add hair to the facing group
-    const hair = createDenseDarkHairstyle();
+    const hair = createCurlyHairstyle();
     facingGroup.add(hair);
 
     // Text plane
@@ -1075,7 +1073,7 @@ function addVersionIndicator() {
     );
     
     console.log(
-        "%c Version: red" + versionNumber + " | Loaded: " + versionTimestamp + " %c",
+        "%c Version: purple" + versionNumber + " | Loaded: " + versionTimestamp + " %c",
         "background: #2196F3; color: white; font-size: 14px; padding: 3px; border-radius: 3px;",
         ""
     );
