@@ -152,8 +152,8 @@ function setupHolesAndMoles() {
         color: 0x404040  // Dark gray
     });
 
-const holes = [
-        { x: -2, z: -2, rotation: Math.PI * 0.25 + 0.175 },
+    const holes = [
+        { x: -1.5, z: -2, rotation: Math.PI * 0.25 + 0.175 }, // Move towards center
         { x: 2, z: -2, rotation: -Math.PI * 0.25 - 0.175 },
         { x: -2, z: 2, rotation: Math.PI * 0.75 + 0.175 },
         { x: 2, z: 2, rotation: -Math.PI * 0.75 - 0.175 }
@@ -183,9 +183,9 @@ const holes = [
         
         mole.userData.isUp = false;
         mole.userData.isMoving = false;
-    scene.add(mole);
-    moles.push(mole);
-});
+        scene.add(mole);
+        moles.push(mole);
+    });
 }
 
 // Initialize scene
@@ -762,7 +762,7 @@ console.log("Scene after fixes:", scene);
 function zoomInCamera() {
     // Move camera closer to the scene
     camera.position.set(0, 5, 6); // Reduced z value to zoom in
-camera.lookAt(0, 0, 0);
+    camera.lookAt(0, 0, 0);
     console.log("Camera zoomed in:", camera.position);
 }
 
@@ -1065,7 +1065,7 @@ function addVersionIndicator() {
     );
     
     console.log(
-        "%c Version: white" + versionNumber + " | Loaded: " + versionTimestamp + " %c",
+        "%c Version: pink" + versionNumber + " | Loaded: " + versionTimestamp + " %c",
         "background: #2196F3; color: white; font-size: 14px; padding: 3px; border-radius: 3px;",
         ""
     );
