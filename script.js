@@ -157,9 +157,9 @@ function setupHolesAndMoles() {
     });
 
     const holes = [
-        { x: -1.5, z: -2.9, rotation: Math.PI * 0.25 + 0.175, description: "Front Left" },
+        { x: -1.5, z: -1.5, rotation: Math.PI * 0.25 + 0.175, description: "back Left" },
         { x: 2, z: -1.5, rotation: -Math.PI * 0.25 - 0.175, description: "Front Right" },
-        { x: -2, z: 2.5, rotation: Math.PI * 0.75 + 0.175, description: "Back Left" },
+        { x: -2, z: 1.5, rotation: Math.PI * 0.75 + 0.175, description: "front Left" },
         { x: 2, z: 2, rotation: -Math.PI * 0.75 - 0.175, description: "Back Right" }
     ];
 
