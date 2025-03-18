@@ -65,7 +65,7 @@ function createCustomTerrain() {
     
     // Constants for the equation
     const A = 0.1; // Amplitude
-    const B = 0.6; // Frequency
+    const B = 0.3; // Frequency
 
     // Modify vertices using the custom equation
     const positionAttribute = geometry.getAttribute('position');
@@ -1072,7 +1072,7 @@ function addVersionIndicator() {
     );
     
     console.log(
-        "%c Version: white" + versionNumber + " | Loaded: " + versionTimestamp + " %c",
+        "%c Version: maroon" + versionNumber + " | Loaded: " + versionTimestamp + " %c",
         "background: #2196F3; color: white; font-size: 14px; padding: 3px; border-radius: 3px;",
         ""
     );
