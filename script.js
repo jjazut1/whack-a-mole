@@ -59,19 +59,23 @@ document.body.appendChild(instructionsElement);
 camera.position.set(0, 10, 12); // Move the camera up
 camera.lookAt(0, 0, 0);
 
-// Function to create a refined rolling hill terrain
-function createRefinedRollingHillTerrain() {
+// Function to create a terrain with a custom equation
+function createCustomTerrain() {
     const geometry = new THREE.PlaneGeometry(30, 30, 100, 100); // More segments for smoother edges
     
-    // Modify vertices for rolling hills
+    // Constants for the equation
+    const A = 0.5; // Amplitude
+    const B = 0.1; // Frequency
+
+    // Modify vertices using the custom equation
     const positionAttribute = geometry.getAttribute('position');
     
     for (let i = 0; i < positionAttribute.count; i++) {
         const x = positionAttribute.getX(i);
         const y = positionAttribute.getY(i);
         
-        // Increase frequency to add more hills
-        const z = Math.sin(x * 0.3) * 0.3 + Math.cos(y * 0.3) * 0.3; // Higher frequency
+        // Apply the custom equation
+        const z = A * Math.sin(B * (x * x + y * y));
         positionAttribute.setZ(i, z);
     }
     
@@ -124,9 +128,9 @@ function setupScene() {
     scene.children.length = 0;
     lights.forEach(light => scene.add(light));
 
-    // Add refined rolling hill terrain
-    const terrain = createRefinedRollingHillTerrain();
-    terrain.position.y = -1; // Lower the terrain
+    // Add custom terrain
+    const terrain = createCustomTerrain();
+    terrain.position.y = -0.5;
     scene.add(terrain);
 
     // Create and add clouds
@@ -526,7 +530,7 @@ function gameLoop() {
 // Explicitly add terrain and clouds to scene
 function addTerrainAndClouds() {
     // Add terrain
-    const terrain = createRefinedRollingHillTerrain();
+    const terrain = createCustomTerrain();
     scene.add(terrain);
     console.log("Terrain added:", terrain);
     
