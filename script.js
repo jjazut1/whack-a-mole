@@ -446,11 +446,12 @@ function animateMole(mole, goingUp) {
     
     mole.userData.isMoving = true;
     const targetY = goingUp ? 1.0 : -1.0; // Higher up position
-    const duration = 200;
     const startY = mole.position.y;
+    const duration = 200;
     const startTime = Date.now();
     
     if (goingUp) {
+        mole.visible = true; // Make visible when going up
         assignNewWord(mole);
     } else {
         updateMoleText(mole, '');
@@ -472,6 +473,9 @@ function animateMole(mole, goingUp) {
         } else {
             mole.userData.isMoving = false;
             mole.userData.isUp = goingUp;
+            if (!goingUp) {
+                mole.visible = false; // Hide when not up
+            }
         }
     }
     update();
@@ -1065,7 +1069,7 @@ function addVersionIndicator() {
     );
     
     console.log(
-        "%c Version: purple" + versionNumber + " | Loaded: " + versionTimestamp + " %c",
+        "%c Version: maroon" + versionNumber + " | Loaded: " + versionTimestamp + " %c",
         "background: #2196F3; color: white; font-size: 14px; padding: 3px; border-radius: 3px;",
         ""
     );
