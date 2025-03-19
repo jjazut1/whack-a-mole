@@ -59,6 +59,27 @@ document.body.appendChild(instructionsElement);
 camera.position.set(0, 10, 12); // Move the camera up
 camera.lookAt(0, 0, 0);
 
+// First, define a global variable to store the texture
+let grassTexture;
+
+// Load the texture (keep your existing texture loader code)
+const textureLoader = new THREE.TextureLoader();
+textureLoader.load(
+    'https://jjazut1.github.io/whack-a-mole/grassfigma.png', // Replace with your actual path
+    (texture) => {
+        // Store the loaded texture in the global variable
+        grassTexture = texture;
+        console.log('Texture loaded:', texture);
+        
+        // Call enhanceGrass after the texture has loaded
+        enhanceGrass();
+    },
+    undefined,
+    (error) => {
+        console.error('Error loading texture:', error);
+    }
+);
+
 // Function to create a terrain with a custom equation
 function createCustomTerrain() {
     const geometry = new THREE.PlaneGeometry(30, 30, 100, 100); // More segments for smoother edges
@@ -1073,7 +1094,7 @@ function addVersionIndicator() {
     );
     
     console.log(
-        "%c Version: pink" + versionNumber + " | Loaded: " + versionTimestamp + " %c",
+        "%c Version: white" + versionNumber + " | Loaded: " + versionTimestamp + " %c",
         "background: #2196F3; color: white; font-size: 14px; padding: 3px; border-radius: 3px;",
         ""
     );
@@ -1164,6 +1185,12 @@ function applyTexture(grassTexture) {
 }
 
 function enhanceGrass() {
+    // Check if texture is loaded
+    if (!grassTexture) {
+        console.error('Grass texture not loaded yet');
+        return;
+    }
+
     // Remove existing grass if present
     scene.children.forEach(child => {
         if (child.userData && child.userData.isGrass) {
