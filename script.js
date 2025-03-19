@@ -1212,7 +1212,7 @@ function addVersionIndicator() {
     );
     
     console.log(
-        "%c Version maroon" + versionNumber + " | Loaded: " + versionTimestamp + " %c",
+        "%c Version green" + versionNumber + " | Loaded: " + versionTimestamp + " %c",
         "background: #2196F3; color: white; font-size: 14px; padding: 3px; border-radius: 3px;",
         ""
     );
@@ -1250,13 +1250,13 @@ addVersionIndicator();
 // You can also add this at the end of your main code
 console.log("Game initialization complete - running latest version");
 
-// Create integrated grass texture with original code compatibility
-function createIntegratedGrassTerrain() {
-    console.log("Creating integrated grass terrain...");
+// Create integrated grass terrain with 4x density
+function createDenseIntegratedGrassTerrain() {
+    console.log("Creating 4x dense integrated grass terrain...");
     
     try {
         // Add version indicator
-        const versionNumber = "11.0.0";
+        const versionNumber = "11.1.0";
         const versionTimestamp = new Date().toISOString();
         
         // Create a version indicator
@@ -1270,21 +1270,21 @@ function createIntegratedGrassTerrain() {
         indicator.style.position = 'absolute';
         indicator.style.bottom = '10px';
         indicator.style.right = '10px';
-        indicator.style.background = 'rgba(76, 175, 80, 0.7)';
+        indicator.style.background = 'rgba(255, 152, 0, 0.7)'; // Orange during generation
         indicator.style.color = 'white';
         indicator.style.padding = '5px';
         indicator.style.borderRadius = '3px';
         indicator.style.fontSize = '12px';
         indicator.style.fontFamily = 'monospace';
         indicator.style.zIndex = '1000';
-        indicator.textContent = `Grass Terrain v${versionNumber}`;
+        indicator.textContent = `Generating Ultra Dense Grass...`;
         document.body.appendChild(indicator);
         
         // Store version info globally for verification
         window.gameVersionInfo = {
             version: versionNumber,
             timestamp: versionTimestamp,
-            feature: "Integrated Grass Terrain"
+            feature: "Ultra Dense Integrated Grass Terrain"
         };
         
         console.log(`Version ${versionNumber} - ${versionTimestamp}`);
@@ -1375,10 +1375,31 @@ function createIntegratedGrassTerrain() {
             short.setIndex(indices);
             short.computeVertexNormals();
             
-            return [regular, tall, short];
+            // Thin blade
+            const thin = new THREE.BufferGeometry();
+            const thinHeight = 0.3;
+            const thinWidth = 0.03;
+            const thinCurve = 0.08;
+            
+            const thinVertices = new Float32Array([
+                -thinWidth/2, 0, 0,
+                -thinWidth/3, thinHeight*0.33, thinCurve*0.3,
+                -thinWidth/4, thinHeight*0.66, thinCurve*0.6,
+                0, thinHeight, thinCurve,
+                thinWidth/2, 0, 0,
+                thinWidth/3, thinHeight*0.33, thinCurve*0.3,
+                thinWidth/4, thinHeight*0.66, thinCurve*0.6
+            ]);
+            
+            thin.setAttribute('position', new THREE.BufferAttribute(thinVertices, 3));
+            thin.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
+            thin.setIndex(indices);
+            thin.computeVertexNormals();
+            
+            return [regular, tall, short, thin];
         }
         
-        // Create grass materials - match original green color palette
+        // Create grass materials with slight variation
         const greenMaterials = [
             new THREE.MeshLambertMaterial({ 
                 color: 0x4CAF50, // Medium green
@@ -1390,6 +1411,14 @@ function createIntegratedGrassTerrain() {
             }),
             new THREE.MeshLambertMaterial({ 
                 color: 0x388E3C, // Darker green
+                side: THREE.DoubleSide
+            }),
+            new THREE.MeshLambertMaterial({ 
+                color: 0x81C784, // Lighter green
+                side: THREE.DoubleSide
+            }),
+            new THREE.MeshLambertMaterial({ 
+                color: 0x2E7D32, // Forest green
                 side: THREE.DoubleSide
             })
         ];
@@ -1442,21 +1471,49 @@ function createIntegratedGrassTerrain() {
             return false;
         }
         
-        // Grass distribution parameters
+        // Grass distribution parameters - 4x more dense
         const terrainSize = 30;
-        const clumpCount = 4000; // Good balance between density and performance
+        const clumpCount = 16000; // 4x the previous 4000
         
-        // Use a grid for systematic coverage
+        // Use a smaller grid for denser coverage
         const halfSize = terrainSize / 2;
-        const gridSize = 0.5;
+        const gridSize = 0.25; // Half the previous size for 4x density
         
         let clumpsCreated = 0;
         let bladesCreated = 0;
         
-        // Process grass in chunks for better performance
-        const processChunkSize = 500;
+        // Process grass in smaller chunks for better performance
+        const processChunkSize = 250; // Reduced from 500 to prevent slowdowns
         let xPos = -halfSize;
         let zPos = -halfSize;
+        
+        // Create multiple groups for better memory management
+        const grassChunks = [];
+        const GRASS_PER_CHUNK = 5000; // Blades per chunk
+        let currentChunk = new THREE.Group();
+        currentChunk.userData.isGrassChunk = true;
+        grassChunks.push(currentChunk);
+        
+        // Create progress bar
+        const progressContainer = document.createElement('div');
+        progressContainer.style.position = 'absolute';
+        progressContainer.style.bottom = '40px';
+        progressContainer.style.left = '10px';
+        progressContainer.style.right = '10px';
+        progressContainer.style.height = '10px';
+        progressContainer.style.backgroundColor = 'rgba(0, 0, 0, 0.2)';
+        progressContainer.style.borderRadius = '5px';
+        progressContainer.style.overflow = 'hidden';
+        progressContainer.style.zIndex = '1000';
+        
+        const progressBar = document.createElement('div');
+        progressBar.style.height = '100%';
+        progressBar.style.width = '0%';
+        progressBar.style.backgroundColor = '#4CAF50';
+        progressBar.style.transition = 'width 0.2s';
+        
+        progressContainer.appendChild(progressBar);
+        document.body.appendChild(progressContainer);
         
         function processNextChunk() {
             const startTime = performance.now();
@@ -1473,8 +1530,8 @@ function createIntegratedGrassTerrain() {
                         // Get terrain height
                         const posY = getTerrainHeight(posX, posZ);
                         
-                        // Create a clump of 2-4 blades
-                        const bladeCount = 2 + Math.floor(Math.random() * 3);
+                        // Create a clump of 2-5 blades (more density)
+                        const bladeCount = 2 + Math.floor(Math.random() * 4);
                         
                         for (let i = 0; i < bladeCount; i++) {
                             // Choose a random blade type
@@ -1502,12 +1559,20 @@ function createIntegratedGrassTerrain() {
                             blade.rotation.z = (Math.random() - 0.5) * 0.1;
                             
                             // Slight random scaling
-                            const scale = 0.9 + Math.random() * 0.2;
+                            const scale = 0.85 + Math.random() * 0.3;
                             blade.scale.set(scale, scale, scale);
                             
-                            // Add to grass group
-                            grassGroup.add(blade);
+                            // Add to current chunk
+                            currentChunk.add(blade);
                             bladesCreated++;
+                            
+                            // If current chunk is full, create a new one
+                            if (bladesCreated % GRASS_PER_CHUNK === 0) {
+                                currentChunk = new THREE.Group();
+                                currentChunk.userData.isGrassChunk = true;
+                                grassChunks.push(currentChunk);
+                                console.log(`Created new grass chunk #${grassChunks.length}`);
+                            }
                         }
                         
                         clumpsCreated++;
@@ -1537,6 +1602,8 @@ function createIntegratedGrassTerrain() {
             
             // Update progress
             const progress = Math.min(100, Math.floor((clumpsCreated / clumpCount) * 100));
+            progressBar.style.width = `${progress}%`;
+            
             console.log(`Grass generation: ${progress}% (${clumpsCreated}/${clumpCount} clumps, ${bladesCreated} blades)`);
             
             // Force render to show progress
@@ -1547,17 +1614,26 @@ function createIntegratedGrassTerrain() {
             // Continue or finish
             if (clumpsCreated < clumpCount && xPos < halfSize) {
                 // Continue in next frame
-                requestAnimationFrame(processNextChunk);
+                setTimeout(() => {
+                    requestAnimationFrame(processNextChunk);
+                }, 5); // Small delay to allow UI updates
                 
                 // Update indicator text
-                indicator.textContent = `Generating Grass ${progress}%`;
-                indicator.style.background = 'rgba(255, 152, 0, 0.7)';
+                indicator.textContent = `Generating Ultra Dense Grass ${progress}%`;
             } else {
-                // Finish
-                console.log(`Completed: ${clumpsCreated} grass clumps with ${bladesCreated} blades`);
+                // Finish and cleanup
+                console.log(`Completed: ${clumpsCreated} grass clumps with ${bladesCreated} blades in ${grassChunks.length} chunks`);
                 
-                // Add terrain grass group to scene
+                // Add all grass chunks to main group
+                grassChunks.forEach(chunk => {
+                    grassGroup.add(chunk);
+                });
+                
+                // Add main grass group to scene
                 scene.add(grassGroup);
+                
+                // Remove progress bar
+                progressContainer.remove();
                 
                 // Final render update
                 if (typeof renderer !== 'undefined') {
@@ -1565,28 +1641,36 @@ function createIntegratedGrassTerrain() {
                 }
                 
                 // Update indicator with final info
-                indicator.textContent = `Grass Terrain v${versionNumber} - ${bladesCreated} blades`;
+                indicator.textContent = `Ultra Dense Grass v${versionNumber} - ${bladesCreated} blades`;
                 indicator.style.background = 'rgba(76, 175, 80, 0.7)';
                 
                 // Make sure grass doesn't animate with clouds
-                const originalUpdateMatrix = grassGroup.updateMatrix;
-                grassGroup.updateMatrix = function() {
-                    // Prevent automatic updates - keep grass static
+                grassGroup.updateMatrixWorld = function(force) {
+                    // Use original method but only when forced
+                    if (force === true) {
+                        THREE.Group.prototype.updateMatrixWorld.call(this, force);
+                    }
                 };
+                
+                // Add optimizers for performance
+                grassGroup.frustumCulled = false; // Prevent blades from disappearing
+                grassChunks.forEach(chunk => {
+                    chunk.frustumCulled = false;
+                });
             }
         }
         
         // Start generating grass
         processNextChunk();
         
-        console.log(`Starting integrated grass generation (target: ${clumpCount} clumps)`);
+        console.log(`Starting ultra dense grass generation (target: ${clumpCount} clumps)`);
         
         return grassGroup;
     } catch (e) {
-        console.error("Error creating integrated grass:", e);
+        console.error("Error creating ultra dense grass:", e);
         return null;
     }
 }
 
 // Call the function
-createIntegratedGrassTerrain();
+createDenseIntegratedGrassTerrain();
