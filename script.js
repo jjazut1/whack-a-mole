@@ -1212,7 +1212,7 @@ function addVersionIndicator() {
     );
     
     console.log(
-        "%c Version maroon" + versionNumber + " | Loaded: " + versionTimestamp + " %c",
+        "%c Version purple" + versionNumber + " | Loaded: " + versionTimestamp + " %c",
         "background: #2196F3; color: white; font-size: 14px; padding: 3px; border-radius: 3px;",
         ""
     );
@@ -1798,3 +1798,190 @@ function createSimpleFallbackGrass() {
 
 // Call the function to create textured grass
 createTexturedGrass();
+
+// Remove grass animation and keep grass stationary
+function fixGrassAnimation() {
+    console.log("Removing grass animation...");
+    
+    try {
+        // Find the animation loop function
+        // In most Three.js implementations, this is called 'animate'
+        if (window.animate && typeof window.animate === 'function') {
+            // Store the original animation function
+            const originalAnimate = window.animate;
+            
+            // Create a modified animation function
+            window.animate = function() {
+                // Request next frame
+                requestAnimationFrame(window.animate);
+                
+                // Find grass and cloud objects to handle them differently
+                const grassGroup = scene.children.find(child => 
+                    child.userData && child.userData.isGrass);
+                
+                // Identify clouds by checking their properties
+                // (Clouds are likely white, grouped objects that move horizontally)
+                const clouds = scene.children.filter(child => 
+                    child.isGroup && child.children[0]?.material?.color?.equals(new THREE.Color(0xFFFFFF)));
+                
+                // Temporarily remove grass from scene before calling original animation
+                if (grassGroup) {
+                    const grassParent = grassGroup.parent;
+                    grassParent.remove(grassGroup);
+                    
+                    // Call original animation (which will move clouds but not grass)
+                    originalAnimate();
+                    
+                    // Add grass back to scene
+                    grassParent.add(grassGroup);
+                } else {
+                    // If no grass group is found, just call the original function
+                    originalAnimate();
+                }
+                
+                // Update mole faces (usually part of the original animation)
+                if (typeof moles !== 'undefined') {
+                    moles.forEach(mole => {
+                        if (mole.userData.facingGroup) {
+                            mole.userData.facingGroup.lookAt(camera.position);
+                        }
+                    });
+                }
+                
+                // Original render call is likely in the original animate function
+                // but add a backup render call just in case
+                if (typeof renderer !== 'undefined' && typeof scene !== 'undefined' && typeof camera !== 'undefined') {
+                    renderer.render(scene, camera);
+                }
+            };
+            
+            console.log("Animation function modified to keep grass stationary");
+        } else {
+            // If we can't find the animate function, look for cloud animation directly
+            console.log("animate function not found, trying alternative approach");
+            
+            // Find animation loop in the scene update
+            const originalUpdate = scene.updateMatrixWorld;
+            scene.updateMatrixWorld = function(force) {
+                // Call the original update
+                originalUpdate.call(this, force);
+                
+                // Find grass group
+                const grassGroup = this.children.find(child => 
+                    child.userData && child.userData.isGrass);
+                
+                // Reset any position changes to grass
+                if (grassGroup) {
+                    // Store the original position if not already saved
+                    if (!grassGroup.userData.originalPosition) {
+                        grassGroup.userData.originalPosition = {
+                            x: grassGroup.position.x,
+                            y: grassGroup.position.y,
+                            z: grassGroup.position.z
+                        };
+                    }
+                    
+                    // Reset to original position
+                    const orig = grassGroup.userData.originalPosition;
+                    grassGroup.position.set(orig.x, orig.y, orig.z);
+                }
+            };
+            
+            console.log("Scene update modified to keep grass stationary");
+        }
+        
+        // Create a version indicator
+        const existingIndicator = document.querySelector('[data-grass-fixed]');
+        if (!existingIndicator) {
+            const indicator = document.createElement('div');
+            indicator.setAttribute('data-grass-fixed', 'true');
+            indicator.style.position = 'absolute';
+            indicator.style.bottom = '10px';
+            indicator.style.right = '10px';
+            indicator.style.background = 'rgba(76, 175, 80, 0.7)';
+            indicator.style.color = 'white';
+            indicator.style.padding = '5px';
+            indicator.style.borderRadius = '3px';
+            indicator.style.fontSize = '12px';
+            indicator.style.fontFamily = 'monospace';
+            indicator.textContent = 'Grass Animation Removed v1.0';
+            document.body.appendChild(indicator);
+        }
+        
+        console.log("Grass animation removal complete");
+        
+        return true;
+    } catch (e) {
+        console.error("Error removing grass animation:", e);
+        return false;
+    }
+}
+
+// Alternative simpler approach - find and fix grass directly
+function stopGrassMovement() {
+    console.log("Stopping grass movement directly...");
+    
+    try {
+        // Find grass group
+        const grassGroup = scene.children.find(child => 
+            child.userData && child.userData.isGrass);
+        
+        if (grassGroup) {
+            // Make the grass immovable by overriding position setter
+            const originalX = grassGroup.position.x;
+            const originalY = grassGroup.position.y;
+            const originalZ = grassGroup.position.z;
+            
+            // Define a custom property descriptor
+            Object.defineProperty(grassGroup.position, 'x', {
+                get: function() { return originalX; },
+                set: function(value) { /* Do nothing - ignore position changes */ }
+            });
+            
+            Object.defineProperty(grassGroup.position, 'y', {
+                get: function() { return originalY; },
+                set: function(value) { /* Do nothing - ignore position changes */ }
+            });
+            
+            Object.defineProperty(grassGroup.position, 'z', {
+                get: function() { return originalZ; },
+                set: function(value) { /* Do nothing - ignore position changes */ }
+            });
+            
+            console.log("Grass position locked at:", originalX, originalY, originalZ);
+            
+            // Also disable any transform matrix updates
+            const originalUpdateMatrix = grassGroup.updateMatrix;
+            grassGroup.updateMatrix = function() {
+                // Do nothing - prevent matrix updates
+            };
+            
+            // Create indicator
+            const indicator = document.createElement('div');
+            indicator.setAttribute('data-grass-fixed', 'true');
+            indicator.style.position = 'absolute';
+            indicator.style.bottom = '10px';
+            indicator.style.right = '10px';
+            indicator.style.background = 'rgba(76, 175, 80, 0.7)';
+            indicator.style.color = 'white';
+            indicator.style.padding = '5px';
+            indicator.style.borderRadius = '3px';
+            indicator.style.fontSize = '12px';
+            indicator.style.fontFamily = 'monospace';
+            indicator.textContent = 'Grass Movement Stopped v1.0';
+            document.body.appendChild(indicator);
+            
+            return true;
+        } else {
+            console.log("Grass group not found");
+            return false;
+        }
+    } catch (e) {
+        console.error("Error stopping grass movement:", e);
+        return false;
+    }
+}
+
+// Execute both approaches for redundancy
+fixGrassAnimation();
+stopGrassMovement();
