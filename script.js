@@ -82,120 +82,121 @@ function loadGrassTexture() {
     );
 }
 
-// Function to enhance grass appearance
-function enhanceGrass() {
-    // Check if texture is loaded
-    if (!grassTexture) {
-        console.error('Grass texture not loaded yet');
-        return;
+// Function to enhance grass appearance using existing variables
+function improveGrassAppearance() {
+    console.log("Starting grass improvement...");
+    
+    try {
+        // Try to use the existing textureLoader
+        const grassImageUrl = 'path/to/grass.png'; // Replace with your actual path
+        
+        // Use a different approach without declaring new variables
+        const existingTextureLoader = textureLoader || new THREE.TextureLoader();
+        
+        existingTextureLoader.load(
+            grassImageUrl,
+            function(loadedTexture) {
+                console.log('Grass texture loaded successfully');
+                applyGrassTexture(loadedTexture);
+            },
+            undefined,
+            function(error) {
+                console.error('Error loading grass texture:', error);
+            }
+        );
+    } catch (e) {
+        console.error("Error initializing grass improvement:", e);
     }
+    
+    // Create a version indicator
+    const versionEl = document.createElement('div');
+    versionEl.style.position = 'absolute';
+    versionEl.style.bottom = '10px';
+    versionEl.style.right = '10px';
+    versionEl.style.background = 'rgba(0,0,0,0.5)';
+    versionEl.style.color = 'white';
+    versionEl.style.padding = '5px';
+    versionEl.style.borderRadius = '3px';
+    versionEl.style.fontSize = '12px';
+    versionEl.style.fontFamily = 'monospace';
+    versionEl.textContent = 'Grass v2.0.1';
+    document.body.appendChild(versionEl);
+}
 
-    // Remove existing grass if present
-    scene.children.forEach(child => {
-        if (child.userData && child.userData.isGrass) {
-            scene.remove(child);
+// Function to apply the loaded texture
+function applyGrassTexture(loadedTexture) {
+    try {
+        // Remove existing grass if present
+        scene.children.forEach(child => {
+            if (child.userData && child.userData.isGrass) {
+                scene.remove(child);
+            }
+        });
+        
+        // Create improved grass instances
+        const bladeGeometry = new THREE.PlaneGeometry(0.05, 0.3);
+        const grassMaterial = new THREE.MeshLambertMaterial({
+            map: loadedTexture,
+            transparent: true,
+            side: THREE.DoubleSide
+        });
+        
+        // Color variations
+        const grassColors = [
+            new THREE.Color(0x4CAF50), // Medium green
+            new THREE.Color(0x8BC34A), // Light green
+            new THREE.Color(0x33691E)  // Dark green
+        ];
+        
+        // Number of blades
+        const numBlades = 3000;
+        
+        // Create blade groups for better organization
+        const grassGroup = new THREE.Group();
+        grassGroup.userData.isGrass = true;
+        
+        for (let i = 0; i < numBlades; i++) {
+            const blade = new THREE.Mesh(bladeGeometry, grassMaterial.clone());
+            
+            // Random position
+            const x = (Math.random() - 0.5) * 30;
+            const z = (Math.random() - 0.5) * 30;
+            
+            // Calculate height based on terrain equation
+            const A = 0.1; // Amplitude
+            const B = 0.4; // Frequency
+            const terrainHeight = A * Math.sin(B * x) + A * Math.cos(B * z);
+            
+            blade.position.set(x, terrainHeight + 0.01, z);
+            
+            // Random rotation
+            blade.rotation.y = Math.random() * Math.PI;
+            // Slight random tilt
+            blade.rotation.x = Math.PI/2 - Math.random() * 0.2;
+            
+            // Random scale for variety
+            const scale = 0.7 + Math.random() * 0.6;
+            blade.scale.set(scale, scale + Math.random() * 0.5, scale);
+            
+            // Random color variation
+            blade.material.color = grassColors[Math.floor(Math.random() * grassColors.length)];
+            
+            grassGroup.add(blade);
         }
-    });
-    
-    // Create improved grass instances
-    const bladeGeometry = new THREE.PlaneGeometry(0.05, 0.3);
-    const grassMaterial = new THREE.MeshLambertMaterial({
-        map: grassTexture,
-        transparent: true,
-        side: THREE.DoubleSide
-    });
-    
-    // Color variations
-    const grassColors = [
-        new THREE.Color(0x4CAF50), // Medium green
-        new THREE.Color(0x8BC34A), // Light green
-        new THREE.Color(0x33691E)  // Dark green
-    ];
-    
-    // Number of blades
-    const numBlades = 3000;
-    
-    // Create blade groups for better organization
-    const grassGroup = new THREE.Group();
-    grassGroup.userData.isGrass = true;
-    
-    for (let i = 0; i < numBlades; i++) {
-        const blade = new THREE.Mesh(bladeGeometry, grassMaterial.clone());
         
-        // Random position
-        const x = (Math.random() - 0.5) * 30;
-        const z = (Math.random() - 0.5) * 30;
+        scene.add(grassGroup);
         
-        // Calculate height based on terrain equation
-        const A = 0.1; // Amplitude
-        const B = 0.4; // Frequency
-        const terrainHeight = A * Math.sin(B * x) + A * Math.cos(B * z);
+        // Force render update
+        renderer.render(scene, camera);
         
-        blade.position.set(x, terrainHeight + 0.01, z);
-        
-        // Random rotation
-        blade.rotation.y = Math.random() * Math.PI;
-        // Slight random tilt
-        blade.rotation.x = Math.PI/2 - Math.random() * 0.2;
-        
-        // Random scale for variety
-        const scale = 0.7 + Math.random() * 0.6;
-        blade.scale.set(scale, scale + Math.random() * 0.5, scale);
-        
-        // Random color variation
-        blade.material.color = grassColors[Math.floor(Math.random() * grassColors.length)];
-        
-        grassGroup.add(blade);
+        console.log("Enhanced grass added:", numBlades, "blades");
+    } catch (e) {
+        console.error("Error applying grass texture:", e);
     }
-    
-    scene.add(grassGroup);
-    
-    // Force render update
-    renderer.render(scene, camera);
-    
-    console.log("Enhanced grass added:", numBlades, "blades");
 }
 
-// Create a version indicator
-function addVersionIndicator() {
-    const versionIndicator = document.createElement('div');
-    versionIndicator.style.position = 'absolute';
-    versionIndicator.style.bottom = '10px';
-    versionIndicator.style.right = '10px';
-    versionIndicator.style.background = 'rgba(0,0,0,0.5)';
-    versionIndicator.style.color = 'white';
-    versionIndicator.style.padding = '5px';
-    versionIndicator.style.borderRadius = '3px';
-    versionIndicator.style.fontSize = '12px';
-    versionIndicator.style.fontFamily = 'monospace';
-    versionIndicator.textContent = 'Grass v2.0.0';
-    document.body.appendChild(versionIndicator);
-}
-
-// Start the process - load texture first
-loadGrassTexture();
-addVersionIndicator();
-
-// First, define a global variable to store the texture
-let grassTexture;
-
-// Load the texture (keep your existing texture loader code)
-const textureLoader = new THREE.TextureLoader();
-textureLoader.load(
-    'https://jjazut1.github.io/whack-a-mole/grassfigma.png', // Replace with your actual path
-    (texture) => {
-        // Store the loaded texture in the global variable
-        grassTexture = texture;
-        console.log('Texture loaded:', texture);
-        
-        // Call enhanceGrass after the texture has loaded
-        enhanceGrass();
-    },
-    undefined,
-    (error) => {
-        console.error('Error loading texture:', error);
-    }
-);
+// Call the function to start the process
+improveGrassAppearance();
 
 // Function to create a terrain with a custom equation
 function createCustomTerrain() {
@@ -1211,7 +1212,7 @@ function addVersionIndicator() {
     );
     
     console.log(
-        "%c Version: green" + versionNumber + " | Loaded: " + versionTimestamp + " %c",
+        "%c Version: maroon" + versionNumber + " | Loaded: " + versionTimestamp + " %c",
         "background: #2196F3; color: white; font-size: 14px; padding: 3px; border-radius: 3px;",
         ""
     );
