@@ -1212,7 +1212,7 @@ function addVersionIndicator() {
     );
     
     console.log(
-        "%c Version purple" + versionNumber + " | Loaded: " + versionTimestamp + " %c",
+        "%c Version green" + versionNumber + " | Loaded: " + versionTimestamp + " %c",
         "background: #2196F3; color: white; font-size: 14px; padding: 3px; border-radius: 3px;",
         ""
     );
@@ -1250,9 +1250,9 @@ addVersionIndicator();
 // You can also add this at the end of your main code
 console.log("Game initialization complete - running latest version");
 
-// Create grass using shaders for better performance and appearance
-function createShaderGrass() {
-    console.log("Creating shader-based grass...");
+// Create grass using debugging techniques to ensure visibility
+function createDebugVisibleGrass() {
+    console.log("Creating debug-visible grass...");
     
     try {
         // Remove existing grass
@@ -1262,46 +1262,9 @@ function createShaderGrass() {
             }
         });
         
-        // Create grass group
+        // Create grass group to hold everything
         const grassGroup = new THREE.Group();
         grassGroup.userData.isGrass = true;
-        
-        // Get hole positions to avoid
-        const holePositions = [];
-        scene.children.forEach(child => {
-            if (child.geometry && 
-                child.geometry.type === 'CircleGeometry') {
-                
-                holePositions.push({
-                    x: child.position.x,
-                    z: child.position.z,
-                    radius: 1.5
-                });
-            }
-        });
-        
-        if (holePositions.length === 0) {
-            holePositions.push(
-                { x: -2.25, z: -2.25, radius: 1.5 },
-                { x: 3, z: -2.25, radius: 1.5 },
-                { x: -3, z: 2.25, radius: 1.5 },
-                { x: 3, z: 3, radius: 1.5 }
-            );
-        }
-        
-        // Function to check if position is in a hole
-        function isInsideHole(posX, posZ) {
-            for (let hole of holePositions) {
-                const dx = posX - hole.x;
-                const dz = posZ - hole.z;
-                const distanceSquared = dx * dx + dz * dz;
-                
-                if (distanceSquared < (hole.radius * 1.1) * (hole.radius * 1.1)) {
-                    return true;
-                }
-            }
-            return false;
-        }
         
         // Function to get terrain height
         function getTerrainHeight(x, z) {
@@ -1310,210 +1273,140 @@ function createShaderGrass() {
             return A * Math.sin(B * x) + A * Math.cos(B * z);
         }
         
-        // Create shader material for grass
-        const grassMaterial = new THREE.ShaderMaterial({
-            vertexShader: `
-                varying vec2 vUv;
-                varying float vHeight;
-                
-                void main() {
-                    vUv = uv;
-                    vHeight = position.y;
-                    
-                    // We're not using time-based animation to avoid
-                    // needing to update uniforms every frame
-                    
-                    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-                }
-            `,
-            fragmentShader: `
-                varying vec2 vUv;
-                varying float vHeight;
-                
-                void main() {
-                    // Base color
-                    vec3 bottomColor = vec3(0.1, 0.5, 0.1); // Dark green at bottom
-                    vec3 topColor = vec3(0.3, 0.8, 0.1);    // Lighter green at top
-                    
-                    // Gradient based on height
-                    vec3 grassColor = mix(bottomColor, topColor, vHeight / 0.4);
-                    
-                    // Add slight variation based on UV coordinates
-                    float noise = fract(sin(dot(vUv, vec2(12.9898, 78.233))) * 43758.5453);
-                    grassColor = mix(grassColor, grassColor * 1.2, noise * 0.3);
-                    
-                    gl_FragColor = vec4(grassColor, 1.0);
-                }
-            `,
+        // DEBUGGING: Add a wireframe terrain overlay
+        const terrainSize = 30;
+        const wireframeGeometry = new THREE.PlaneGeometry(terrainSize, terrainSize, 32, 32);
+        
+        // Adjust wireframe to match the terrain
+        const positionAttribute = wireframeGeometry.getAttribute('position');
+        for (let i = 0; i < positionAttribute.count; i++) {
+            const x = positionAttribute.getX(i);
+            const z = positionAttribute.getZ(i);
+            const height = getTerrainHeight(x, z);
+            positionAttribute.setY(i, height);
+        }
+        
+        const wireframeMaterial = new THREE.MeshBasicMaterial({ 
+            color: 0x44AA44, 
+            wireframe: true,
+            transparent: true,
+            opacity: 0.3
+        });
+        
+        const wireframe = new THREE.Mesh(wireframeGeometry, wireframeMaterial);
+        wireframe.rotation.x = -Math.PI / 2;
+        wireframe.position.y = 0.02; // Slightly above terrain
+        grassGroup.add(wireframe);
+        
+        // DEBUGGING: Helper material/geometry for position markers
+        const helperMaterial = new THREE.MeshBasicMaterial({ color: 0xFF0000 });
+        const helperGeometry = new THREE.SphereGeometry(0.05, 8, 8);
+        
+        // Grass Material - simple and very visible
+        const grassMaterial = new THREE.MeshBasicMaterial({ 
+            color: 0x33CC33, 
             side: THREE.DoubleSide
         });
         
-        // Create multiple different blade geometries for variety
-        const bladeGeometries = [
-            // Blade type 1: Simple tapered shape
-            (function() {
-                const blade = new THREE.BufferGeometry();
-                const vertices = new Float32Array([
-                    // Left side
-                    -0.03, 0.0, 0.0,    // Bottom left
-                    -0.01, 0.4, 0.0,    // Top left
-                    
-                    // Right side
-                    0.03, 0.0, 0.0,     // Bottom right
-                    0.01, 0.4, 0.0,     // Top right
-                ]);
-                
-                const indices = [
-                    0, 1, 2,
-                    2, 1, 3
-                ];
-                
-                blade.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
-                blade.setIndex(indices);
-                blade.computeVertexNormals();
-                return blade;
-            })(),
-            
-            // Blade type 2: Curved blade
-            (function() {
-                const blade = new THREE.BufferGeometry();
-                const vertices = new Float32Array([
-                    // Left side
-                    -0.03, 0.0, 0.0,    // Bottom left
-                    -0.02, 0.2, 0.02,   // Middle left
-                    -0.01, 0.4, 0.0,    // Top left
-                    
-                    // Right side
-                    0.03, 0.0, 0.0,     // Bottom right
-                    0.02, 0.2, 0.02,    // Middle right
-                    0.01, 0.4, 0.0,     // Top right
-                ]);
-                
-                const indices = [
-                    0, 1, 3,
-                    3, 1, 4,
-                    1, 2, 4,
-                    4, 2, 5
-                ];
-                
-                blade.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
-                blade.setIndex(indices);
-                blade.computeVertexNormals();
-                return blade;
-            })()
-        ];
+        // Grass blade geometry - bigger for visibility
+        const grassBlade = new THREE.PlaneGeometry(0.2, 0.7);
         
-        // Create grass instances
-        const terrainSize = 30;
-        const grassCount = 5000;
+        // Number of grass instances
+        const grassCount = 1000; // Reduced count for debugging
         
-        // Create a separate instanced mesh for each blade type
-        bladeGeometries.forEach((bladeGeometry, geometryIndex) => {
-            const grassMesh = new THREE.InstancedMesh(
-                bladeGeometry, 
-                grassMaterial.clone(), 
-                geometryIndex === 0 ? grassCount : Math.floor(grassCount / 3)
-            );
+        // Create instanced mesh for grass
+        const grassMesh = new THREE.InstancedMesh(grassBlade, grassMaterial, grassCount);
+        grassMesh.frustumCulled = false; // Prevent culling
+        
+        // Temporary object for setting positions
+        const dummy = new THREE.Object3D();
+        
+        // Position each grass instance
+        for (let i = 0; i < grassCount; i++) {
+            // Random position across terrain
+            const x = (Math.random() - 0.5) * terrainSize;
+            const z = (Math.random() - 0.5) * terrainSize;
             
-            grassMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+            // Get height at this position
+            const y = getTerrainHeight(x, z);
             
-            const dummy = new THREE.Object3D();
-            let instanceIndex = 0;
+            // Position the grass blade
+            dummy.position.set(x, y, z);
             
-            // Grid-based distribution for even coverage
-            const gridSize = 0.6;
-            const halfSize = terrainSize / 2;
+            // Random rotation around Y axis
+            dummy.rotation.y = Math.random() * Math.PI;
             
-            for (let x = -halfSize; x < halfSize; x += gridSize) {
-                for (let z = -halfSize; z < halfSize; z += gridSize) {
-                    // Add randomness to positions
-                    const posX = x + (Math.random() - 0.5) * (gridSize * 0.8);
-                    const posZ = z + (Math.random() - 0.5) * (gridSize * 0.8);
-                    
-                    // Skip if in a hole
-                    if (isInsideHole(posX, posZ)) {
-                        continue;
-                    }
-                    
-                    // Random skip some positions
-                    if (Math.random() < 0.2) continue;
-                    
-                    // Get terrain height at this position
-                    const posY = getTerrainHeight(posX, posZ);
-                    
-                    // Position the dummy
-                    dummy.position.set(posX, posY, posZ);
-                    
-                    // Random rotation around Y
-                    dummy.rotation.y = Math.random() * Math.PI * 2;
-                    
-                    // Slight random tilt
-                    dummy.rotation.x = (Math.random() - 0.5) * 0.2;
-                    dummy.rotation.z = (Math.random() - 0.5) * 0.2;
-                    
-                    // Random scale
-                    const scale = 0.7 + Math.random() * 0.6;
-                    dummy.scale.set(1, scale, 1);
-                    
-                    // Update matrix
-                    dummy.updateMatrix();
-                    
-                    // Apply to instance
-                    grassMesh.setMatrixAt(instanceIndex, dummy.matrix);
-                    
-                    instanceIndex++;
-                    if (instanceIndex >= grassMesh.count) break;
-                }
-                if (instanceIndex >= grassMesh.count) break;
+            // Ensure correct scale
+            dummy.scale.set(1, 1, 1);
+            
+            // Update and apply matrix
+            dummy.updateMatrix();
+            grassMesh.setMatrixAt(i, dummy.matrix);
+            
+            // DEBUGGING: Add red sphere at grass position
+            if (i % 50 === 0) { // Add only some to avoid overwhelming the scene
+                const helper = new THREE.Mesh(helperGeometry, helperMaterial);
+                helper.position.set(x, y, z);
+                grassGroup.add(helper);
             }
-            
-            // Update the instance matrix
-            grassMesh.instanceMatrix.needsUpdate = true;
-            
-            // Add to grass group
-            grassGroup.add(grassMesh);
-        });
+        }
+        
+        // Make sure to update the instance matrix
+        grassMesh.instanceMatrix.needsUpdate = true;
+        
+        // Add grass mesh to group
+        grassGroup.add(grassMesh);
+        
+        // DEBUGGING: Add a visible cube at origin
+        const originCube = new THREE.Mesh(
+            new THREE.BoxGeometry(1, 1, 1),
+            new THREE.MeshBasicMaterial({ color: 0xFF5500 })
+        );
+        originCube.position.set(0, 1, 0);
+        grassGroup.add(originCube);
         
         // Add grass group to scene
         scene.add(grassGroup);
+        
+        // Make sure lighting is adequate
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+        scene.add(ambientLight);
+        
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        directionalLight.position.set(5, 10, 5);
+        scene.add(directionalLight);
         
         // Force render update
         if (typeof renderer !== 'undefined') {
             renderer.render(scene, camera);
         }
         
-        // Add version indicator
-        const existingIndicator = document.querySelector('[data-grass-shader]');
-        if (!existingIndicator) {
-            const indicator = document.createElement('div');
-            indicator.setAttribute('data-grass-shader', 'true');
-            indicator.style.position = 'absolute';
-            indicator.style.bottom = '10px';
-            indicator.style.right = '10px';
-            indicator.style.background = 'rgba(76, 175, 80, 0.7)';
-            indicator.style.color = 'white';
-            indicator.style.padding = '5px';
-            indicator.style.borderRadius = '3px';
-            indicator.style.fontSize = '12px';
-            indicator.style.fontFamily = 'monospace';
-            indicator.textContent = `Shader Grass v4.0.0`;
-            document.body.appendChild(indicator);
-        }
+        // Debug console output
+        console.log("Grass instances count:", grassMesh.count);
+        console.log("Frustum Culling:", grassMesh.frustumCulled);
         
-        console.log(`Created shader-based grass`);
+        // Add indicator
+        const indicator = document.createElement('div');
+        indicator.style.position = 'absolute';
+        indicator.style.bottom = '10px';
+        indicator.style.right = '10px';
+        indicator.style.background = 'rgba(255, 85, 0, 0.7)';
+        indicator.style.color = 'white';
+        indicator.style.padding = '5px';
+        indicator.style.borderRadius = '3px';
+        indicator.style.fontSize = '12px';
+        indicator.style.fontFamily = 'monospace';
+        indicator.textContent = `Debug Grass v6.0.0 - ${grassCount} blades (frustumCulled=${grassMesh.frustumCulled})`;
+        document.body.appendChild(indicator);
         
-        // Keep grass static (no animation)
-        const originalUpdateMatrix = grassGroup.updateMatrix;
-        grassGroup.updateMatrix = function() {
-            // Do nothing - prevent updates
-        };
+        console.log(`Created ${grassCount} debug grass blades`);
         
         return grassGroup;
     } catch (e) {
-        console.error("Error creating shader grass:", e);
+        console.error("Error creating debug grass:", e);
         return null;
     }
 }
 
 // Call the function
-createShaderGrass();
+createDebugVisibleGrass();
