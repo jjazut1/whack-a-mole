@@ -1212,7 +1212,7 @@ function addVersionIndicator() {
     );
     
     console.log(
-        "%c Version: red" + versionNumber + " | Loaded: " + versionTimestamp + " %c",
+        "%c Version: blue" + versionNumber + " | Loaded: " + versionTimestamp + " %c",
         "background: #2196F3; color: white; font-size: 14px; padding: 3px; border-radius: 3px;",
         ""
     );
@@ -1485,3 +1485,132 @@ function createCylindricalGrass() {
 // Call one of the functions
 createCylindricalGrass(); // This approach is more likely to work well
 // Alternatively: createRealisticGrass();
+
+// Create grass using the hair approach
+function createGrassLikeHair() {
+    console.log("Creating grass using the hair approach...");
+    
+    try {
+        // Remove existing grass
+        scene.children.forEach(child => {
+            if (child.userData && child.userData.isGrass) {
+                scene.remove(child);
+            }
+        });
+        
+        // Create grass group
+        const grassGroup = new THREE.Group();
+        grassGroup.userData.isGrass = true;
+        
+        // Number of grass patches
+        const numPatches = 800;
+        
+        // Natural grass colors
+        const grassColors = [
+            new THREE.Color(0x4CAF50), // Medium green
+            new THREE.Color(0x8BC34A), // Light green
+            new THREE.Color(0x7CB342), // Light green
+            new THREE.Color(0x558B2F)  // Olive green
+        ];
+        
+        for (let i = 0; i < numPatches; i++) {
+            // Create a group for each grass patch
+            const grassPatch = new THREE.Group();
+            
+            // Random position
+            const x = (Math.random() - 0.5) * 30;
+            const z = (Math.random() - 0.5) * 30;
+            
+            // Calculate height based on terrain
+            let y = 0.1; // Default height
+            
+            try {
+                const A = 0.1; // Amplitude
+                const B = 0.4; // Frequency
+                y = A * Math.sin(B * x) + A * Math.cos(B * z);
+            } catch (e) {
+                console.log("Using default height");
+            }
+            
+            // Position the patch
+            grassPatch.position.set(x, y, z);
+            
+            // Random rotation around Y axis
+            grassPatch.rotation.y = Math.random() * Math.PI * 2;
+            
+            // Random color for this patch
+            const grassColor = grassColors[Math.floor(Math.random() * grassColors.length)];
+            const grassMaterial = new THREE.MeshBasicMaterial({ color: grassColor });
+            
+            // Number of blades in this patch (3-7 blades)
+            const numBlades = 3 + Math.floor(Math.random() * 5);
+            
+            // Create blades for this patch (similar to hair spikes)
+            for (let j = 0; j < numBlades; j++) {
+                // Create a blade using cone geometry (like hair spikes)
+                const height = 0.15 + Math.random() * 0.1; // 1/2 the height of hair (0.3-0.5)
+                const radiusTop = 0.001; // Very thin at top
+                const radiusBottom = 0.005 + Math.random() * 0.005; // Slightly thicker at bottom
+                
+                const bladeGeometry = new THREE.ConeGeometry(
+                    radiusBottom, height, 4, 1
+                );
+                
+                const blade = new THREE.Mesh(bladeGeometry, grassMaterial);
+                
+                // Position within the patch
+                const offsetX = (Math.random() - 0.5) * 0.05;
+                const offsetZ = (Math.random() - 0.5) * 0.05;
+                blade.position.set(offsetX, height/2, offsetZ);
+                
+                // Rotate slightly for variation
+                blade.rotation.x = (Math.random() - 0.5) * 0.2;
+                blade.rotation.z = (Math.random() - 0.5) * 0.2;
+                
+                // Add blade to patch
+                grassPatch.add(blade);
+            }
+            
+            // Add patch to grass group
+            grassGroup.add(grassPatch);
+        }
+        
+        // Add grass group to scene
+        scene.add(grassGroup);
+        
+        // Force render update
+        if (typeof renderer !== 'undefined') {
+            renderer.render(scene, camera);
+        }
+        
+        // Update debug indicator
+        const existingDebug = document.querySelector('[data-grass-debug]');
+        if (existingDebug) {
+            existingDebug.remove();
+        }
+        
+        const debugEl = document.createElement('div');
+        debugEl.setAttribute('data-grass-debug', 'true');
+        debugEl.style.position = 'absolute';
+        debugEl.style.bottom = '10px';
+        debugEl.style.right = '10px';
+        debugEl.style.background = 'rgba(76, 175, 80, 0.7)';
+        debugEl.style.color = 'white';
+        debugEl.style.padding = '5px';
+        debugEl.style.borderRadius = '3px';
+        debugEl.style.fontSize = '12px';
+        debugEl.style.fontFamily = 'monospace';
+        debugEl.textContent = `Hair-Style Grass v2.4.0 - ${numPatches} patches`;
+        document.body.appendChild(debugEl);
+        
+        console.log(`Added ${numPatches} grass patches with hair-like blades to the scene`);
+        
+        return grassGroup;
+    } catch (e) {
+        console.error("Error creating hair-like grass:", e);
+        return null;
+    }
+}
+
+// Call the function
+createGrassLikeHair();
