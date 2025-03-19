@@ -1212,7 +1212,7 @@ function addVersionIndicator() {
     );
     
     console.log(
-        "%c Version green" + versionNumber + " | Loaded: " + versionTimestamp + " %c",
+        "%c Version purple" + versionNumber + " | Loaded: " + versionTimestamp + " %c",
         "background: #2196F3; color: white; font-size: 14px; padding: 3px; border-radius: 3px;",
         ""
     );
@@ -1250,13 +1250,13 @@ addVersionIndicator();
 // You can also add this at the end of your main code
 console.log("Game initialization complete - running latest version");
 
-// Create integrated grass terrain with 4x density
-function createDenseIntegratedGrassTerrain() {
-    console.log("Creating 4x dense integrated grass terrain...");
+// Create super dense integrated grass terrain with consistent coloring
+function createSuperDenseIntegratedGrassTerrain() {
+    console.log("Creating super dense integrated grass terrain with consistent coloring...");
     
     try {
         // Add version indicator
-        const versionNumber = "11.1.0";
+        const versionNumber = "11.2.0";
         const versionTimestamp = new Date().toISOString();
         
         // Create a version indicator
@@ -1277,21 +1277,21 @@ function createDenseIntegratedGrassTerrain() {
         indicator.style.fontSize = '12px';
         indicator.style.fontFamily = 'monospace';
         indicator.style.zIndex = '1000';
-        indicator.textContent = `Generating Ultra Dense Grass...`;
+        indicator.textContent = `Generating Super Dense Grass...`;
         document.body.appendChild(indicator);
         
         // Store version info globally for verification
         window.gameVersionInfo = {
             version: versionNumber,
             timestamp: versionTimestamp,
-            feature: "Ultra Dense Integrated Grass Terrain"
+            feature: "Super Dense Grass with Consistent Green Coloring"
         };
         
         console.log(`Version ${versionNumber} - ${versionTimestamp}`);
         
         // Remove existing grass if any
         scene.children.forEach(child => {
-            if (child.userData && child.userData.isGrass) {
+            if (child.userData && (child.userData.isGrass || child.userData.isGrassChunk)) {
                 scene.remove(child);
             }
         });
@@ -1399,7 +1399,8 @@ function createDenseIntegratedGrassTerrain() {
             return [regular, tall, short, thin];
         }
         
-        // Create grass materials with slight variation
+        // Create grass materials with CONSISTENT green colors
+        // No white or extremely light colors
         const greenMaterials = [
             new THREE.MeshLambertMaterial({ 
                 color: 0x4CAF50, // Medium green
@@ -1410,11 +1411,11 @@ function createDenseIntegratedGrassTerrain() {
                 side: THREE.DoubleSide
             }),
             new THREE.MeshLambertMaterial({ 
-                color: 0x388E3C, // Darker green
+                color: 0x81C784, // Lighter green but still green
                 side: THREE.DoubleSide
             }),
             new THREE.MeshLambertMaterial({ 
-                color: 0x81C784, // Lighter green
+                color: 0x388E3C, // Darker green
                 side: THREE.DoubleSide
             }),
             new THREE.MeshLambertMaterial({ 
@@ -1471,25 +1472,25 @@ function createDenseIntegratedGrassTerrain() {
             return false;
         }
         
-        // Grass distribution parameters - 4x more dense
+        // Grass distribution parameters - 8x more dense than original (2x the previous)
         const terrainSize = 30;
-        const clumpCount = 16000; // 4x the previous 4000
+        const clumpCount = 32000; // 2x the previous 16000
         
-        // Use a smaller grid for denser coverage
+        // Use a smaller grid for even denser coverage
         const halfSize = terrainSize / 2;
-        const gridSize = 0.25; // Half the previous size for 4x density
+        const gridSize = 0.18; // Smaller than previous for 2x density
         
         let clumpsCreated = 0;
         let bladesCreated = 0;
         
         // Process grass in smaller chunks for better performance
-        const processChunkSize = 250; // Reduced from 500 to prevent slowdowns
+        const processChunkSize = 200; // Reduced further to maintain smoothness
         let xPos = -halfSize;
         let zPos = -halfSize;
         
         // Create multiple groups for better memory management
         const grassChunks = [];
-        const GRASS_PER_CHUNK = 5000; // Blades per chunk
+        const GRASS_PER_CHUNK = 4000; // Blades per chunk - reduced for better performance
         let currentChunk = new THREE.Group();
         currentChunk.userData.isGrassChunk = true;
         grassChunks.push(currentChunk);
@@ -1515,6 +1516,32 @@ function createDenseIntegratedGrassTerrain() {
         progressContainer.appendChild(progressBar);
         document.body.appendChild(progressContainer);
         
+        // Check for and add required lighting if it doesn't exist
+        let hasAmbientLight = false;
+        let hasDirectionalLight = false;
+        
+        scene.children.forEach(child => {
+            if (child instanceof THREE.AmbientLight) {
+                hasAmbientLight = true;
+            }
+            if (child instanceof THREE.DirectionalLight) {
+                hasDirectionalLight = true;
+            }
+        });
+        
+        if (!hasAmbientLight) {
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+            scene.add(ambientLight);
+            console.log("Added ambient light for better grass visibility");
+        }
+        
+        if (!hasDirectionalLight) {
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            directionalLight.position.set(5, 10, 5);
+            scene.add(directionalLight);
+            console.log("Added directional light for better grass visibility");
+        }
+        
         function processNextChunk() {
             const startTime = performance.now();
             let chunkClumps = 0;
@@ -1530,7 +1557,7 @@ function createDenseIntegratedGrassTerrain() {
                         // Get terrain height
                         const posY = getTerrainHeight(posX, posZ);
                         
-                        // Create a clump of 2-5 blades (more density)
+                        // Create a clump of 2-5 blades
                         const bladeCount = 2 + Math.floor(Math.random() * 4);
                         
                         for (let i = 0; i < bladeCount; i++) {
@@ -1538,14 +1565,14 @@ function createDenseIntegratedGrassTerrain() {
                             const geometryIndex = Math.floor(Math.random() * geometries.length);
                             const bladeGeometry = geometries[geometryIndex];
                             
-                            // Choose random material
+                            // Choose random material - all proper greens, no whites
                             const material = greenMaterials[Math.floor(Math.random() * greenMaterials.length)];
                             
                             // Create blade
                             const blade = new THREE.Mesh(bladeGeometry, material);
                             
                             // Position within the clump
-                            const offset = 0.03;
+                            const offset = 0.02; // Smaller offset for denser appearance
                             const offsetX = (Math.random() - 0.5) * offset;
                             const offsetZ = (Math.random() - 0.5) * offset;
                             
@@ -1558,8 +1585,8 @@ function createDenseIntegratedGrassTerrain() {
                             blade.rotation.x = (Math.random() - 0.5) * 0.1;
                             blade.rotation.z = (Math.random() - 0.5) * 0.1;
                             
-                            // Slight random scaling
-                            const scale = 0.85 + Math.random() * 0.3;
+                            // Slight random scaling - narrower range for consistency
+                            const scale = 0.85 + Math.random() * 0.25;
                             blade.scale.set(scale, scale, scale);
                             
                             // Add to current chunk
@@ -1568,6 +1595,9 @@ function createDenseIntegratedGrassTerrain() {
                             
                             // If current chunk is full, create a new one
                             if (bladesCreated % GRASS_PER_CHUNK === 0) {
+                                // Add the completed chunk to the scene immediately to free memory
+                                scene.add(currentChunk);
+                                
                                 currentChunk = new THREE.Group();
                                 currentChunk.userData.isGrassChunk = true;
                                 grassChunks.push(currentChunk);
@@ -1616,21 +1646,18 @@ function createDenseIntegratedGrassTerrain() {
                 // Continue in next frame
                 setTimeout(() => {
                     requestAnimationFrame(processNextChunk);
-                }, 5); // Small delay to allow UI updates
+                }, 10); // Slightly longer delay to prevent browser stuttering
                 
                 // Update indicator text
-                indicator.textContent = `Generating Ultra Dense Grass ${progress}%`;
+                indicator.textContent = `Generating Super Dense Grass ${progress}%`;
             } else {
                 // Finish and cleanup
                 console.log(`Completed: ${clumpsCreated} grass clumps with ${bladesCreated} blades in ${grassChunks.length} chunks`);
                 
-                // Add all grass chunks to main group
-                grassChunks.forEach(chunk => {
-                    grassGroup.add(chunk);
-                });
-                
-                // Add main grass group to scene
-                scene.add(grassGroup);
+                // Add any remaining chunks to scene
+                if (currentChunk.children.length > 0) {
+                    scene.add(currentChunk);
+                }
                 
                 // Remove progress bar
                 progressContainer.remove();
@@ -1641,36 +1668,44 @@ function createDenseIntegratedGrassTerrain() {
                 }
                 
                 // Update indicator with final info
-                indicator.textContent = `Ultra Dense Grass v${versionNumber} - ${bladesCreated} blades`;
+                indicator.textContent = `Super Dense Grass v${versionNumber} - ${bladesCreated} blades`;
                 indicator.style.background = 'rgba(76, 175, 80, 0.7)';
                 
-                // Make sure grass doesn't animate with clouds
-                grassGroup.updateMatrixWorld = function(force) {
-                    // Use original method but only when forced
-                    if (force === true) {
-                        THREE.Group.prototype.updateMatrixWorld.call(this, force);
-                    }
-                };
-                
-                // Add optimizers for performance
-                grassGroup.frustumCulled = false; // Prevent blades from disappearing
-                grassChunks.forEach(chunk => {
-                    chunk.frustumCulled = false;
-                });
+                // Set up a memory optimization cleanup timer
+                setTimeout(() => {
+                    console.log("Running performance optimization...");
+                    // Disable rendering updates for grass chunks to improve performance
+                    grassChunks.forEach(chunk => {
+                        chunk.frustumCulled = false;
+                        
+                        // Make static to save CPU
+                        chunk.matrixAutoUpdate = false;
+                        chunk.updateMatrix();
+                    });
+                    
+                    console.log("Grass performance optimization complete");
+                }, 1000);
             }
         }
         
         // Start generating grass
         processNextChunk();
         
-        console.log(`Starting ultra dense grass generation (target: ${clumpCount} clumps)`);
+        console.log(`Starting super dense grass generation (target: ${clumpCount} clumps)`);
         
-        return grassGroup;
+        return true;
     } catch (e) {
-        console.error("Error creating ultra dense grass:", e);
-        return null;
+        console.error("Error creating super dense grass:", e);
+        
+        // Clean up on error
+        const progressContainer = document.querySelector('div:has(> div[style*="backgroundColor: #4CAF50"])');
+        if (progressContainer) {
+            progressContainer.remove();
+        }
+        
+        return false;
     }
 }
 
 // Call the function
-createDenseIntegratedGrassTerrain();
+createSuperDenseIntegratedGrassTerrain();
