@@ -1212,7 +1212,7 @@ function addVersionIndicator() {
     );
     
     console.log(
-        "%c Version: maroon" + versionNumber + " | Loaded: " + versionTimestamp + " %c",
+        "%c Version: purple" + versionNumber + " | Loaded: " + versionTimestamp + " %c",
         "background: #2196F3; color: white; font-size: 14px; padding: 3px; border-radius: 3px;",
         ""
     );
@@ -1249,3 +1249,118 @@ addVersionIndicator();
 
 // You can also add this at the end of your main code
 console.log("Game initialization complete - running latest version");
+
+// Simplified grass creation function - no texture dependencies
+function createSimpleGrass() {
+    console.log("Creating simple grass...");
+    
+    try {
+        // Remove existing grass if present
+        scene.children.forEach(child => {
+            if (child.userData && child.userData.isGrass) {
+                scene.remove(child);
+            }
+        });
+        
+        // Create grass group
+        const grassGroup = new THREE.Group();
+        grassGroup.userData.isGrass = true;
+        
+        // Number of grass blades
+        const numBlades = 2000;
+        
+        // Use simple colored material instead of texture
+        const grassMaterials = [
+            new THREE.MeshBasicMaterial({ color: 0x4CAF50 }), // Medium green
+            new THREE.MeshBasicMaterial({ color: 0x8BC34A }), // Light green
+            new THREE.MeshBasicMaterial({ color: 0x33691E })  // Dark green
+        ];
+        
+        // Create blade geometry - simple rectangle
+        const bladeGeometry = new THREE.PlaneGeometry(0.05, 0.3);
+        
+        // Create grass blades
+        for (let i = 0; i < numBlades; i++) {
+            // Pick a random material
+            const material = grassMaterials[Math.floor(Math.random() * grassMaterials.length)].clone();
+            
+            // Create mesh
+            const blade = new THREE.Mesh(bladeGeometry, material);
+            
+            // Random position within scene bounds
+            const x = (Math.random() - 0.5) * 30;
+            const z = (Math.random() - 0.5) * 30;
+            
+            // Height calculation based on terrain
+            let y = 0.2; // Default height above terrain
+            
+            // Try to calculate terrain height if possible
+            try {
+                const A = 0.1; // Amplitude
+                const B = 0.4; // Frequency
+                y = A * Math.sin(B * x) + A * Math.cos(B * z) + 0.1;
+            } catch (e) {
+                console.log("Using default height for grass");
+            }
+            
+            // Position blade
+            blade.position.set(x, y, z);
+            
+            // Random rotation
+            blade.rotation.y = Math.random() * Math.PI;
+            
+            // Tilt slightly
+            blade.rotation.x = Math.PI/2 - Math.random() * 0.2;
+            
+            // Add to group
+            grassGroup.add(blade);
+        }
+        
+        // Add grass group to scene
+        scene.add(grassGroup);
+        
+        // Force render update
+        if (typeof renderer !== 'undefined') {
+            renderer.render(scene, camera);
+        }
+        
+        // Add debug indicator
+        const debugEl = document.createElement('div');
+        debugEl.style.position = 'absolute';
+        debugEl.style.bottom = '10px';
+        debugEl.style.right = '10px';
+        debugEl.style.background = 'rgba(76, 175, 80, 0.7)';
+        debugEl.style.color = 'white';
+        debugEl.style.padding = '5px';
+        debugEl.style.borderRadius = '3px';
+        debugEl.style.fontSize = '12px';
+        debugEl.style.fontFamily = 'monospace';
+        debugEl.textContent = `Simple Grass v2.1.0 - ${numBlades} blades`;
+        document.body.appendChild(debugEl);
+        
+        console.log(`Added ${numBlades} grass blades to the scene`);
+        
+        // Log scene info for debugging
+        console.log("Scene children count:", scene.children.length);
+        console.log("Grass group child count:", grassGroup.children.length);
+        
+        return grassGroup;
+    } catch (e) {
+        console.error("Error creating simple grass:", e);
+        return null;
+    }
+}
+
+// Create a test cube to verify rendering is working
+function createTestCube() {
+    const geometry = new THREE.BoxGeometry(1, 1, 1);
+    const material = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+    const cube = new THREE.Mesh(geometry, material);
+    cube.position.set(0, 2, 0);
+    scene.add(cube);
+    console.log("Test cube added to scene");
+}
+
+// Call the function
+createSimpleGrass();
+createTestCube();
