@@ -1212,7 +1212,7 @@ function addVersionIndicator() {
     );
     
     console.log(
-        "%c Version: purple" + versionNumber + " | Loaded: " + versionTimestamp + " %c",
+        "%c Version: yellow" + versionNumber + " | Loaded: " + versionTimestamp + " %c",
         "background: #2196F3; color: white; font-size: 14px; padding: 3px; border-radius: 3px;",
         ""
     );
@@ -1250,14 +1250,15 @@ addVersionIndicator();
 // You can also add this at the end of your main code
 console.log("Game initialization complete - running latest version");
 
-// Simplified grass creation function - no texture dependencies
-function createSimpleGrass() {
-    console.log("Creating simple grass...");
+// Enhanced grass creation function
+function createEnhancedGrass() {
+    console.log("Creating enhanced grass...");
     
     try {
-        // Remove existing grass if present
+        // Remove existing grass and test cube
         scene.children.forEach(child => {
-            if (child.userData && child.userData.isGrass) {
+            if ((child.userData && child.userData.isGrass) || 
+                (child.geometry && child.geometry.type === 'BoxGeometry')) {
                 scene.remove(child);
             }
         });
@@ -1266,35 +1267,51 @@ function createSimpleGrass() {
         const grassGroup = new THREE.Group();
         grassGroup.userData.isGrass = true;
         
-        // Number of grass blades
-        const numBlades = 2000;
+        // Number of grass blades - increased for density
+        const numBlades = 5000;
         
-        // Use simple colored material instead of texture
-        const grassMaterials = [
-            new THREE.MeshBasicMaterial({ color: 0x4CAF50 }), // Medium green
-            new THREE.MeshBasicMaterial({ color: 0x8BC34A }), // Light green
-            new THREE.MeshBasicMaterial({ color: 0x33691E })  // Dark green
+        // More natural grass colors
+        const grassColors = [
+            new THREE.Color(0x4CAF50), // Medium green
+            new THREE.Color(0x8BC34A), // Light green
+            new THREE.Color(0x33691E), // Dark green
+            new THREE.Color(0x7CB342), // Light green
+            new THREE.Color(0x558B2F)  // Olive green
         ];
         
-        // Create blade geometry - simple rectangle
-        const bladeGeometry = new THREE.PlaneGeometry(0.05, 0.3);
+        // Create blade geometry - taller and thinner
+        const bladeGeometry = new THREE.PlaneGeometry(0.03, 0.4);
         
         // Create grass blades
         for (let i = 0; i < numBlades; i++) {
             // Pick a random material
-            const material = grassMaterials[Math.floor(Math.random() * grassMaterials.length)].clone();
+            const material = new THREE.MeshBasicMaterial({ 
+                color: grassColors[Math.floor(Math.random() * grassColors.length)],
+                side: THREE.DoubleSide
+            });
             
             // Create mesh
             const blade = new THREE.Mesh(bladeGeometry, material);
             
-            // Random position within scene bounds
-            const x = (Math.random() - 0.5) * 30;
-            const z = (Math.random() - 0.5) * 30;
+            // Random position with some clustering
+            let x, z;
+            
+            // 70% chance of random position, 30% chance of clustered position
+            if (Math.random() < 0.7) {
+                x = (Math.random() - 0.5) * 30;
+                z = (Math.random() - 0.5) * 30;
+            } else {
+                // Create clusters around random points
+                const clusterCenterX = (Math.random() - 0.5) * 30;
+                const clusterCenterZ = (Math.random() - 0.5) * 30;
+                x = clusterCenterX + (Math.random() - 0.5) * 3;
+                z = clusterCenterZ + (Math.random() - 0.5) * 3;
+            }
             
             // Height calculation based on terrain
             let y = 0.2; // Default height above terrain
             
-            // Try to calculate terrain height if possible
+            // Calculate terrain height
             try {
                 const A = 0.1; // Amplitude
                 const B = 0.4; // Frequency
@@ -1306,11 +1323,18 @@ function createSimpleGrass() {
             // Position blade
             blade.position.set(x, y, z);
             
-            // Random rotation
+            // Random rotation around Y axis
             blade.rotation.y = Math.random() * Math.PI;
             
-            // Tilt slightly
-            blade.rotation.x = Math.PI/2 - Math.random() * 0.2;
+            // Tilt slightly (less tilt for more vertical blades)
+            blade.rotation.x = Math.PI/2 - Math.random() * 0.1;
+            
+            // Random slight bending
+            blade.rotation.z = (Math.random() - 0.5) * 0.05;
+            
+            // Random scale variation
+            const heightScale = 0.8 + Math.random() * 0.4;
+            blade.scale.set(1, heightScale, 1);
             
             // Add to group
             grassGroup.add(blade);
@@ -1324,8 +1348,14 @@ function createSimpleGrass() {
             renderer.render(scene, camera);
         }
         
-        // Add debug indicator
+        // Update debug indicator
+        const existingDebug = document.querySelector('[data-grass-debug]');
+        if (existingDebug) {
+            existingDebug.remove();
+        }
+        
         const debugEl = document.createElement('div');
+        debugEl.setAttribute('data-grass-debug', 'true');
         debugEl.style.position = 'absolute';
         debugEl.style.bottom = '10px';
         debugEl.style.right = '10px';
@@ -1335,32 +1365,17 @@ function createSimpleGrass() {
         debugEl.style.borderRadius = '3px';
         debugEl.style.fontSize = '12px';
         debugEl.style.fontFamily = 'monospace';
-        debugEl.textContent = `Simple Grass v2.1.0 - ${numBlades} blades`;
+        debugEl.textContent = `Enhanced Grass v2.2.0 - ${numBlades} blades`;
         document.body.appendChild(debugEl);
         
-        console.log(`Added ${numBlades} grass blades to the scene`);
-        
-        // Log scene info for debugging
-        console.log("Scene children count:", scene.children.length);
-        console.log("Grass group child count:", grassGroup.children.length);
+        console.log(`Added ${numBlades} enhanced grass blades to the scene`);
         
         return grassGroup;
     } catch (e) {
-        console.error("Error creating simple grass:", e);
+        console.error("Error creating enhanced grass:", e);
         return null;
     }
 }
 
-// Create a test cube to verify rendering is working
-function createTestCube() {
-    const geometry = new THREE.BoxGeometry(1, 1, 1);
-    const material = new THREE.MeshBasicMaterial({ color: 0xff0000 });
-    const cube = new THREE.Mesh(geometry, material);
-    cube.position.set(0, 2, 0);
-    scene.add(cube);
-    console.log("Test cube added to scene");
-}
-
-// Call the function
-createSimpleGrass();
-createTestCube();
+// Call the enhanced grass function
+createEnhancedGrass();
