@@ -1212,7 +1212,7 @@ function addVersionIndicator() {
     );
     
     console.log(
-        "%c Version: blue" + versionNumber + " | Loaded: " + versionTimestamp + " %c",
+        "%c Version: pink" + versionNumber + " | Loaded: " + versionTimestamp + " %c",
         "background: #2196F3; color: white; font-size: 14px; padding: 3px; border-radius: 3px;",
         ""
     );
@@ -1250,9 +1250,9 @@ addVersionIndicator();
 // You can also add this at the end of your main code
 console.log("Game initialization complete - running latest version");
 
-// Create turf-like grass with dense, even coverage
-function createTurfGrass() {
-    console.log("Creating turf-like grass...");
+// Create improved turf grass with proper ground contact
+function createImprovedTurfGrass() {
+    console.log("Creating improved turf grass...");
     
     try {
         // Remove existing grass
@@ -1305,10 +1305,16 @@ function createTurfGrass() {
             return false;
         }
         
-        // Turf grass approach - using a dense grid of short grass blades
-        // Define the grid properties
+        // Calculate terrain height at a position
+        function getTerrainHeight(x, z) {
+            const A = 0.1; // Amplitude
+            const B = 0.4; // Frequency
+            return A * Math.sin(B * x) + A * Math.cos(B * z);
+        }
+        
+        // Turf grass approach - significantly higher density
         const gridSize = 30; // Total size of the terrain
-        const gridDensity = 1.5; // Higher values = more dense turf
+        const gridDensity = 3.0; // Much higher density (3x more than before)
         const cellSize = 1 / gridDensity;
         const numCellsX = Math.floor(gridSize * gridDensity);
         const numCellsZ = Math.floor(gridSize * gridDensity);
@@ -1321,12 +1327,14 @@ function createTurfGrass() {
             new THREE.Color(0x558B2F)  // Olive green
         ];
         
-        // Grass blade properties
-        const bladeHeight = 0.08; // Shorter blades for turf
-        const bladeWidth = 0.02;
+        // Grass blade properties - shorter for turf
+        const bladeHeight = 0.06; // Very short blades
+        const bladeWidth = 0.015;
         
         // Create a blade geometry to reuse
         const bladeGeometry = new THREE.ConeGeometry(bladeWidth, bladeHeight, 4, 1);
+        // Important: Move the geometry's origin to the bottom of the cone
+        bladeGeometry.translate(0, bladeHeight/2, 0);
         
         // Track created blades
         let bladeCount = 0;
@@ -1335,33 +1343,32 @@ function createTurfGrass() {
         for (let i = 0; i < numCellsX; i++) {
             for (let j = 0; j < numCellsZ; j++) {
                 // Calculate grid position with slight randomness
-                const x = (i / gridDensity) - (gridSize / 2) + (Math.random() * cellSize * 0.8);
-                const z = (j / gridDensity) - (gridSize / 2) + (Math.random() * cellSize * 0.8);
+                const x = (i / gridDensity) - (gridSize / 2) + (Math.random() * cellSize * 0.5);
+                const z = (j / gridDensity) - (gridSize / 2) + (Math.random() * cellSize * 0.5);
                 
                 // Skip if in a hole
                 if (isInsideHole(x, z)) {
                     continue;
                 }
                 
-                // Calculate terrain height
+                // Calculate terrain height - this is the exact height of the terrain
                 let y = 0;
                 try {
-                    const A = 0.1; // Amplitude
-                    const B = 0.4; // Frequency
-                    y = A * Math.sin(B * x) + A * Math.cos(B * z);
+                    y = getTerrainHeight(x, z);
                 } catch (e) {
-                    // Use default height
+                    console.log("Error calculating height, using default");
                 }
                 
-                // Create a turf clump at this position (multiple short blades)
+                // Create a turf clump at this position
                 const turfClump = new THREE.Group();
+                // Position clump EXACTLY at the terrain height
                 turfClump.position.set(x, y, z);
-                
-                // Number of blades in this clump (2-4 for turf)
-                const numBlades = 2 + Math.floor(Math.random() * 3);
                 
                 // Random rotation for the whole clump
                 turfClump.rotation.y = Math.random() * Math.PI * 2;
+                
+                // Number of blades in this clump
+                const numBlades = 2 + Math.floor(Math.random() * 3);
                 
                 for (let k = 0; k < numBlades; k++) {
                     // Select a random color for this blade
@@ -1372,17 +1379,14 @@ function createTurfGrass() {
                     const blade = new THREE.Mesh(bladeGeometry, grassMaterial);
                     
                     // Position within the clump - very tight clustering for turf
-                    const offsetX = (Math.random() - 0.5) * 0.03;
-                    const offsetZ = (Math.random() - 0.5) * 0.03;
-                    blade.position.set(offsetX, bladeHeight/2, offsetZ);
+                    const offsetX = (Math.random() - 0.5) * 0.02;
+                    const offsetZ = (Math.random() - 0.5) * 0.02;
+                    // Important: y=0 because the geometry is already translated
+                    blade.position.set(offsetX, 0, offsetZ);
                     
-                    // Slight random tilt for natural appearance
-                    blade.rotation.x = (Math.random() - 0.5) * 0.15; // Less tilt for turf
-                    blade.rotation.z = (Math.random() - 0.5) * 0.15;
-                    
-                    // Random slight scaling
-                    const scale = 0.8 + Math.random() * 0.4;
-                    blade.scale.y = scale;
+                    // Minimal tilt for turf-like appearance
+                    blade.rotation.x = (Math.random() - 0.5) * 0.1;
+                    blade.rotation.z = (Math.random() - 0.5) * 0.1;
                     
                     // Add blade to clump
                     turfClump.add(blade);
@@ -1419,17 +1423,17 @@ function createTurfGrass() {
         debugEl.style.borderRadius = '3px';
         debugEl.style.fontSize = '12px';
         debugEl.style.fontFamily = 'monospace';
-        debugEl.textContent = `Turf Grass v3.1.0 - ${bladeCount} blades`;
+        debugEl.textContent = `Dense Turf v3.2.0 - ${bladeCount} blades`;
         document.body.appendChild(debugEl);
         
-        console.log(`Created turf-like grass with ${bladeCount} blades`);
+        console.log(`Created improved turf grass with ${bladeCount} blades`);
         
         return grassGroup;
     } catch (e) {
-        console.error("Error creating turf grass:", e);
+        console.error("Error creating improved turf grass:", e);
         return null;
     }
 }
 
-// Call the function to create turf grass
-createTurfGrass();
+// Call the function
+createImprovedTurfGrass();
