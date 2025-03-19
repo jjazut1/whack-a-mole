@@ -1073,7 +1073,7 @@ function addVersionIndicator() {
     );
     
     console.log(
-        "%c Version: black" + versionNumber + " | Loaded: " + versionTimestamp + " %c",
+        "%c Version: blue" + versionNumber + " | Loaded: " + versionTimestamp + " %c",
         "background: #2196F3; color: white; font-size: 14px; padding: 3px; border-radius: 3px;",
         ""
     );
@@ -1113,9 +1113,11 @@ console.log("Game initialization complete - running latest version");
 
 // Load the grass texture
 const textureLoader = new THREE.TextureLoader();
-const grassTexture = textureLoader.load('https://jjazut1.github.io/whack-a-mole/grass.png');
+const grassTexture = textureLoader.load('https://jjazut1.github.io/whack-a-mole/grassfigma.png');
 grassTexture.wrapS = grassTexture.wrapT = THREE.RepeatWrapping;
 grassTexture.repeat.set(1, 1); // Adjust repeat as needed
+
+console.log(grassTexture);
 
 // Create a plane geometry for a single grass blade
 const bladeGeometry = new THREE.PlaneGeometry(0.1, 0.5);
