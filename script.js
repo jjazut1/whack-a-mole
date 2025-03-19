@@ -1212,7 +1212,7 @@ function addVersionIndicator() {
     );
     
     console.log(
-        "%c Version white" + versionNumber + " | Loaded: " + versionTimestamp + " %c",
+        "%c Version maroon" + versionNumber + " | Loaded: " + versionTimestamp + " %c",
         "background: #2196F3; color: white; font-size: 14px; padding: 3px; border-radius: 3px;",
         ""
     );
@@ -1491,3 +1491,310 @@ function createSeamlessTurf() {
 
 // Call the function
 createSeamlessTurf();
+
+// Create grass using the grass.png texture
+function createTexturedGrass() {
+    console.log("Creating textured grass with grass.png...");
+    
+    try {
+        // Remove existing grass
+        scene.children.forEach(child => {
+            if (child.userData && child.userData.isGrass) {
+                scene.remove(child);
+            }
+        });
+        
+        // Create grass group
+        const grassGroup = new THREE.Group();
+        grassGroup.userData.isGrass = true;
+        
+        // Get hole positions to avoid
+        const holePositions = [];
+        scene.children.forEach(child => {
+            if (child.geometry && 
+                child.geometry.type === 'CircleGeometry') {
+                
+                holePositions.push({
+                    x: child.position.x,
+                    z: child.position.z,
+                    radius: 1.5
+                });
+            }
+        });
+        
+        if (holePositions.length === 0) {
+            holePositions.push(
+                { x: -2.25, z: -2.25, radius: 1.5 },
+                { x: 3, z: -2.25, radius: 1.5 },
+                { x: -3, z: 2.25, radius: 1.5 },
+                { x: 3, z: 3, radius: 1.5 }
+            );
+        }
+        
+        // Function to check if position is in a hole
+        function isInsideHole(posX, posZ) {
+            for (let hole of holePositions) {
+                const dx = posX - hole.x;
+                const dz = posZ - hole.z;
+                const distanceSquared = dx * dx + dz * dz;
+                
+                if (distanceSquared < hole.radius * hole.radius) {
+                    return true;
+                }
+            }
+            return false;
+        }
+        
+        // Function to get terrain height
+        function getTerrainHeight(x, z) {
+            const A = 0.1; // Amplitude
+            const B = 0.4; // Frequency
+            return A * Math.sin(B * x) + A * Math.cos(B * z);
+        }
+        
+        // Load the grass texture
+        const textureLoader = new THREE.TextureLoader();
+        
+        // First, create and add a version indicator to show we're loading
+        const loadingIndicator = document.createElement('div');
+        loadingIndicator.style.position = 'absolute';
+        loadingIndicator.style.bottom = '10px';
+        loadingIndicator.style.right = '10px';
+        loadingIndicator.style.background = 'rgba(255, 152, 0, 0.7)';
+        loadingIndicator.style.color = 'white';
+        loadingIndicator.style.padding = '5px';
+        loadingIndicator.style.borderRadius = '3px';
+        loadingIndicator.style.fontSize = '12px';
+        loadingIndicator.style.fontFamily = 'monospace';
+        loadingIndicator.textContent = `Loading Grass Texture...`;
+        document.body.appendChild(loadingIndicator);
+        
+        // Load the texture
+        textureLoader.load(
+            // Use the path that was previously attempted
+            'grass.png',
+            
+            // Success callback - texture loaded successfully
+            function(grassTexture) {
+                console.log("Grass texture loaded successfully:", grassTexture);
+                
+                // Configure texture properties
+                grassTexture.wrapS = grassTexture.wrapT = THREE.RepeatWrapping;
+                grassTexture.repeat.set(1, 1);
+                
+                // Create billboard planes with the grass texture
+                const bladeWidth = 0.2;
+                const bladeHeight = 0.3;
+                const bladeGeometry = new THREE.PlaneGeometry(bladeWidth, bladeHeight);
+                
+                // Create multiple blades across the terrain
+                const numBlades = 3000;
+                
+                // Track terrain size and other properties
+                const terrainSize = 30;
+                
+                for (let i = 0; i < numBlades; i++) {
+                    // Random position
+                    const x = (Math.random() - 0.5) * terrainSize;
+                    const z = (Math.random() - 0.5) * terrainSize;
+                    
+                    // Skip if in a hole
+                    if (isInsideHole(x, z)) {
+                        continue;
+                    }
+                    
+                    // Get terrain height at this position
+                    const y = getTerrainHeight(x, z);
+                    
+                    // Create material with transparency for grass
+                    const material = new THREE.MeshBasicMaterial({
+                        map: grassTexture,
+                        transparent: true,
+                        side: THREE.DoubleSide,
+                        alphaTest: 0.5 // Helps with sorting and overlapping
+                    });
+                    
+                    // Create a blade of grass
+                    const blade = new THREE.Mesh(bladeGeometry, material);
+                    
+                    // Position exactly on the terrain
+                    blade.position.set(x, y, z);
+                    
+                    // Random rotation for variety
+                    blade.rotation.y = Math.random() * Math.PI * 2;
+                    
+                    // Random scale for variety
+                    const scaleValue = 0.7 + Math.random() * 0.6;
+                    blade.scale.set(scaleValue, scaleValue, scaleValue);
+                    
+                    // Add to grass group
+                    grassGroup.add(blade);
+                }
+                
+                // Add grass group to scene
+                scene.add(grassGroup);
+                
+                // Force render update
+                if (typeof renderer !== 'undefined') {
+                    renderer.render(scene, camera);
+                }
+                
+                // Update the indicator
+                document.body.removeChild(loadingIndicator);
+                
+                const debugEl = document.createElement('div');
+                debugEl.setAttribute('data-grass-debug', 'true');
+                debugEl.style.position = 'absolute';
+                debugEl.style.bottom = '10px';
+                debugEl.style.right = '10px';
+                debugEl.style.background = 'rgba(76, 175, 80, 0.7)';
+                debugEl.style.color = 'white';
+                debugEl.style.padding = '5px';
+                debugEl.style.borderRadius = '3px';
+                debugEl.style.fontSize = '12px';
+                debugEl.style.fontFamily = 'monospace';
+                debugEl.textContent = `Textured Grass v1.0.0 - ${grassGroup.children.length} blades`;
+                document.body.appendChild(debugEl);
+                
+                console.log(`Created textured grass with ${grassGroup.children.length} blades`);
+            },
+            
+            // Progress callback
+            function(xhr) {
+                console.log((xhr.loaded / xhr.total * 100) + '% loaded');
+            },
+            
+            // Error callback
+            function(error) {
+                console.error("Error loading grass texture:", error);
+                
+                // Update indicator to show error
+                document.body.removeChild(loadingIndicator);
+                
+                const errorEl = document.createElement('div');
+                errorEl.style.position = 'absolute';
+                errorEl.style.bottom = '10px';
+                errorEl.style.right = '10px';
+                errorEl.style.background = 'rgba(244, 67, 54, 0.7)';
+                errorEl.style.color = 'white';
+                errorEl.style.padding = '5px';
+                errorEl.style.borderRadius = '3px';
+                errorEl.style.fontSize = '12px';
+                errorEl.style.fontFamily = 'monospace';
+                errorEl.textContent = `Error loading grass texture`;
+                document.body.appendChild(errorEl);
+                
+                // If texture fails to load, create a simple fallback
+                createSimpleFallbackGrass();
+            }
+        );
+        
+        return grassGroup;
+    } catch (e) {
+        console.error("Error in createTexturedGrass:", e);
+        return null;
+    }
+}
+
+// Fallback function if texture loading fails
+function createSimpleFallbackGrass() {
+    console.log("Creating fallback grass...");
+    
+    // Create a simple green quad for grass
+    const grassGroup = new THREE.Group();
+    grassGroup.userData.isGrass = true;
+    
+    const numBlades = 3000;
+    const terrainSize = 30;
+    
+    // Simple geometric shape for grass
+    const bladeGeometry = new THREE.PlaneGeometry(0.2, 0.3);
+    
+    // Grass colors
+    const grassColors = [
+        new THREE.Color(0x4CAF50), // Medium green
+        new THREE.Color(0x8BC34A), // Light green
+        new THREE.Color(0x43A047), // Slightly darker
+        new THREE.Color(0x388E3C)  // Darker green
+    ];
+    
+    // Function to get terrain height
+    function getTerrainHeight(x, z) {
+        const A = 0.1; // Amplitude
+        const B = 0.4; // Frequency
+        return A * Math.sin(B * x) + A * Math.cos(B * z);
+    }
+    
+    // Function to check if position is in a hole
+    function isInsideHole(posX, posZ) {
+        const holePositions = [
+            { x: -2.25, z: -2.25, radius: 1.5 },
+            { x: 3, z: -2.25, radius: 1.5 },
+            { x: -3, z: 2.25, radius: 1.5 },
+            { x: 3, z: 3, radius: 1.5 }
+        ];
+        
+        for (let hole of holePositions) {
+            const dx = posX - hole.x;
+            const dz = posZ - hole.z;
+            const distanceSquared = dx * dx + dz * dz;
+            
+            if (distanceSquared < hole.radius * hole.radius) {
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    for (let i = 0; i < numBlades; i++) {
+        // Random position
+        const x = (Math.random() - 0.5) * terrainSize;
+        const z = (Math.random() - 0.5) * terrainSize;
+        
+        // Skip if in a hole
+        if (isInsideHole(x, z)) {
+            continue;
+        }
+        
+        // Get terrain height at this position
+        const y = getTerrainHeight(x, z);
+        
+        // Random color from our palette
+        const color = grassColors[Math.floor(Math.random() * grassColors.length)];
+        const material = new THREE.MeshBasicMaterial({
+            color: color,
+            side: THREE.DoubleSide
+        });
+        
+        // Create a blade of grass
+        const blade = new THREE.Mesh(bladeGeometry, material);
+        
+        // Position exactly on the terrain
+        blade.position.set(x, y, z);
+        
+        // Random rotation
+        blade.rotation.y = Math.random() * Math.PI * 2;
+        
+        // Random scale
+        const scaleValue = 0.7 + Math.random() * 0.6;
+        blade.scale.set(scaleValue, scaleValue, scaleValue);
+        
+        // Add to grass group
+        grassGroup.add(blade);
+    }
+    
+    // Add grass group to scene
+    scene.add(grassGroup);
+    
+    // Force render update
+    if (typeof renderer !== 'undefined') {
+        renderer.render(scene, camera);
+    }
+    
+    console.log(`Created fallback grass with ${grassGroup.children.length} blades`);
+    
+    return grassGroup;
+}
+
+// Call the function to create textured grass
+createTexturedGrass();
