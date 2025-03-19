@@ -1250,9 +1250,9 @@ addVersionIndicator();
 // You can also add this at the end of your main code
 console.log("Game initialization complete - running latest version");
 
-// Create turf grass with evenly distributed blades
-function createEvenTurfGrass() {
-    console.log("Creating evenly distributed turf grass...");
+// Create realistic turf grass using a combination of techniques
+function createRealisticTurf() {
+    console.log("Creating realistic turf grass...");
     
     try {
         // Remove existing grass
@@ -1270,8 +1270,7 @@ function createEvenTurfGrass() {
         const holePositions = [];
         scene.children.forEach(child => {
             if (child.geometry && 
-                child.geometry.type === 'CircleGeometry' && 
-                child.material) {
+                child.geometry.type === 'CircleGeometry') {
                 
                 holePositions.push({
                     x: child.position.x,
@@ -1312,42 +1311,26 @@ function createEvenTurfGrass() {
             return A * Math.sin(B * x) + A * Math.cos(B * z);
         }
         
-        // Grass colors for variety
+        // ======= APPROACH 1: BASE TURF LAYER =======
+        // Create a grid of small flat quads as the base turf layer
+        const patchSize = 1.5; // Larger patches for base layer
+        const terrainSize = 30;
+        const patchesPerSide = Math.ceil(terrainSize / patchSize);
+        const startOffset = -terrainSize / 2;
+        
+        // Grass colors
         const grassColors = [
             new THREE.Color(0x4CAF50), // Medium green
-            new THREE.Color(0x8BC34A), // Light green
-            new THREE.Color(0x7CB342), // Light green
-            new THREE.Color(0x558B2F)  // Olive green
+            new THREE.Color(0x66BB6A), // Light green
+            new THREE.Color(0x43A047), // Slightly darker
+            new THREE.Color(0x388E3C)  // Darker green
         ];
         
-        // Grass blade properties
-        const bladeHeight = 0.07; // Short blades for turf
-        const bladeWidth = 0.015;
-        
-        // Create a blade geometry to reuse
-        const bladeGeometry = new THREE.ConeGeometry(bladeWidth, bladeHeight, 4, 1);
-        // Move the geometry's origin to the bottom of the cone
-        bladeGeometry.translate(0, bladeHeight/2, 0);
-        
-        // Use a high density grid with individual blades instead of clusters
-        const gridSize = 30; // Total size of the terrain
-        const gridDensity = 3.5; // Very high density
-        const cellSize = 1 / gridDensity;
-        const numCellsX = Math.floor(gridSize * gridDensity);
-        const numCellsZ = Math.floor(gridSize * gridDensity);
-        
-        // Track created blades
-        let bladeCount = 0;
-        
-        // Create evenly distributed turf (no clustering)
-        for (let i = 0; i < numCellsX; i++) {
-            for (let j = 0; j < numCellsZ; j++) {
-                // Skip some positions randomly for slight natural variation
-                if (Math.random() < 0.2) continue;
-                
-                // Calculate position with slight randomness
-                const x = (i / gridDensity) - (gridSize / 2) + (Math.random() * cellSize * 0.6);
-                const z = (j / gridDensity) - (gridSize / 2) + (Math.random() * cellSize * 0.6);
+        // Create the base layer of turf
+        for (let i = 0; i < patchesPerSide; i++) {
+            for (let j = 0; j < patchesPerSide; j++) {
+                const x = startOffset + i * patchSize + patchSize/2;
+                const z = startOffset + j * patchSize + patchSize/2;
                 
                 // Skip if in a hole
                 if (isInsideHole(x, z)) {
@@ -1359,35 +1342,91 @@ function createEvenTurfGrass() {
                 try {
                     y = getTerrainHeight(x, z);
                 } catch (e) {
-                    // Use default height
+                    // Use default
                 }
                 
-                // Select a random color for this blade
-                const colorIndex = Math.floor(Math.random() * grassColors.length);
-                const grassColor = grassColors[colorIndex];
-                const grassMaterial = new THREE.MeshBasicMaterial({ color: grassColor });
+                // Create a patch with a slight height variation
+                const geometry = new THREE.PlaneGeometry(patchSize, patchSize, 2, 2);
                 
-                // Create the blade
-                const blade = new THREE.Mesh(bladeGeometry, grassMaterial);
+                // Add height variation to corners of the patch to follow terrain
+                const positionAttribute = geometry.getAttribute('position');
+                for (let v = 0; v < positionAttribute.count; v++) {
+                    const vx = positionAttribute.getX(v);
+                    const vz = positionAttribute.getZ(v);
+                    // Calculate height at this vertex
+                    const vertexX = x + vx * patchSize/2;
+                    const vertexZ = z + vz * patchSize/2;
+                    const height = getTerrainHeight(vertexX, vertexZ);
+                    positionAttribute.setY(v, height - y);
+                }
                 
-                // Position blade directly on terrain
-                blade.position.set(x, y, z);
+                // Random grass color for this patch
+                const color = grassColors[Math.floor(Math.random() * grassColors.length)];
+                const material = new THREE.MeshLambertMaterial({
+                    color: color,
+                    side: THREE.DoubleSide
+                });
                 
-                // Random rotation around Y axis
+                const patch = new THREE.Mesh(geometry, material);
+                patch.position.set(x, y + 0.01, z); // Slightly above terrain to prevent z-fighting
+                patch.rotation.x = -Math.PI / 2; // Lay flat
+                
+                grassGroup.add(patch);
+            }
+        }
+        
+        // ======= APPROACH 2: DETAIL LAYER =======
+        // Add randomly distributed small grass tufts for detail
+        const numTufts = 2000;
+        const tuftWidth = 0.15;
+        const tuftHeight = 0.06;
+        
+        // Create a reusable tuft geometry
+        const tuftGeometry = new THREE.ConeGeometry(tuftWidth/2, tuftHeight, 4, 1);
+        tuftGeometry.translate(0, tuftHeight/2, 0);
+        
+        for (let i = 0; i < numTufts; i++) {
+            // Random position
+            const x = (Math.random() - 0.5) * terrainSize;
+            const z = (Math.random() - 0.5) * terrainSize;
+            
+            // Skip if in a hole
+            if (isInsideHole(x, z)) {
+                continue;
+            }
+            
+            // Calculate terrain height
+            let y = getTerrainHeight(x, z);
+            
+            // Random grass color for this tuft
+            const color = grassColors[Math.floor(Math.random() * grassColors.length)];
+            const material = new THREE.MeshBasicMaterial({
+                color: color
+            });
+            
+            // Create a small group for this tuft
+            const tuft = new THREE.Group();
+            tuft.position.set(x, y, z);
+            
+            // Add 2-3 blades to this tuft
+            const bladeCount = 2 + Math.floor(Math.random() * 2);
+            
+            for (let j = 0; j < bladeCount; j++) {
+                const blade = new THREE.Mesh(tuftGeometry, material);
+                
+                // Position within tuft (very tight clustering)
+                const offsetX = (Math.random() - 0.5) * tuftWidth * 0.5;
+                const offsetZ = (Math.random() - 0.5) * tuftWidth * 0.5;
+                blade.position.set(offsetX, 0, offsetZ);
+                
+                // Random rotation
                 blade.rotation.y = Math.random() * Math.PI * 2;
                 
-                // Very slight random tilt for natural appearance
-                blade.rotation.x = (Math.random() - 0.5) * 0.1;
-                blade.rotation.z = (Math.random() - 0.5) * 0.1;
-                
-                // Random height variation (very slight)
-                const scale = 0.9 + Math.random() * 0.2;
-                blade.scale.y = scale;
-                
-                // Add blade directly to grass group
-                grassGroup.add(blade);
-                bladeCount++;
+                // Add to tuft
+                tuft.add(blade);
             }
+            
+            grassGroup.add(tuft);
         }
         
         // Add grass group to scene
@@ -1415,17 +1454,17 @@ function createEvenTurfGrass() {
         debugEl.style.borderRadius = '3px';
         debugEl.style.fontSize = '12px';
         debugEl.style.fontFamily = 'monospace';
-        debugEl.textContent = `Even Turf v3.3.0 - ${bladeCount} blades`;
+        debugEl.textContent = `Realistic Turf v4.0.0`;
         document.body.appendChild(debugEl);
         
-        console.log(`Created evenly distributed turf with ${bladeCount} blades`);
+        console.log(`Created realistic turf grass`);
         
         return grassGroup;
     } catch (e) {
-        console.error("Error creating even turf grass:", e);
+        console.error("Error creating realistic turf:", e);
         return null;
     }
 }
 
 // Call the function
-createEvenTurfGrass();
+createRealisticTurf();
