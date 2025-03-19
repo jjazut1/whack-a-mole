@@ -1212,7 +1212,7 @@ function addVersionIndicator() {
     );
     
     console.log(
-        "%c Version blue" + versionNumber + " | Loaded: " + versionTimestamp + " %c",
+        "%c Version maroon" + versionNumber + " | Loaded: " + versionTimestamp + " %c",
         "background: #2196F3; color: white; font-size: 14px; padding: 3px; border-radius: 3px;",
         ""
     );
@@ -1250,100 +1250,65 @@ addVersionIndicator();
 // You can also add this at the end of your main code
 console.log("Game initialization complete - running latest version");
 
-// Create very dense natural-looking grass
-function createDenseNaturalGrass() {
-    console.log("Creating very dense natural grass...");
+// Create integrated grass texture with original code compatibility
+function createIntegratedGrassTerrain() {
+    console.log("Creating integrated grass terrain...");
     
     try {
-        // Remove existing grass
+        // Add version indicator
+        const versionNumber = "11.0.0";
+        const versionTimestamp = new Date().toISOString();
+        
+        // Create a version indicator
+        const existingIndicator = document.querySelector('[data-version-indicator]');
+        if (existingIndicator) {
+            existingIndicator.remove();
+        }
+        
+        const indicator = document.createElement('div');
+        indicator.setAttribute('data-version-indicator', 'true');
+        indicator.style.position = 'absolute';
+        indicator.style.bottom = '10px';
+        indicator.style.right = '10px';
+        indicator.style.background = 'rgba(76, 175, 80, 0.7)';
+        indicator.style.color = 'white';
+        indicator.style.padding = '5px';
+        indicator.style.borderRadius = '3px';
+        indicator.style.fontSize = '12px';
+        indicator.style.fontFamily = 'monospace';
+        indicator.style.zIndex = '1000';
+        indicator.textContent = `Grass Terrain v${versionNumber}`;
+        document.body.appendChild(indicator);
+        
+        // Store version info globally for verification
+        window.gameVersionInfo = {
+            version: versionNumber,
+            timestamp: versionTimestamp,
+            feature: "Integrated Grass Terrain"
+        };
+        
+        console.log(`Version ${versionNumber} - ${versionTimestamp}`);
+        
+        // Remove existing grass if any
         scene.children.forEach(child => {
             if (child.userData && child.userData.isGrass) {
                 scene.remove(child);
             }
         });
         
-        // Create grass group
-        const grassGroup = new THREE.Group();
-        grassGroup.userData.isGrass = true;
-        
-        // Get hole positions to avoid
-        const holePositions = [];
-        scene.children.forEach(child => {
-            if (child.geometry && 
-                child.geometry.type === 'CircleGeometry') {
-                
-                holePositions.push({
-                    x: child.position.x,
-                    z: child.position.z,
-                    radius: 1.5
-                });
-            }
-        });
-        
-        if (holePositions.length === 0) {
-            holePositions.push(
-                { x: -2.25, z: -2.25, radius: 1.5 },
-                { x: 3, z: -2.25, radius: 1.5 },
-                { x: -3, z: 2.25, radius: 1.5 },
-                { x: 3, z: 3, radius: 1.5 }
-            );
-        }
-        
-        // Function to check if position is in a hole
-        function isInsideHole(posX, posZ) {
-            for (let hole of holePositions) {
-                const dx = posX - hole.x;
-                const dz = posZ - hole.z;
-                const distanceSquared = dx * dx + dz * dz;
-                
-                if (distanceSquared < (hole.radius * 1.1) * (hole.radius * 1.1)) {
-                    return true;
-                }
-            }
-            return false;
-        }
-        
-        // Function to get terrain height
+        // Function to get terrain height - maintain compatibility with original code
         function getTerrainHeight(x, z) {
             const A = 0.1; // Amplitude
             const B = 0.4; // Frequency
             return A * Math.sin(B * x) + A * Math.cos(B * z);
         }
         
-        // Create terrain with proper green color
-        const terrainSize = 30;
-        const terrainGeometry = new THREE.PlaneGeometry(terrainSize, terrainSize, 50, 50);
-        
-        // Adjust vertices to match terrain height
-        const positionAttribute = terrainGeometry.getAttribute('position');
-        for (let i = 0; i < positionAttribute.count; i++) {
-            const x = positionAttribute.getX(i);
-            const z = positionAttribute.getZ(i);
-            const height = getTerrainHeight(x, z);
-            positionAttribute.setY(i, height);
-        }
-        
-        terrainGeometry.computeVertexNormals();
-        
-        // Darker green for terrain to make grass stand out more
-        const terrainMaterial = new THREE.MeshLambertMaterial({
-            color: 0x2E7D32,
-            side: THREE.DoubleSide
-        });
-        
-        const terrainMesh = new THREE.Mesh(terrainGeometry, terrainMaterial);
-        terrainMesh.rotation.x = -Math.PI / 2;
-        terrainMesh.position.y = -0.02;
-        
-        grassGroup.add(terrainMesh);
-        
-        // Create optimized instanced geometry for performance with high density
-        // Create four blade variations for variety
+        // Create grass geometries for variety
         function createGrassGeometries() {
             // Regular blade
             const regular = new THREE.BufferGeometry();
-            const regularHeight = 0.3;
-            const regularWidth = 0.05;
+            const regularHeight = 0.25;
+            const regularWidth = 0.04;
             const regularCurve = 0.1;
             
             const regularVertices = new Float32Array([
@@ -1370,9 +1335,9 @@ function createDenseNaturalGrass() {
             
             // Tall blade
             const tall = new THREE.BufferGeometry();
-            const tallHeight = 0.45;
-            const tallWidth = 0.04;
-            const tallCurve = 0.15;
+            const tallHeight = 0.4;
+            const tallWidth = 0.035;
+            const tallCurve = 0.12;
             
             const tallVertices = new Float32Array([
                 -tallWidth/2, 0, 0,
@@ -1391,8 +1356,8 @@ function createDenseNaturalGrass() {
             
             // Short blade
             const short = new THREE.BufferGeometry();
-            const shortHeight = 0.2;
-            const shortWidth = 0.06;
+            const shortHeight = 0.15;
+            const shortWidth = 0.045;
             const shortCurve = 0.05;
             
             const shortVertices = new Float32Array([
@@ -1410,66 +1375,86 @@ function createDenseNaturalGrass() {
             short.setIndex(indices);
             short.computeVertexNormals();
             
-            // Wide blade
-            const wide = new THREE.BufferGeometry();
-            const wideHeight = 0.25;
-            const wideWidth = 0.08;
-            const wideCurve = 0.07;
-            
-            const wideVertices = new Float32Array([
-                -wideWidth/2, 0, 0,
-                -wideWidth/3, wideHeight*0.33, wideCurve*0.3,
-                -wideWidth/4, wideHeight*0.66, wideCurve*0.5,
-                0, wideHeight, wideCurve*0.7,
-                wideWidth/2, 0, 0,
-                wideWidth/3, wideHeight*0.33, wideCurve*0.3,
-                wideWidth/4, wideHeight*0.66, wideCurve*0.5
-            ]);
-            
-            wide.setAttribute('position', new THREE.BufferAttribute(wideVertices, 3));
-            wide.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
-            wide.setIndex(indices);
-            wide.computeVertexNormals();
-            
-            return [regular, tall, short, wide];
+            return [regular, tall, short];
         }
         
-        // Create grass materials with different shades of green
+        // Create grass materials - match original green color palette
         const greenMaterials = [
             new THREE.MeshLambertMaterial({ 
-                color: 0x4CAF50, 
+                color: 0x4CAF50, // Medium green
                 side: THREE.DoubleSide
             }),
             new THREE.MeshLambertMaterial({ 
-                color: 0x66BB6A, 
+                color: 0x66BB6A, // Light green
                 side: THREE.DoubleSide
             }),
             new THREE.MeshLambertMaterial({ 
-                color: 0x388E3C, 
-                side: THREE.DoubleSide
-            }),
-            new THREE.MeshLambertMaterial({ 
-                color: 0x81C784, 
+                color: 0x388E3C, // Darker green
                 side: THREE.DoubleSide
             })
         ];
         
-        // Create grass blades
+        // Create grass group
+        const grassGroup = new THREE.Group();
+        grassGroup.userData.isGrass = true;
+        
+        // Generate geometries
         const geometries = createGrassGeometries();
         
-        // MUCH HIGHER DENSITY - 5x increase
-        const clumpCount = 7500; // 5x the previous 1500
+        // Get hole positions to avoid (from existing scene)
+        const holePositions = [];
+        scene.children.forEach(child => {
+            if (child.geometry && 
+                child.geometry.type === 'CircleGeometry') {
+                
+                holePositions.push({
+                    x: child.position.x,
+                    z: child.position.z,
+                    radius: 1.5
+                });
+                
+                console.log(`Found hole at: ${child.position.x}, ${child.position.z}`);
+            }
+        });
         
-        // Use a finer grid for more density
+        // Fallback hole positions if none found
+        if (holePositions.length === 0) {
+            holePositions.push(
+                { x: -2.25, z: -2.25, radius: 1.5 },
+                { x: 3, z: -2.25, radius: 1.5 },
+                { x: -3, z: 2.25, radius: 1.5 },
+                { x: 3, z: 3, radius: 1.5 }
+            );
+            console.log("Using fallback hole positions");
+        }
+        
+        // Function to check if position is in a hole
+        function isInsideHole(posX, posZ) {
+            for (let hole of holePositions) {
+                const dx = posX - hole.x;
+                const dz = posZ - hole.z;
+                const distanceSquared = dx * dx + dz * dz;
+                
+                if (distanceSquared < (hole.radius * 1.1) * (hole.radius * 1.1)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+        
+        // Grass distribution parameters
+        const terrainSize = 30;
+        const clumpCount = 4000; // Good balance between density and performance
+        
+        // Use a grid for systematic coverage
         const halfSize = terrainSize / 2;
-        const gridSize = 0.36; // Closer spacing (was 0.8)
+        const gridSize = 0.5;
         
         let clumpsCreated = 0;
         let bladesCreated = 0;
         
-        // Use batching for better performance with high density
-        // Process in smaller chunks to avoid freezing the browser
-        const processChunkSize = 1000;
+        // Process grass in chunks for better performance
+        const processChunkSize = 500;
         let xPos = -halfSize;
         let zPos = -halfSize;
         
@@ -1477,9 +1462,7 @@ function createDenseNaturalGrass() {
             const startTime = performance.now();
             let chunkClumps = 0;
             
-            // Process a chunk of grass clumps
             while (chunkClumps < processChunkSize && clumpsCreated < clumpCount) {
-                // Go through the grid
                 while (zPos < halfSize && clumpsCreated < clumpCount) {
                     // Add randomness to positions
                     const posX = xPos + (Math.random() - 0.5) * (gridSize * 0.8);
@@ -1490,15 +1473,12 @@ function createDenseNaturalGrass() {
                         // Get terrain height
                         const posY = getTerrainHeight(posX, posZ);
                         
-                        // Create a clump of 2-4 blades (less per clump for performance)
+                        // Create a clump of 2-4 blades
                         const bladeCount = 2 + Math.floor(Math.random() * 3);
                         
                         for (let i = 0; i < bladeCount; i++) {
-                            // Choose a random blade type with weighted distribution
-                            const geometryIndex = Math.random() < 0.6 ? 0 : 
-                                                (Math.random() < 0.5 ? 1 : 
-                                                (Math.random() < 0.5 ? 2 : 3));
-                            
+                            // Choose a random blade type
+                            const geometryIndex = Math.floor(Math.random() * geometries.length);
                             const bladeGeometry = geometries[geometryIndex];
                             
                             // Choose random material
@@ -1508,7 +1488,7 @@ function createDenseNaturalGrass() {
                             const blade = new THREE.Mesh(bladeGeometry, material);
                             
                             // Position within the clump
-                            const offset = 0.03; // Smaller offset for denser appearance
+                            const offset = 0.03;
                             const offsetX = (Math.random() - 0.5) * offset;
                             const offsetZ = (Math.random() - 0.5) * offset;
                             
@@ -1517,12 +1497,12 @@ function createDenseNaturalGrass() {
                             // Random rotation
                             blade.rotation.y = Math.random() * Math.PI * 2;
                             
-                            // Very slight tilt for more natural look but less extreme
+                            // Very slight tilt for more natural look
                             blade.rotation.x = (Math.random() - 0.5) * 0.1;
                             blade.rotation.z = (Math.random() - 0.5) * 0.1;
                             
                             // Slight random scaling
-                            const scale = 0.9 + Math.random() * 0.2; // Less variation for consistency
+                            const scale = 0.9 + Math.random() * 0.2;
                             blade.scale.set(scale, scale, scale);
                             
                             // Add to grass group
@@ -1537,101 +1517,76 @@ function createDenseNaturalGrass() {
                     // Move to next grid position
                     zPos += gridSize;
                     
-                    // Check if we've spent too much time in this frame
-                    if (performance.now() - startTime > 16) { // 16ms = ~60fps
+                    // Check if we've spent too much time
+                    if (performance.now() - startTime > 16) {
                         break;
                     }
                 }
                 
-                // Reset z and increment x when we finish a row
+                // Reset z and increment x at end of row
                 if (zPos >= halfSize) {
                     zPos = -halfSize;
                     xPos += gridSize;
                 }
                 
-                // If we've spent too much time, break and continue in next frame
+                // Break if we've spent too much time
                 if (performance.now() - startTime > 16) {
                     break;
                 }
             }
             
             // Update progress
-            console.log(`Created ${clumpsCreated}/${clumpCount} grass clumps (${bladesCreated} blades)...`);
+            const progress = Math.min(100, Math.floor((clumpsCreated / clumpCount) * 100));
+            console.log(`Grass generation: ${progress}% (${clumpsCreated}/${clumpCount} clumps, ${bladesCreated} blades)`);
             
             // Force render to show progress
             if (typeof renderer !== 'undefined') {
                 renderer.render(scene, camera);
             }
             
-            // Update indicator
-            updateProgressIndicator(clumpsCreated, clumpCount, bladesCreated);
-            
-            // Continue if not done
+            // Continue or finish
             if (clumpsCreated < clumpCount && xPos < halfSize) {
+                // Continue in next frame
                 requestAnimationFrame(processNextChunk);
+                
+                // Update indicator text
+                indicator.textContent = `Generating Grass ${progress}%`;
+                indicator.style.background = 'rgba(255, 152, 0, 0.7)';
             } else {
-                // Finished
+                // Finish
                 console.log(`Completed: ${clumpsCreated} grass clumps with ${bladesCreated} blades`);
+                
+                // Add terrain grass group to scene
+                scene.add(grassGroup);
                 
                 // Final render update
                 if (typeof renderer !== 'undefined') {
                     renderer.render(scene, camera);
                 }
                 
-                // Update indicator with final counts
-                updateProgressIndicator(clumpsCreated, clumpCount, bladesCreated, true);
+                // Update indicator with final info
+                indicator.textContent = `Grass Terrain v${versionNumber} - ${bladesCreated} blades`;
+                indicator.style.background = 'rgba(76, 175, 80, 0.7)';
+                
+                // Make sure grass doesn't animate with clouds
+                const originalUpdateMatrix = grassGroup.updateMatrix;
+                grassGroup.updateMatrix = function() {
+                    // Prevent automatic updates - keep grass static
+                };
             }
         }
-        
-        // Create or update progress indicator
-        function updateProgressIndicator(current, total, blades, finished = false) {
-            let indicator = document.querySelector('[data-grass-dense]');
-            
-            if (!indicator) {
-                indicator = document.createElement('div');
-                indicator.setAttribute('data-grass-dense', 'true');
-                indicator.style.position = 'absolute';
-                indicator.style.bottom = '10px';
-                indicator.style.right = '10px';
-                indicator.style.padding = '5px';
-                indicator.style.borderRadius = '3px';
-                indicator.style.fontSize = '12px';
-                indicator.style.fontFamily = 'monospace';
-                document.body.appendChild(indicator);
-            }
-            
-            indicator.style.background = finished ? 
-                'rgba(76, 175, 80, 0.7)' : 'rgba(255, 152, 0, 0.7)';
-            indicator.style.color = 'white';
-            
-            const percent = Math.floor((current / total) * 100);
-            indicator.textContent = finished ?
-                `Dense Grass v10.0.0 - ${current} clumps, ${blades} blades` :
-                `Generating grass: ${percent}% (${current}/${total} clumps)`;
-        }
-        
-        // Add grass group to scene
-        scene.add(grassGroup);
-        
-        // Ensure adequate lighting
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
-        scene.add(ambientLight);
-        
-        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-        directionalLight.position.set(5, 10, 5);
-        scene.add(directionalLight);
         
         // Start generating grass
         processNextChunk();
         
-        console.log(`Starting to generate dense grass (target: ${clumpCount} clumps)`);
+        console.log(`Starting integrated grass generation (target: ${clumpCount} clumps)`);
         
         return grassGroup;
     } catch (e) {
-        console.error("Error creating dense grass:", e);
+        console.error("Error creating integrated grass:", e);
         return null;
     }
 }
 
 // Call the function
-createDenseNaturalGrass();
+createIntegratedGrassTerrain();
