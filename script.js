@@ -1212,7 +1212,7 @@ function addVersionIndicator() {
     );
     
     console.log(
-        "%c Version green" + versionNumber + " | Loaded: " + versionTimestamp + " %c",
+        "%c Version pink" + versionNumber + " | Loaded: " + versionTimestamp + " %c",
         "background: #2196F3; color: white; font-size: 14px; padding: 3px; border-radius: 3px;",
         ""
     );
@@ -1410,3 +1410,329 @@ function createDebugVisibleGrass() {
 
 // Call the function
 createDebugVisibleGrass();
+
+// Create shader-based grass with realistic blades but no wind animation
+function createRealisticShaderGrass() {
+    console.log("Creating realistic shader grass without wind...");
+    
+    try {
+        // Remove existing grass
+        scene.children.forEach(child => {
+            if (child.userData && child.userData.isGrass) {
+                scene.remove(child);
+            }
+        });
+        
+        // Create grass group
+        const grassGroup = new THREE.Group();
+        grassGroup.userData.isGrass = true;
+        
+        // Get hole positions to avoid
+        const holePositions = [];
+        scene.children.forEach(child => {
+            if (child.geometry && 
+                child.geometry.type === 'CircleGeometry') {
+                
+                holePositions.push({
+                    x: child.position.x,
+                    z: child.position.z,
+                    radius: 1.5
+                });
+            }
+        });
+        
+        if (holePositions.length === 0) {
+            holePositions.push(
+                { x: -2.25, z: -2.25, radius: 1.5 },
+                { x: 3, z: -2.25, radius: 1.5 },
+                { x: -3, z: 2.25, radius: 1.5 },
+                { x: 3, z: 3, radius: 1.5 }
+            );
+        }
+        
+        // Function to check if position is in a hole
+        function isInsideHole(posX, posZ) {
+            for (let hole of holePositions) {
+                const dx = posX - hole.x;
+                const dz = posZ - hole.z;
+                const distanceSquared = dx * dx + dz * dz;
+                
+                if (distanceSquared < (hole.radius * 1.1) * (hole.radius * 1.1)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+        
+        // Function to get terrain height
+        function getTerrainHeight(x, z) {
+            const A = 0.1; // Amplitude
+            const B = 0.4; // Frequency
+            return A * Math.sin(B * x) + A * Math.cos(B * z);
+        }
+        
+        // Create a base terrain plane for context
+        const terrainSize = 30;
+        const terrainGeometry = new THREE.PlaneGeometry(terrainSize, terrainSize, 50, 50);
+        
+        // Adjust vertices to match terrain height
+        const positionAttribute = terrainGeometry.getAttribute('position');
+        for (let i = 0; i < positionAttribute.count; i++) {
+            const x = positionAttribute.getX(i);
+            const z = positionAttribute.getZ(i);
+            const height = getTerrainHeight(x, z);
+            positionAttribute.setY(i, height);
+        }
+        
+        terrainGeometry.computeVertexNormals();
+        
+        // Create a subtle green base material
+        const terrainMaterial = new THREE.MeshLambertMaterial({
+            color: 0x8BC34A,
+            side: THREE.DoubleSide
+        });
+        
+        const terrainMesh = new THREE.Mesh(terrainGeometry, terrainMaterial);
+        terrainMesh.rotation.x = -Math.PI / 2;
+        terrainMesh.position.y = -0.02; // Slightly below to prevent z-fighting
+        
+        grassGroup.add(terrainMesh);
+        
+        // Create shader material for grass
+        const grassVertexShader = `
+            varying vec2 vUv;
+            varying float vHeight;
+            
+            void main() {
+                vUv = uv;
+                
+                // Calculate height of the blade (0 at bottom, 1 at top)
+                vHeight = position.y / 0.7; // Assuming blade height is around 0.7
+                
+                // No wind animation, just use position as is
+                vec3 pos = position;
+                
+                gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
+            }
+        `;
+        
+        const grassFragmentShader = `
+            varying vec2 vUv;
+            varying float vHeight;
+            
+            void main() {
+                // Base colors - more natural gradient
+                vec3 bottomColor = vec3(0.13, 0.54, 0.13); // Dark green
+                vec3 middleColor = vec3(0.17, 0.64, 0.17); // Medium green
+                vec3 topColor = vec3(0.36, 0.78, 0.18);    // Lighter green
+                
+                // Calculate color based on height
+                vec3 grassColor;
+                
+                if (vHeight < 0.3) {
+                    // Bottom third - blend from bottom to middle
+                    float t = vHeight / 0.3;
+                    grassColor = mix(bottomColor, middleColor, t);
+                } else {
+                    // Top two-thirds - blend from middle to top
+                    float t = (vHeight - 0.3) / 0.7;
+                    grassColor = mix(middleColor, topColor, t);
+                }
+                
+                // Add subtle variation based on UV coordinates
+                float noise = fract(sin(dot(vUv, vec2(12.9898, 78.233))) * 43758.5453);
+                grassColor = mix(grassColor, grassColor * 1.1, noise * 0.3);
+                
+                // Slightly fade opacity toward tip for softer look
+                float alpha = 1.0 - (vHeight * vHeight * 0.1);
+                
+                gl_FragColor = vec4(grassColor, alpha);
+            }
+        `;
+        
+        const grassMaterial = new THREE.ShaderMaterial({
+            vertexShader: grassVertexShader,
+            fragmentShader: grassFragmentShader,
+            side: THREE.DoubleSide,
+            transparent: true
+        });
+        
+        // Create tapered blade geometry for more realistic grass
+        function createTaperedBladeGeometry() {
+            const geometry = new THREE.BufferGeometry();
+            
+            // Define blade shape - tapered from bottom to top
+            const vertices = new Float32Array([
+                // Left side
+                -0.03, 0.0, 0.0,    // Bottom left
+                -0.02, 0.2, 0.0,    // Lower middle left
+                -0.01, 0.5, 0.0,    // Upper middle left
+                0.0, 0.7, 0.0,      // Top
+                
+                // Right side
+                0.03, 0.0, 0.0,     // Bottom right
+                0.02, 0.2, 0.0,     // Lower middle right
+                0.01, 0.5, 0.0,     // Upper middle right
+            ]);
+            
+            // Define triangles
+            const indices = [
+                0, 1, 4,  // Bottom left triangle
+                1, 5, 4,  // Middle left triangle
+                1, 2, 5,  // Middle upper left triangle
+                2, 6, 5,  // Upper middle triangle
+                2, 3, 6   // Top triangle
+            ];
+            
+            // Define UVs for proper texture mapping
+            const uvs = new Float32Array([
+                0.0, 0.0,  // Bottom left
+                0.0, 0.3,  // Lower middle left
+                0.0, 0.7,  // Upper middle left
+                0.5, 1.0,  // Top
+                
+                1.0, 0.0,  // Bottom right
+                1.0, 0.3,  // Lower middle right
+                1.0, 0.7   // Upper middle right
+            ]);
+            
+            geometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
+            geometry.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
+            geometry.setIndex(indices);
+            geometry.computeVertexNormals();
+            
+            return geometry;
+        }
+        
+        // Create the tapered blade geometry
+        const grassBladeGeometry = createTaperedBladeGeometry();
+        
+        // Number of grass instances
+        const grassCount = 3000;
+        
+        // Create instanced mesh
+        const grassMesh = new THREE.InstancedMesh(
+            grassBladeGeometry,
+            grassMaterial,
+            grassCount
+        );
+        
+        grassMesh.frustumCulled = false; // Prevent culling
+        
+        // Temporary object for setting positions
+        const dummy = new THREE.Object3D();
+        
+        // Position each grass instance
+        let instanceCount = 0;
+        
+        // Grid-based distribution for even coverage
+        const gridSize = 0.6;
+        const halfSize = terrainSize / 2;
+        
+        for (let x = -halfSize; x < halfSize; x += gridSize) {
+            for (let z = -halfSize; z < halfSize; z += gridSize) {
+                // Add randomness to positions
+                const posX = x + (Math.random() - 0.5) * (gridSize * 0.8);
+                const posZ = z + (Math.random() - 0.5) * (gridSize * 0.8);
+                
+                // Skip if in a hole
+                if (isInsideHole(posX, posZ)) {
+                    continue;
+                }
+                
+                // Random skip some positions
+                if (Math.random() < 0.2) continue;
+                
+                // Get terrain height at this position
+                const posY = getTerrainHeight(posX, posZ);
+                
+                // Position the dummy
+                dummy.position.set(posX, posY, posZ);
+                
+                // Random rotation around Y axis
+                dummy.rotation.y = Math.random() * Math.PI * 2;
+                
+                // Slight random tilt 
+                dummy.rotation.x = (Math.random() - 0.5) * 0.1;
+                dummy.rotation.z = (Math.random() - 0.5) * 0.1;
+                
+                // Random slight scaling
+                const scale = 0.7 + Math.random() * 0.6;
+                dummy.scale.set(1, scale, 1);
+                
+                // Update and apply matrix
+                dummy.updateMatrix();
+                grassMesh.setMatrixAt(instanceCount, dummy.matrix);
+                
+                instanceCount++;
+                if (instanceCount >= grassCount) break;
+            }
+            if (instanceCount >= grassCount) break;
+        }
+        
+        // Update the instance matrix
+        grassMesh.instanceMatrix.needsUpdate = true;
+        
+        // Add grass mesh to group
+        grassGroup.add(grassMesh);
+        
+        // Add the grass group to the scene
+        scene.add(grassGroup);
+        
+        // Make sure lighting is adequate
+        const existingLights = [];
+        scene.traverse(child => {
+            if (child.isLight) existingLights.push(child);
+        });
+        
+        if (existingLights.length < 2) {
+            // Add ambient light
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+            scene.add(ambientLight);
+            
+            // Add directional light
+            const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            dirLight.position.set(5, 10, 5);
+            scene.add(dirLight);
+        }
+        
+        // Force render update
+        if (typeof renderer !== 'undefined') {
+            renderer.render(scene, camera);
+        }
+        
+        // Add version indicator
+        const existingIndicator = document.querySelector('[data-grass-realistic]');
+        if (!existingIndicator) {
+            const indicator = document.createElement('div');
+            indicator.setAttribute('data-grass-realistic', 'true');
+            indicator.style.position = 'absolute';
+            indicator.style.bottom = '10px';
+            indicator.style.right = '10px';
+            indicator.style.background = 'rgba(76, 175, 80, 0.7)';
+            indicator.style.color = 'white';
+            indicator.style.padding = '5px';
+            indicator.style.borderRadius = '3px';
+            indicator.style.fontSize = '12px';
+            indicator.style.fontFamily = 'monospace';
+            indicator.textContent = `Realistic Grass v7.0.0 - ${instanceCount}/${grassCount} blades`;
+            document.body.appendChild(indicator);
+        }
+        
+        console.log(`Created realistic shader grass with ${instanceCount} blades (without wind animation)`);
+        
+        // Keep grass static (no animation)
+        const originalUpdateMatrix = grassGroup.updateMatrix;
+        grassGroup.updateMatrix = function() {
+            // Do nothing - prevent updates
+        };
+        
+        return grassGroup;
+    } catch (e) {
+        console.error("Error creating realistic shader grass:", e);
+        return null;
+    }
+}
+
+// Call the function
+createRealisticShaderGrass();
