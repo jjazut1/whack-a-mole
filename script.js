@@ -2187,3 +2187,462 @@ function createConsistentGreenGrass() {
 
 // Call the function
 createConsistentGreenGrass();
+
+// Create absolutely no white grass with forced coloring
+function createForcedGreenGrass() {
+    console.log("Creating forced green grass with no white blades...");
+    
+    try {
+        // Add version indicator
+        const versionNumber = "11.4.0";
+        const versionTimestamp = new Date().toISOString();
+        
+        // Create a version indicator
+        const existingIndicator = document.querySelector('[data-version-indicator]');
+        if (existingIndicator) {
+            existingIndicator.remove();
+        }
+        
+        const indicator = document.createElement('div');
+        indicator.setAttribute('data-version-indicator', 'true');
+        indicator.style.position = 'absolute';
+        indicator.style.bottom = '10px';
+        indicator.style.right = '10px';
+        indicator.style.background = 'rgba(255, 152, 0, 0.7)'; // Orange during generation
+        indicator.style.color = 'white';
+        indicator.style.padding = '5px';
+        indicator.style.borderRadius = '3px';
+        indicator.style.fontSize = '12px';
+        indicator.style.fontFamily = 'monospace';
+        indicator.style.zIndex = '1000';
+        indicator.textContent = `Eliminating White Grass Blades...`;
+        document.body.appendChild(indicator);
+        
+        // Log grass elimination details
+        console.log(`Version ${versionNumber} - Eliminating white grass blades`);
+        
+        // Step 1: First, find and remove ALL existing grass
+        let existingGrassCount = 0;
+        
+        // Find all possible grass objects by traversing the entire scene
+        const objectsToRemove = [];
+        
+        scene.traverse(object => {
+            // Check if it might be grass based on various criteria
+            const mightBeGrass = (
+                // Check userData flags
+                (object.userData && (
+                    object.userData.isGrass || 
+                    object.userData.isGrassChunk || 
+                    object.userData.isGrassBlade
+                )) ||
+                // Check by material color (anything green)
+                (object.material && object.material.color && 
+                 (object.material.color.g > 0.4 && object.material.color.g > object.material.color.r)) ||
+                // Check by geometry (thin tall objects)
+                (object.geometry && 
+                 object.scale && 
+                 object.scale.y > object.scale.x * 2)
+            );
+            
+            if (mightBeGrass && object.type === 'Mesh') {
+                objectsToRemove.push(object);
+                existingGrassCount++;
+            }
+        });
+        
+        // Remove all the found objects
+        objectsToRemove.forEach(object => {
+            if (object.parent) {
+                object.parent.remove(object);
+            }
+        });
+        
+        console.log(`Removed ${existingGrassCount} existing grass-like objects`);
+        
+        // Also look for and remove any group that might contain grass
+        scene.children = scene.children.filter(child => {
+            if (child.userData && 
+                (child.userData.isGrass || child.userData.isGrassChunk)) {
+                console.log("Removed grass group");
+                return false;
+            }
+            return true;
+        });
+        
+        // Create extremely safe grass materials
+        // Using PhongMaterial with specific settings to avoid white reflection
+        const safeGreenColors = [
+            0x1B5E20, // Dark green 
+            0x2E7D32, // Forest green
+            0x388E3C, // Dark green
+            0x43A047, // Medium-dark green
+            0x4CAF50  // Medium green
+        ];
+        
+        // Create fixed grass geometries
+        function createGrassGeometries() {
+            // Simplified blades with minimal vertices
+            const regularGeometry = new THREE.BufferGeometry();
+            const height = 0.25;
+            const width = 0.05;
+            
+            // Simple triangle shape with no curved top
+            const vertices = new Float32Array([
+                -width/2, 0, 0,        // 0: bottom left
+                width/2, 0, 0,         // 1: bottom right
+                0, height, 0.05        // 2: top point
+            ]);
+            
+            const indices = [0, 1, 2];
+            
+            const uvs = new Float32Array([
+                0.0, 0.0,
+                1.0, 0.0,
+                0.5, 1.0
+            ]);
+            
+            regularGeometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
+            regularGeometry.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
+            regularGeometry.setIndex(indices);
+            regularGeometry.computeVertexNormals();
+            
+            // Slightly taller blade
+            const tallGeometry = regularGeometry.clone();
+            const tallPositions = tallGeometry.attributes.position.array;
+            // Modify the height of the top vertex
+            tallPositions[7] = 0.35; // Taller
+            tallGeometry.attributes.position.needsUpdate = true;
+            tallGeometry.computeVertexNormals();
+            
+            // Slightly shorter blade
+            const shortGeometry = regularGeometry.clone();
+            const shortPositions = shortGeometry.attributes.position.array;
+            // Modify the height of the top vertex
+            shortPositions[7] = 0.18; // Shorter
+            shortGeometry.attributes.position.needsUpdate = true;
+            shortGeometry.computeVertexNormals();
+            
+            return [regularGeometry, tallGeometry, shortGeometry];
+        }
+        
+        // Function to create a guaranteed green material
+        function createForcedGreenMaterial(colorIndex) {
+            // Use PhongMaterial for better control
+            const material = new THREE.MeshPhongMaterial({
+                color: safeGreenColors[colorIndex % safeGreenColors.length],
+                shininess: 0,
+                specular: new THREE.Color(0x002200), // Very dark green specular
+                emissive: new THREE.Color(0x002200), // Slight glow to ensure green
+                flatShading: true,
+                side: THREE.DoubleSide
+            });
+            
+            // Override any lighting calculations that might lead to white
+            material.onBeforeCompile = function(shader) {
+                // Add custom color correction to the fragment shader
+                shader.fragmentShader = shader.fragmentShader.replace(
+                    'gl_FragColor = vec4( outgoingLight, diffuseColor.a );',
+                    `
+                    // Force color to stay green, never white
+                    outgoingLight = mix(outgoingLight, vec3(0.0, 0.4, 0.0), 0.3);
+                    
+                    // Ensure green channel is always dominant
+                    float maxChannel = max(outgoingLight.r, outgoingLight.b);
+                    if (outgoingLight.g < maxChannel * 1.2) {
+                        outgoingLight.g = maxChannel * 1.2;
+                    }
+                    
+                    // Cap brightness to prevent white
+                    float brightness = (outgoingLight.r + outgoingLight.g + outgoingLight.b) / 3.0;
+                    if (brightness > 0.6) {
+                        outgoingLight = outgoingLight * (0.6 / brightness);
+                    }
+                    
+                    gl_FragColor = vec4( outgoingLight, diffuseColor.a );
+                    `
+                );
+            };
+            
+            return material;
+        }
+        
+        // Function to get terrain height - maintain compatibility with original code
+        function getTerrainHeight(x, z) {
+            const A = 0.1; // Amplitude
+            const B = 0.4; // Frequency
+            return A * Math.sin(B * x) + A * Math.cos(B * z);
+        }
+        
+        // Get hole positions to avoid (from existing scene)
+        const holePositions = [];
+        scene.children.forEach(child => {
+            if (child.geometry && 
+                child.geometry.type === 'CircleGeometry') {
+                
+                holePositions.push({
+                    x: child.position.x,
+                    z: child.position.z,
+                    radius: 1.5
+                });
+                
+                console.log(`Found hole at: ${child.position.x}, ${child.position.z}`);
+            }
+        });
+        
+        // Fallback hole positions if none found
+        if (holePositions.length === 0) {
+            holePositions.push(
+                { x: -2.25, z: -2.25, radius: 1.5 },
+                { x: 3, z: -2.25, radius: 1.5 },
+                { x: -3, z: 2.25, radius: 1.5 },
+                { x: 3, z: 3, radius: 1.5 }
+            );
+            console.log("Using fallback hole positions");
+        }
+        
+        // Function to check if position is in a hole
+        function isInsideHole(posX, posZ) {
+            for (let hole of holePositions) {
+                const dx = posX - hole.x;
+                const dz = posZ - hole.z;
+                const distanceSquared = dx * dx + dz * dz;
+                
+                if (distanceSquared < (hole.radius * 1.1) * (hole.radius * 1.1)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+        
+        // Create progress bar
+        const progressContainer = document.createElement('div');
+        progressContainer.style.position = 'absolute';
+        progressContainer.style.bottom = '40px';
+        progressContainer.style.left = '10px';
+        progressContainer.style.right = '10px';
+        progressContainer.style.height = '10px';
+        progressContainer.style.backgroundColor = 'rgba(0, 0, 0, 0.2)';
+        progressContainer.style.borderRadius = '5px';
+        progressContainer.style.overflow = 'hidden';
+        progressContainer.style.zIndex = '1000';
+        
+        const progressBar = document.createElement('div');
+        progressBar.style.height = '100%';
+        progressBar.style.width = '0%';
+        progressBar.style.backgroundColor = '#388E3C'; // Dark green progress
+        progressBar.style.transition = 'width 0.2s';
+        
+        progressContainer.appendChild(progressBar);
+        document.body.appendChild(progressContainer);
+        
+        // Check for and add required lighting if it doesn't exist
+        let hasAmbientLight = false;
+        let hasDirectionalLight = false;
+        
+        scene.children.forEach(child => {
+            if (child instanceof THREE.AmbientLight) {
+                hasAmbientLight = true;
+            }
+            if (child instanceof THREE.DirectionalLight) {
+                hasDirectionalLight = true;
+            }
+        });
+        
+        if (!hasAmbientLight) {
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+            scene.add(ambientLight);
+            console.log("Added ambient light for better grass visibility");
+        }
+        
+        if (!hasDirectionalLight) {
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            directionalLight.position.set(5, 10, 5);
+            scene.add(directionalLight);
+            console.log("Added directional light for better grass visibility");
+        }
+        
+        // Create master grass container
+        const grassContainer = new THREE.Group();
+        grassContainer.name = "All Grass Container";
+        grassContainer.userData.isGrass = true;
+        scene.add(grassContainer);
+        
+        // Generate grass - using smaller chunk size for better performance
+        const geometries = createGrassGeometries();
+        const terrainSize = 30;
+        const halfSize = terrainSize / 2;
+        const clumpCount = 32000; // Maintain density
+        const GRASS_PER_CHUNK = 2000; // Smaller chunks for better performance
+        
+        // Process grass in chunks for better performance
+        const processChunkSize = 150;
+        let clumpsCreated = 0;
+        let bladesCreated = 0;
+        let chunksCreated = 0;
+        
+        // Create a group for the current chunk
+        let currentChunk = new THREE.Group();
+        currentChunk.userData.isGrassChunk = true;
+        
+        // Create grid for grass distribution
+        const gridSize = 0.18;
+        let xPos = -halfSize;
+        let zPos = -halfSize;
+        
+        function processNextChunk() {
+            const startTime = performance.now();
+            let chunkClumps = 0;
+            
+            while (chunkClumps < processChunkSize && clumpsCreated < clumpCount) {
+                while (zPos < halfSize && clumpsCreated < clumpCount) {
+                    // Add randomness to positions
+                    const posX = xPos + (Math.random() - 0.5) * (gridSize * 0.8);
+                    const posZ = zPos + (Math.random() - 0.5) * (gridSize * 0.8);
+                    
+                    // Skip if in a hole
+                    if (!isInsideHole(posX, posZ)) {
+                        // Get terrain height
+                        const posY = getTerrainHeight(posX, posZ);
+                        
+                        // Create a clump of 2-4 blades
+                        const bladeCount = 2 + Math.floor(Math.random() * 3);
+                        
+                        for (let i = 0; i < bladeCount; i++) {
+                            // Choose a random blade type
+                            const geometryIndex = Math.floor(Math.random() * geometries.length);
+                            const bladeGeometry = geometries[geometryIndex];
+                            
+                            // Choose a guaranteed green material
+                            const materialIndex = Math.floor(Math.random() * safeGreenColors.length);
+                            const material = createForcedGreenMaterial(materialIndex);
+                            
+                            // Create blade
+                            const blade = new THREE.Mesh(bladeGeometry, material);
+                            blade.userData.isGrassBlade = true;
+                            
+                            // Position within the clump
+                            const offset = 0.02;
+                            const offsetX = (Math.random() - 0.5) * offset;
+                            const offsetZ = (Math.random() - 0.5) * offset;
+                            
+                            blade.position.set(posX + offsetX, posY, posZ + offsetZ);
+                            
+                            // Random rotation
+                            blade.rotation.y = Math.random() * Math.PI * 2;
+                            
+                            // Slight random scaling
+                            const scale = 0.85 + Math.random() * 0.2;
+                            blade.scale.set(scale, scale, scale);
+                            
+                            // Add to current chunk
+                            currentChunk.add(blade);
+                            bladesCreated++;
+                            
+                            // If current chunk is full, add to scene and create new chunk
+                            if (currentChunk.children.length >= GRASS_PER_CHUNK) {
+                                // Name the chunk for identification
+                                currentChunk.name = `Grass Chunk ${chunksCreated + 1}`;
+                                
+                                // Add to container to maintain organization
+                                grassContainer.add(currentChunk);
+                                
+                                // Create new chunk
+                                currentChunk = new THREE.Group();
+                                currentChunk.userData.isGrassChunk = true;
+                                chunksCreated++;
+                                
+                                console.log(`Created grass chunk #${chunksCreated} with ${GRASS_PER_CHUNK} blades`);
+                            }
+                        }
+                        
+                        clumpsCreated++;
+                        chunkClumps++;
+                    }
+                    
+                    // Move to next grid position
+                    zPos += gridSize;
+                    
+                    // Check if we've spent too much time
+                    if (performance.now() - startTime > 16) {
+                        break;
+                    }
+                }
+                
+                // Reset z and increment x at end of row
+                if (zPos >= halfSize) {
+                    zPos = -halfSize;
+                    xPos += gridSize;
+                }
+                
+                // Break if we've spent too much time
+                if (performance.now() - startTime > 16) {
+                    break;
+                }
+            }
+            
+            // Update progress
+            const progress = Math.min(100, Math.floor((clumpsCreated / clumpCount) * 100));
+            progressBar.style.width = `${progress}%`;
+            
+            console.log(`Grass generation: ${progress}% (${clumpsCreated}/${clumpCount} clumps, ${bladesCreated} blades)`);
+            
+            // Force render to show progress
+            if (typeof renderer !== 'undefined') {
+                renderer.render(scene, camera);
+            }
+            
+            // Continue or finish
+            if (clumpsCreated < clumpCount && xPos < halfSize) {
+                // Continue in next frame
+                setTimeout(() => {
+                    requestAnimationFrame(processNextChunk);
+                }, 10);
+                
+                // Update indicator text
+                indicator.textContent = `Creating Guaranteed Green Grass ${progress}%`;
+            } else {
+                // Add any remaining blades in the final chunk
+                if (currentChunk.children.length > 0) {
+                    currentChunk.name = `Grass Chunk ${chunksCreated + 1}`;
+                    grassContainer.add(currentChunk);
+                    chunksCreated++;
+                }
+                
+                // Remove progress bar
+                progressContainer.remove();
+                
+                console.log(`Completed: ${clumpsCreated} grass clumps with ${bladesCreated} blades in ${chunksCreated} chunks`);
+                
+                // Final render update
+                if (typeof renderer !== 'undefined') {
+                    renderer.render(scene, camera);
+                }
+                
+                // Update indicator with final info
+                indicator.textContent = `Guaranteed Green Grass v${versionNumber}`;
+                indicator.style.background = 'rgba(76, 175, 80, 0.7)';
+                
+                // Performance optimizations
+                grassContainer.frustumCulled = false;
+                grassContainer.matrixAutoUpdate = false;
+                grassContainer.updateMatrix();
+                
+                console.log("Grass generation complete - all white blades eliminated");
+            }
+        }
+        
+        // Start generating grass
+        processNextChunk();
+        
+        console.log(`Starting guaranteed green grass generation (target: ${clumpCount} clumps)`);
+        
+        return true;
+    } catch (e) {
+        console.error("Error creating guaranteed green grass:", e);
+        return false;
+    }
+}
+
+// Call the function
+createForcedGreenGrass();
