@@ -1073,7 +1073,7 @@ function addVersionIndicator() {
     );
     
     console.log(
-        "%c Version: purple" + versionNumber + " | Loaded: " + versionTimestamp + " %c",
+        "%c Version: black" + versionNumber + " | Loaded: " + versionTimestamp + " %c",
         "background: #2196F3; color: white; font-size: 14px; padding: 3px; border-radius: 3px;",
         ""
     );
@@ -1111,23 +1111,24 @@ addVersionIndicator();
 // You can also add this at the end of your main code
 console.log("Game initialization complete - running latest version");
 
-// Load the alpha texture for a grass blade
+// Load the grass texture
 const textureLoader = new THREE.TextureLoader();
-const grassAlphaTexture = textureLoader.load('https://jjazut1.github.io/whack-a-mole/grass.png');
+const grassTexture = textureLoader.load('https://jjazut1.github.io/whack-a-mole/grass.png');
+grassTexture.wrapS = grassTexture.wrapT = THREE.RepeatWrapping;
+grassTexture.repeat.set(1, 1); // Adjust repeat as needed
 
 // Create a plane geometry for a single grass blade
 const bladeGeometry = new THREE.PlaneGeometry(0.1, 0.5);
 
-// Create a material with transparency and color variation
+// Create a material with transparency
 const grassMaterial = new THREE.MeshBasicMaterial({
-    map: grassAlphaTexture,
+    map: grassTexture,
     transparent: true,
-    side: THREE.DoubleSide,
-    color: new THREE.Color(0x228B22) // Base green color
+    side: THREE.DoubleSide
 });
 
 // Number of grass blades
-const numBlades = 5000;
+const numBlades = 1000;
 
 // Create an InstancedMesh for the grass blades
 const grassMesh = new THREE.InstancedMesh(bladeGeometry, grassMaterial, numBlades);
