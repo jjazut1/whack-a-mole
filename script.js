@@ -1073,7 +1073,7 @@ function addVersionIndicator() {
     );
     
     console.log(
-        "%c Version: blue" + versionNumber + " | Loaded: " + versionTimestamp + " %c",
+        "%c Version: black" + versionNumber + " | Loaded: " + versionTimestamp + " %c",
         "background: #2196F3; color: white; font-size: 14px; padding: 3px; border-radius: 3px;",
         ""
     );
@@ -1113,42 +1113,51 @@ console.log("Game initialization complete - running latest version");
 
 // Load the grass texture
 const textureLoader = new THREE.TextureLoader();
-const grassTexture = textureLoader.load('https://jjazut1.github.io/whack-a-mole/grassfigma.png');
-grassTexture.wrapS = grassTexture.wrapT = THREE.RepeatWrapping;
-grassTexture.repeat.set(1, 1); // Adjust repeat as needed
+textureLoader.load(
+    'https://jjazut1.github.io/whack-a-mole/grassfigma.png',
+    (texture) => {
+        // On successful load
+        console.log('Texture loaded:', texture);
+        applyTexture(texture);
+    },
+    undefined,
+    (error) => {
+        // On error
+        console.error('Error loading texture:', error);
+    }
+);
 
-console.log(grassTexture);
+function applyTexture(grassTexture) {
+    const grassMaterial = new THREE.MeshBasicMaterial({
+        map: grassTexture,
+        transparent: true,
+        side: THREE.DoubleSide
+    });
 
-// Create a plane geometry for a single grass blade
-const bladeGeometry = new THREE.PlaneGeometry(0.1, 0.5);
+    // Create a plane geometry for a single grass blade
+    const bladeGeometry = new THREE.PlaneGeometry(0.1, 0.5);
 
-// Create a material with transparency
-const grassMaterial = new THREE.MeshBasicMaterial({
-    map: grassTexture,
-    transparent: true,
-    side: THREE.DoubleSide
-});
+    // Number of grass blades
+    const numBlades = 1000;
 
-// Number of grass blades
-const numBlades = 1000;
+    // Create an InstancedMesh for the grass blades
+    const grassMesh = new THREE.InstancedMesh(bladeGeometry, grassMaterial, numBlades);
 
-// Create an InstancedMesh for the grass blades
-const grassMesh = new THREE.InstancedMesh(bladeGeometry, grassMaterial, numBlades);
+    // Set up the instance matrix for each blade
+    const dummy = new THREE.Object3D();
+    for (let i = 0; i < numBlades; i++) {
+        const x = (Math.random() - 0.5) * 30;
+        const z = (Math.random() - 0.5) * 30;
+        const y = 0;
 
-// Set up the instance matrix for each blade
-const dummy = new THREE.Object3D();
-for (let i = 0; i < numBlades; i++) {
-    const x = (Math.random() - 0.5) * 30;
-    const z = (Math.random() - 0.5) * 30;
-    const y = 0;
+        dummy.position.set(x, y, z);
+        dummy.rotation.y = Math.random() * Math.PI;
+        dummy.scale.setScalar(0.8 + Math.random() * 0.4); // Random size variation
+        dummy.updateMatrix();
 
-    dummy.position.set(x, y, z);
-    dummy.rotation.y = Math.random() * Math.PI;
-    dummy.scale.setScalar(0.8 + Math.random() * 0.4); // Random size variation
-    dummy.updateMatrix();
+        grassMesh.setMatrixAt(i, dummy.matrix);
+    }
 
-    grassMesh.setMatrixAt(i, dummy.matrix);
+    // Add the grass mesh to the scene
+    scene.add(grassMesh);
 }
-
-// Add the grass mesh to the scene
-scene.add(grassMesh);
