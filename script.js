@@ -1212,7 +1212,7 @@ function addVersionIndicator() {
     );
     
     console.log(
-        "%c Version: green" + versionNumber + " | Loaded: " + versionTimestamp + " %c",
+        "%c Version: red" + versionNumber + " | Loaded: " + versionTimestamp + " %c",
         "background: #2196F3; color: white; font-size: 14px; padding: 3px; border-radius: 3px;",
         ""
     );
@@ -1267,7 +1267,7 @@ function createRealisticGrass() {
         grassGroup.userData.isGrass = true;
         
         // Number of grass blades
-        const numBlades = 5000;
+        const numBlades = 15000;
         
         // Natural grass colors
         const grassColors = [
