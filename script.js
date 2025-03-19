@@ -1212,7 +1212,7 @@ function addVersionIndicator() {
     );
     
     console.log(
-        "%c Version: red" + versionNumber + " | Loaded: " + versionTimestamp + " %c",
+        "%c Version white" + versionNumber + " | Loaded: " + versionTimestamp + " %c",
         "background: #2196F3; color: white; font-size: 14px; padding: 3px; border-radius: 3px;",
         ""
     );
@@ -1250,9 +1250,9 @@ addVersionIndicator();
 // You can also add this at the end of your main code
 console.log("Game initialization complete - running latest version");
 
-// Create realistic turf grass using a combination of techniques
-function createRealisticTurf() {
-    console.log("Creating realistic turf grass...");
+// Create a truly realistic turf effect with seamless appearance
+function createSeamlessTurf() {
+    console.log("Creating seamless turf surface...");
     
     try {
         // Remove existing grass
@@ -1311,81 +1311,119 @@ function createRealisticTurf() {
             return A * Math.sin(B * x) + A * Math.cos(B * z);
         }
         
-        // ======= APPROACH 1: BASE TURF LAYER =======
-        // Create a grid of small flat quads as the base turf layer
-        const patchSize = 1.5; // Larger patches for base layer
-        const terrainSize = 30;
-        const patchesPerSide = Math.ceil(terrainSize / patchSize);
-        const startOffset = -terrainSize / 2;
+        // ===== PRIMARY APPROACH: SINGLE LARGE MESH =====
+        // Create a single, detailed mesh for the entire turf surface
         
-        // Grass colors
+        // Define the size and resolution
+        const terrainSize = 30;
+        const resolution = 100; // Higher number means more detailed terrain
+        const geometry = new THREE.PlaneGeometry(
+            terrainSize, 
+            terrainSize, 
+            resolution, 
+            resolution
+        );
+        
+        // Modify vertices to follow the terrain shape
+        const positionAttribute = geometry.getAttribute('position');
+        
+        // Create holes in the geometry
+        for (let i = 0; i < positionAttribute.count; i++) {
+            const x = positionAttribute.getX(i);
+            const z = positionAttribute.getZ(i);
+            
+            // Convert local coordinates to world coordinates
+            const worldX = x;
+            const worldZ = z;
+            
+            // Calculate height at this point
+            const y = getTerrainHeight(worldX, worldZ);
+            
+            // Check if this vertex is inside a hole
+            if (isInsideHole(worldX, worldZ)) {
+                // Move it below the terrain to create a hole
+                positionAttribute.setY(i, y - 0.2);
+            } else {
+                // Set to terrain height with slight random variation for texture
+                const variation = Math.random() * 0.005; // Very subtle variation
+                positionAttribute.setY(i, y + variation);
+            }
+        }
+        
+        // Update the geometry to reflect changes
+        geometry.computeVertexNormals();
+        
+        // Create a material with slight color variations
+        const turf = new THREE.ShaderMaterial({
+            uniforms: {
+                colorA: { value: new THREE.Color(0x66BB6A) }, // Light green
+                colorB: { value: new THREE.Color(0x388E3C) }  // Darker green
+            },
+            vertexShader: `
+                varying vec2 vUv;
+                
+                void main() {
+                    vUv = uv;
+                    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+                }
+            `,
+            fragmentShader: `
+                uniform vec3 colorA;
+                uniform vec3 colorB;
+                varying vec2 vUv;
+                
+                void main() {
+                    // Create subtle variations in grass color
+                    vec3 color = mix(colorA, colorB, smoothstep(0.0, 1.0, 
+                                     fract(sin(dot(vUv, vec2(12.9898, 78.233))) * 43758.5453)));
+                    
+                    // Add subtle noise pattern for grass texture
+                    float noise = fract(sin(dot(vUv, vec2(12.9898, 78.233)) * 
+                                        cos(dot(vUv, vec2(54.3219, 43.1753)))) * 43758.5453);
+                    
+                    // Apply noise to color for subtle texture
+                    color = mix(color, colorA * 1.1, noise * 0.15);
+                    
+                    gl_FragColor = vec4(color, 1.0);
+                }
+            `,
+            side: THREE.DoubleSide
+        });
+        
+        // Create the mesh and position it
+        const turfMesh = new THREE.Mesh(geometry, turf);
+        turfMesh.rotation.x = -Math.PI / 2; // Lay flat horizontally
+        turfMesh.position.y = 0.02; // Slightly above terrain to prevent z-fighting
+        
+        grassGroup.add(turfMesh);
+        
+        // ===== DETAIL ENHANCEMENT: ADD SCATTERED SMALL GRASS CLUMPS =====
+        // Add some depth with small grass clumps in a subtle way
+        
+        // Create a small triangle geometry for grass clumps
+        const clumpGeometry = new THREE.BufferGeometry();
+        const vertices = new Float32Array([
+            0, 0, 0,      // Bottom center
+            -0.05, 0, 0,  // Bottom left
+            0, 0.05, 0,   // Top center
+            0.05, 0, 0    // Bottom right
+        ]);
+        clumpGeometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
+        clumpGeometry.setIndex([0, 1, 2, 0, 2, 3]); // Two triangles
+        clumpGeometry.computeVertexNormals();
+        
+        // Grass colors for clumps
         const grassColors = [
-            new THREE.Color(0x4CAF50), // Medium green
             new THREE.Color(0x66BB6A), // Light green
+            new THREE.Color(0x4CAF50), // Medium green
             new THREE.Color(0x43A047), // Slightly darker
             new THREE.Color(0x388E3C)  // Darker green
         ];
         
-        // Create the base layer of turf
-        for (let i = 0; i < patchesPerSide; i++) {
-            for (let j = 0; j < patchesPerSide; j++) {
-                const x = startOffset + i * patchSize + patchSize/2;
-                const z = startOffset + j * patchSize + patchSize/2;
-                
-                // Skip if in a hole
-                if (isInsideHole(x, z)) {
-                    continue;
-                }
-                
-                // Calculate terrain height
-                let y = 0;
-                try {
-                    y = getTerrainHeight(x, z);
-                } catch (e) {
-                    // Use default
-                }
-                
-                // Create a patch with a slight height variation
-                const geometry = new THREE.PlaneGeometry(patchSize, patchSize, 2, 2);
-                
-                // Add height variation to corners of the patch to follow terrain
-                const positionAttribute = geometry.getAttribute('position');
-                for (let v = 0; v < positionAttribute.count; v++) {
-                    const vx = positionAttribute.getX(v);
-                    const vz = positionAttribute.getZ(v);
-                    // Calculate height at this vertex
-                    const vertexX = x + vx * patchSize/2;
-                    const vertexZ = z + vz * patchSize/2;
-                    const height = getTerrainHeight(vertexX, vertexZ);
-                    positionAttribute.setY(v, height - y);
-                }
-                
-                // Random grass color for this patch
-                const color = grassColors[Math.floor(Math.random() * grassColors.length)];
-                const material = new THREE.MeshLambertMaterial({
-                    color: color,
-                    side: THREE.DoubleSide
-                });
-                
-                const patch = new THREE.Mesh(geometry, material);
-                patch.position.set(x, y + 0.01, z); // Slightly above terrain to prevent z-fighting
-                patch.rotation.x = -Math.PI / 2; // Lay flat
-                
-                grassGroup.add(patch);
-            }
-        }
+        // Add scattered clumps for texture
+        const numClumps = 2000;
         
-        // ======= APPROACH 2: DETAIL LAYER =======
-        // Add randomly distributed small grass tufts for detail
-        const numTufts = 2000;
-        const tuftWidth = 0.15;
-        const tuftHeight = 0.06;
-        
-        // Create a reusable tuft geometry
-        const tuftGeometry = new THREE.ConeGeometry(tuftWidth/2, tuftHeight, 4, 1);
-        tuftGeometry.translate(0, tuftHeight/2, 0);
-        
-        for (let i = 0; i < numTufts; i++) {
+        for (let i = 0; i < numClumps; i++) {
             // Random position
             const x = (Math.random() - 0.5) * terrainSize;
             const z = (Math.random() - 0.5) * terrainSize;
@@ -1396,37 +1434,22 @@ function createRealisticTurf() {
             }
             
             // Calculate terrain height
-            let y = getTerrainHeight(x, z);
+            const y = getTerrainHeight(x, z) + 0.02; // Slightly above base surface
             
-            // Random grass color for this tuft
-            const color = grassColors[Math.floor(Math.random() * grassColors.length)];
-            const material = new THREE.MeshBasicMaterial({
-                color: color
+            // Create a grass clump
+            const clumpMaterial = new THREE.MeshBasicMaterial({ 
+                color: grassColors[Math.floor(Math.random() * grassColors.length)],
+                side: THREE.DoubleSide
             });
             
-            // Create a small group for this tuft
-            const tuft = new THREE.Group();
-            tuft.position.set(x, y, z);
+            const clump = new THREE.Mesh(clumpGeometry, clumpMaterial);
             
-            // Add 2-3 blades to this tuft
-            const bladeCount = 2 + Math.floor(Math.random() * 2);
+            // Position and rotate
+            clump.position.set(x, y, z);
+            clump.rotation.x = -Math.PI / 2; // Lay flat
+            clump.rotation.z = Math.random() * Math.PI * 2; // Random orientation
             
-            for (let j = 0; j < bladeCount; j++) {
-                const blade = new THREE.Mesh(tuftGeometry, material);
-                
-                // Position within tuft (very tight clustering)
-                const offsetX = (Math.random() - 0.5) * tuftWidth * 0.5;
-                const offsetZ = (Math.random() - 0.5) * tuftWidth * 0.5;
-                blade.position.set(offsetX, 0, offsetZ);
-                
-                // Random rotation
-                blade.rotation.y = Math.random() * Math.PI * 2;
-                
-                // Add to tuft
-                tuft.add(blade);
-            }
-            
-            grassGroup.add(tuft);
+            grassGroup.add(clump);
         }
         
         // Add grass group to scene
@@ -1454,17 +1477,17 @@ function createRealisticTurf() {
         debugEl.style.borderRadius = '3px';
         debugEl.style.fontSize = '12px';
         debugEl.style.fontFamily = 'monospace';
-        debugEl.textContent = `Realistic Turf v4.0.0`;
+        debugEl.textContent = `Seamless Turf v5.0.0`;
         document.body.appendChild(debugEl);
         
-        console.log(`Created realistic turf grass`);
+        console.log(`Created seamless turf surface`);
         
         return grassGroup;
     } catch (e) {
-        console.error("Error creating realistic turf:", e);
+        console.error("Error creating seamless turf:", e);
         return null;
     }
 }
 
 // Call the function
-createRealisticTurf();
+createSeamlessTurf();
