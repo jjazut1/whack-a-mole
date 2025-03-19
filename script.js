@@ -1212,7 +1212,7 @@ function addVersionIndicator() {
     );
     
     console.log(
-        "%c Version: blue" + versionNumber + " | Loaded: " + versionTimestamp + " %c",
+        "%c Version: white" + versionNumber + " | Loaded: " + versionTimestamp + " %c",
         "background: #2196F3; color: white; font-size: 14px; padding: 3px; border-radius: 3px;",
         ""
     );
@@ -1486,9 +1486,9 @@ function createCylindricalGrass() {
 createCylindricalGrass(); // This approach is more likely to work well
 // Alternatively: createRealisticGrass();
 
-// Create grass using the hair approach
-function createGrassLikeHair() {
-    console.log("Creating grass using the hair approach...");
+// Create grass using the hair approach with more blades and hole avoidance
+function createDenseGrassWithHoleAvoidance() {
+    console.log("Creating dense grass with hole avoidance...");
     
     try {
         // Remove existing grass
@@ -1502,8 +1502,8 @@ function createGrassLikeHair() {
         const grassGroup = new THREE.Group();
         grassGroup.userData.isGrass = true;
         
-        // Number of grass patches
-        const numPatches = 800;
+        // Number of grass patches - significantly increased
+        const numPatches = 4000; // More patches to create about 20,000 blades
         
         // Natural grass colors
         const grassColors = [
@@ -1513,13 +1513,79 @@ function createGrassLikeHair() {
             new THREE.Color(0x558B2F)  // Olive green
         ];
         
-        for (let i = 0; i < numPatches; i++) {
-            // Create a group for each grass patch
-            const grassPatch = new THREE.Group();
-            
+        // Get hole positions to avoid placing grass there
+        const holePositions = [];
+        scene.children.forEach(child => {
+            // Find holes by looking for circular gray meshes
+            if (child.geometry && 
+                child.geometry.type === 'CircleGeometry' && 
+                child.material && 
+                child.material.color && 
+                child.material.color.getHexString().startsWith('5')) {
+                
+                holePositions.push({
+                    x: child.position.x,
+                    z: child.position.z,
+                    radius: 1.4 // Typical hole radius
+                });
+                
+                console.log(`Found hole at: ${child.position.x}, ${child.position.z}`);
+            }
+        });
+        
+        // Alternative hole detection method if the above doesn't work
+        if (holePositions.length === 0 && typeof moles !== 'undefined' && moles.length > 0) {
+            moles.forEach(mole => {
+                if (mole.position) {
+                    holePositions.push({
+                        x: mole.position.x,
+                        z: mole.position.z,
+                        radius: 1.4
+                    });
+                    console.log(`Found mole hole at: ${mole.position.x}, ${mole.position.z}`);
+                }
+            });
+        }
+        
+        // If still no holes found, define static hole positions
+        if (holePositions.length === 0) {
+            // These are based on the typical layout seen in screenshots
+            holePositions.push(
+                { x: -2.25, z: -2.25, radius: 1.4 },
+                { x: 3, z: -2.25, radius: 1.4 },
+                { x: -3, z: 2.25, radius: 1.4 },
+                { x: 3, z: 3, radius: 1.4 }
+            );
+            console.log("Using static hole positions");
+        }
+        
+        // Function to check if a position is inside a hole
+        function isInsideHole(posX, posZ) {
+            for (let hole of holePositions) {
+                const dx = posX - hole.x;
+                const dz = posZ - hole.z;
+                const distanceSquared = dx * dx + dz * dz;
+                
+                if (distanceSquared < hole.radius * hole.radius) {
+                    return true;
+                }
+            }
+            return false;
+        }
+        
+        let bladesCreated = 0;
+        let patchesCreated = 0;
+        
+        // Create grass patches until we reach the desired blade count or patch count
+        while (patchesCreated < numPatches) {
             // Random position
             const x = (Math.random() - 0.5) * 30;
             const z = (Math.random() - 0.5) * 30;
+            
+            // Skip if position is inside a hole
+            if (isInsideHole(x, z)) {
+                continue;
+            }
             
             // Calculate height based on terrain
             let y = 0.1; // Default height
@@ -1532,6 +1598,9 @@ function createGrassLikeHair() {
                 console.log("Using default height");
             }
             
+            // Create a group for each grass patch
+            const grassPatch = new THREE.Group();
+            
             // Position the patch
             grassPatch.position.set(x, y, z);
             
@@ -1542,13 +1611,13 @@ function createGrassLikeHair() {
             const grassColor = grassColors[Math.floor(Math.random() * grassColors.length)];
             const grassMaterial = new THREE.MeshBasicMaterial({ color: grassColor });
             
-            // Number of blades in this patch (3-7 blades)
-            const numBlades = 3 + Math.floor(Math.random() * 5);
+            // Number of blades in this patch (4-6 blades)
+            const numBlades = 4 + Math.floor(Math.random() * 3);
             
             // Create blades for this patch (similar to hair spikes)
             for (let j = 0; j < numBlades; j++) {
                 // Create a blade using cone geometry (like hair spikes)
-                const height = 0.15 + Math.random() * 0.1; // 1/2 the height of hair (0.3-0.5)
+                const height = 0.15 + Math.random() * 0.1; // 1/2 the height of hair
                 const radiusTop = 0.001; // Very thin at top
                 const radiusBottom = 0.005 + Math.random() * 0.005; // Slightly thicker at bottom
                 
@@ -1569,10 +1638,12 @@ function createGrassLikeHair() {
                 
                 // Add blade to patch
                 grassPatch.add(blade);
+                bladesCreated++;
             }
             
             // Add patch to grass group
             grassGroup.add(grassPatch);
+            patchesCreated++;
         }
         
         // Add grass group to scene
@@ -1600,17 +1671,17 @@ function createGrassLikeHair() {
         debugEl.style.borderRadius = '3px';
         debugEl.style.fontSize = '12px';
         debugEl.style.fontFamily = 'monospace';
-        debugEl.textContent = `Hair-Style Grass v2.4.0 - ${numPatches} patches`;
+        debugEl.textContent = `Dense Grass v2.5.0 - ${bladesCreated} blades`;
         document.body.appendChild(debugEl);
         
-        console.log(`Added ${numPatches} grass patches with hair-like blades to the scene`);
+        console.log(`Added ${patchesCreated} grass patches with ${bladesCreated} total blades, avoiding ${holePositions.length} holes`);
         
         return grassGroup;
     } catch (e) {
-        console.error("Error creating hair-like grass:", e);
+        console.error("Error creating dense grass:", e);
         return null;
     }
 }
 
 // Call the function
-createGrassLikeHair();
+createDenseGrassWithHoleAvoidance();
