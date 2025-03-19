@@ -1073,7 +1073,7 @@ function addVersionIndicator() {
     );
     
     console.log(
-        "%c Version: black" + versionNumber + " | Loaded: " + versionTimestamp + " %c",
+        "%c Version: red" + versionNumber + " | Loaded: " + versionTimestamp + " %c",
         "background: #2196F3; color: white; font-size: 14px; padding: 3px; border-radius: 3px;",
         ""
     );
@@ -1131,7 +1131,8 @@ function applyTexture(grassTexture) {
     const grassMaterial = new THREE.MeshBasicMaterial({
         map: grassTexture,
         transparent: true,
-        side: THREE.DoubleSide
+        side: THREE.DoubleSide,
+        alphaTest: 0.5  // Add this to prevent transparency sorting issues
     });
 
     // Create a plane geometry for a single grass blade
