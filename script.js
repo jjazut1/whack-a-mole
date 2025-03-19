@@ -2187,3 +2187,404 @@ function createConsistentGreenGrass() {
 
 // Call the function
 createConsistentGreenGrass();
+
+// Apply grass texture from provided screenshot
+function applyGrassTextureFromScreenshot() {
+    console.log("Applying grass texture from provided screenshot...");
+    
+    try {
+        // Add version indicator
+        const versionNumber = "13.0.0";
+        
+        // Create a version indicator
+        const existingIndicator = document.querySelector('[data-version-indicator]');
+        if (existingIndicator) {
+            existingIndicator.remove();
+        }
+        
+        const indicator = document.createElement('div');
+        indicator.setAttribute('data-version-indicator', 'true');
+        indicator.style.position = 'absolute';
+        indicator.style.bottom = '10px';
+        indicator.style.right = '10px';
+        indicator.style.background = 'rgba(76, 175, 80, 0.7)';
+        indicator.style.color = 'white';
+        indicator.style.padding = '5px';
+        indicator.style.borderRadius = '3px';
+        indicator.style.fontSize = '12px';
+        indicator.style.fontFamily = 'monospace';
+        indicator.style.zIndex = '1000';
+        indicator.textContent = `Processing Screenshot...`;
+        document.body.appendChild(indicator);
+        
+        console.log(`Version ${versionNumber} - Applying grass texture from screenshot`);
+        
+        // First, remove all existing grass
+        scene.traverse(object => {
+            if (object.userData && (
+                object.userData.isGrass || 
+                object.userData.isGrassChunk || 
+                object.userData.isGrassBlade
+            )) {
+                if (object.parent) {
+                    object.parent.remove(object);
+                }
+            }
+        });
+        
+        // Base64 encoded image from the provided screenshot
+        // Note: In a real implementation, you would host this image file separately
+        // For this example, we'll use a placeholder reference
+        const screenshotImageURL = 'https://jjazut1.github.io/whack-a-mole/screenshot-grass.png' // Replace with actual path to your screenshot
+        
+        // Find the terrain plane or create a new one
+        let terrainPlane = null;
+        scene.traverse(object => {
+            if (object.type === 'Mesh' && 
+                object.geometry && 
+                (object.geometry.type === 'PlaneGeometry' || 
+                 object.geometry.type === 'PlaneBufferGeometry')) {
+                
+                terrainPlane = object;
+                console.log("Found terrain plane:", terrainPlane);
+            }
+        });
+        
+        // If we can't find the terrain, create a new one
+        const terrainSize = 30;
+        
+        if (!terrainPlane) {
+            console.log("Creating new terrain plane");
+            
+            // Create terrain geometry
+            const geometry = new THREE.PlaneGeometry(terrainSize, terrainSize, 128, 128);
+            
+            // Apply height function to vertices
+            const positions = geometry.attributes.position.array;
+            for (let i = 0; i < positions.length; i += 3) {
+                const x = positions[i];
+                const z = positions[i + 2];
+                
+                // Simple terrain height function
+                const A = 0.1; // Amplitude
+                const B = 0.4; // Frequency
+                positions[i + 1] = A * Math.sin(B * x) + A * Math.cos(B * z);
+            }
+            
+            // Update normals
+            geometry.computeVertexNormals();
+            
+            // Create temporary material
+            const material = new THREE.MeshLambertMaterial({
+                color: 0x7CFC00,
+                side: THREE.DoubleSide
+            });
+            
+            // Create the plane and add to scene
+            terrainPlane = new THREE.Mesh(geometry, material);
+            terrainPlane.rotation.x = -Math.PI / 2; // Rotate to be horizontal
+            terrainPlane.position.y = 0;
+            terrainPlane.receiveShadow = true;
+            scene.add(terrainPlane);
+        }
+        
+        // Function to process the screenshot and create a clean texture
+        function processScreenshotTexture(imageElement) {
+            try {
+                // Create canvas and context
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                
+                // Set canvas size
+                canvas.width = imageElement.width;
+                canvas.height = imageElement.height;
+                
+                // Draw the original image
+                ctx.drawImage(imageElement, 0, 0);
+                
+                // Get image data
+                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                const data = imageData.data;
+                
+                // Get color samples from the green grass area
+                // We'll use these to identify and preserve grass colors
+                const grassColorSamples = [];
+                
+                // Sample from areas that are likely to be grass
+                // Avoid edges, UI text, and moles by sampling from central regions
+                const samplePoints = [
+                    { x: Math.floor(canvas.width * 0.1), y: Math.floor(canvas.height * 0.5) },
+                    { x: Math.floor(canvas.width * 0.5), y: Math.floor(canvas.height * 0.2) },
+                    { x: Math.floor(canvas.width * 0.8), y: Math.floor(canvas.height * 0.3) },
+                    { x: Math.floor(canvas.width * 0.3), y: Math.floor(canvas.height * 0.7) },
+                    { x: Math.floor(canvas.width * 0.7), y: Math.floor(canvas.height * 0.6) }
+                ];
+                
+                // Get color samples
+                for (const point of samplePoints) {
+                    const index = (point.y * canvas.width + point.x) * 4;
+                    grassColorSamples.push({
+                        r: data[index],
+                        g: data[index + 1],
+                        b: data[index + 2]
+                    });
+                }
+                
+                console.log("Grass color samples:", grassColorSamples);
+                
+                // Function to check if a color is similar to grass
+                function isGrassColor(r, g, b) {
+                    // Check if the color is predominantly green (grass-like)
+                    return g > r * 1.2 && g > b * 1.2;
+                }
+                
+                function isGrayHoleColor(r, g, b) {
+                    // Check if it's gray/hole color (roughly equal RGB values)
+                    const avg = (r + g + b) / 3;
+                    return Math.abs(r - avg) < 30 && 
+                           Math.abs(g - avg) < 30 && 
+                           Math.abs(b - avg) < 30 &&
+                           avg > 100 && avg < 180; // Gray range
+                }
+                
+                function isMoleColor(r, g, b) {
+                    // Detect mole colors (creamy/beige)
+                    return r > 200 && g > 200 && b > 150 && 
+                           Math.abs(r - g) < 40; // Yellowish
+                }
+                
+                function isUIText(r, g, b, a) {
+                    // Detect white text
+                    return r > 240 && g > 240 && b > 240;
+                }
+                
+                // Create a new canvas for the processed texture
+                const processedCanvas = document.createElement('canvas');
+                processedCanvas.width = canvas.width;
+                processedCanvas.height = canvas.height;
+                const processedCtx = processedCanvas.getContext('2d');
+                
+                // Fill with a base grass color
+                processedCtx.fillStyle = '#4CAF50'; // Medium green
+                processedCtx.fillRect(0, 0, processedCanvas.width, processedCanvas.height);
+                
+                // Copy and process the image data
+                const processedImageData = ctx.createImageData(canvas.width, canvas.height);
+                const processedData = processedImageData.data;
+                
+                for (let i = 0; i < data.length; i += 4) {
+                    const r = data[i];
+                    const g = data[i + 1];
+                    const b = data[i + 2];
+                    const a = data[i + 3];
+                    
+                    // Handle different elements in the image
+                    if (isGrassColor(r, g, b)) {
+                        // Keep grass colors as they are
+                        processedData[i] = r;
+                        processedData[i + 1] = g;
+                        processedData[i + 2] = b;
+                        processedData[i + 3] = 255;
+                    } 
+                    else if (isGrayHoleColor(r, g, b)) {
+                        // Make holes transparent so they blend with the terrain
+                        processedData[i] = 0;
+                        processedData[i + 1] = 0;
+                        processedData[i + 2] = 0;
+                        processedData[i + 3] = 0; // Transparent
+                    }
+                    else if (isMoleColor(r, g, b) || isUIText(r, g, b, a)) {
+                        // Replace moles and UI with nearby grass color
+                        
+                        // Find a nearby grass pixel
+                        let foundGrass = false;
+                        let grassR = 76, grassG = 175, grassB = 80; // Default grass color
+                        
+                        // Sample nearby pixels 
+                        const x = (i / 4) % canvas.width;
+                        const y = Math.floor((i / 4) / canvas.width);
+                        
+                        // Try pixels in different directions
+                        const directions = [
+                            { dx: -10, dy: 0 },
+                            { dx: 10, dy: 0 },
+                            { dx: 0, dy: -10 },
+                            { dx: 0, dy: 10 }
+                        ];
+                        
+                        for (const dir of directions) {
+                            const nx = x + dir.dx;
+                            const ny = y + dir.dy;
+                            
+                            if (nx >= 0 && nx < canvas.width && ny >= 0 && ny < canvas.height) {
+                                const neighborIndex = (ny * canvas.width + nx) * 4;
+                                const nr = data[neighborIndex];
+                                const ng = data[neighborIndex + 1];
+                                const nb = data[neighborIndex + 2];
+                                
+                                if (isGrassColor(nr, ng, nb)) {
+                                    grassR = nr;
+                                    grassG = ng;
+                                    grassB = nb;
+                                    foundGrass = true;
+                                    break;
+                                }
+                            }
+                        }
+                        
+                        // Use the found grass color or default
+                        processedData[i] = grassR;
+                        processedData[i + 1] = grassG;
+                        processedData[i + 2] = grassB;
+                        processedData[i + 3] = 255;
+                    }
+                    else {
+                        // For any other pixel (like sky), use a green color
+                        processedData[i] = 76;
+                        processedData[i + 1] = 175;
+                        processedData[i + 2] = 80;
+                        processedData[i + 3] = 255;
+                    }
+                }
+                
+                // Apply the processed image data
+                processedCtx.putImageData(processedImageData, 0, 0);
+                
+                // Add some random detail to areas where moles were removed
+                for (let i = 0; i < 5000; i++) {
+                    const x = Math.random() * processedCanvas.width;
+                    const y = Math.random() * processedCanvas.height;
+                    
+                    // Only add detail to non-hole areas
+                    const pixelData = processedCtx.getImageData(x, y, 1, 1).data;
+                    if (pixelData[3] > 0) { // If not transparent (hole)
+                        // Small grass detail
+                        processedCtx.strokeStyle = `rgb(
+                            ${Math.floor(pixelData[0] * 0.9)}, 
+                            ${Math.floor(pixelData[1] * 1.1)}, 
+                            ${Math.floor(pixelData[2] * 0.9)}
+                        )`;
+                        
+                        processedCtx.beginPath();
+                        processedCtx.moveTo(x, y);
+                        processedCtx.lineTo(x, y - 3 - Math.random() * 5);
+                        processedCtx.stroke();
+                    }
+                }
+                
+                // Return the texture from the processed canvas
+                return new THREE.CanvasTexture(processedCanvas);
+            } catch (e) {
+                console.error("Error processing screenshot:", e);
+                return null;
+            }
+        }
+        
+        // Create a placeholder texture while loading
+        function createPlaceholderTexture() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 512;
+            canvas.height = 512;
+            const ctx = canvas.getContext('2d');
+            
+            // Green background
+            ctx.fillStyle = '#4CAF50';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Loading text
+            ctx.fillStyle = 'white';
+            ctx.font = '24px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('Loading grass texture...', canvas.width/2, canvas.height/2);
+            
+            return new THREE.CanvasTexture(canvas);
+        }
+        
+        // Apply placeholder texture initially
+        const placeholderTexture = createPlaceholderTexture();
+        terrainPlane.material = new THREE.MeshStandardMaterial({
+            map: placeholderTexture,
+            roughness: 0.8,
+            metalness: 0.1,
+            side: THREE.DoubleSide
+        });
+        
+        // Function to load and process the screenshot
+        function loadAndProcessScreenshot() {
+            // If we're using a placeholder URL, provide instructions
+            if (screenshotImageURL === 'screenshot_grass.jpg') {
+                console.log(`
+                === IMPORTANT IMPLEMENTATION INSTRUCTIONS ===
+                1. Save the screenshot you shared with me
+                2. Upload it to your server or hosting service
+                3. Update the 'screenshotImageURL' variable with the actual URL
+                4. The code will automatically process this image to create a grass texture
+                `);
+                
+                // Create a sample texture based on the placeholder
+                const sampleTexture = createPlaceholderTexture();
+                terrainPlane.material.map = sampleTexture;
+                terrainPlane.material.needsUpdate = true;
+                
+                indicator.textContent = `Texture Placeholder - Need Screenshot URL`;
+                indicator.style.background = 'rgba(255, 152, 0, 0.7)'; // Orange for warning
+                
+                return;
+            }
+            
+            // Load the actual screenshot
+            const imageLoader = new THREE.ImageLoader();
+            
+            imageLoader.load(
+                screenshotImageURL,
+                function(imageElement) {
+                    console.log("Screenshot loaded, processing...");
+                    indicator.textContent = `Processing grass texture...`;
+                    
+                    // Process the image to create a clean texture
+                    const processedTexture = processScreenshotTexture(imageElement);
+                    
+                    if (processedTexture) {
+                        // Configure texture settings
+                        processedTexture.wrapS = THREE.RepeatWrapping;
+                        processedTexture.wrapT = THREE.RepeatWrapping;
+                        
+                        // Apply texture to terrain with proper material settings
+                        terrainPlane.material.map = processedTexture;
+                        terrainPlane.material.needsUpdate = true;
+                        
+                        console.log("Grass texture applied successfully");
+                        indicator.textContent = `Grass Texture v${versionNumber}`;
+                        indicator.style.background = 'rgba(76, 175, 80, 0.7)';
+                        
+                        // Force render update
+                        if (renderer) {
+                            renderer.render(scene, camera);
+                        }
+                    } else {
+                        console.error("Failed to process grass texture");
+                        indicator.textContent = `Texture Processing Failed`;
+                        indicator.style.background = 'rgba(244, 67, 54, 0.7)'; // Red for error
+                    }
+                },
+                undefined, // Progress callback
+                function(error) {
+                    console.error("Error loading screenshot:", error);
+                    indicator.textContent = `Failed to load texture`;
+                    indicator.style.background = 'rgba(244, 67, 54, 0.7)'; // Red for error
+                }
+            );
+        }
+        
+        // Start the loading and processing
+        loadAndProcessScreenshot();
+        
+        return terrainPlane;
+    } catch (e) {
+        console.error("Error applying grass texture from screenshot:", e);
+        return null;
+    }
+}
+
+// Call the function
+applyGrassTextureFromScreenshot();
