@@ -1212,7 +1212,7 @@ function addVersionIndicator() {
     );
     
     console.log(
-        "%c Version red" + versionNumber + " | Loaded: " + versionTimestamp + " %c",
+        "%c Version yellow" + versionNumber + " | Loaded: " + versionTimestamp + " %c",
         "background: #2196F3; color: white; font-size: 14px; padding: 3px; border-radius: 3px;",
         ""
     );
@@ -1250,9 +1250,9 @@ addVersionIndicator();
 // You can also add this at the end of your main code
 console.log("Game initialization complete - running latest version");
 
-// Create simple reliable grass with standard materials
-function createReliableGrass() {
-    console.log("Creating simple reliable grass...");
+// Create natural-looking grass blades
+function createNaturalGrass() {
+    console.log("Creating natural-looking grass...");
     
     try {
         // Remove existing grass
@@ -1337,32 +1337,172 @@ function createReliableGrass() {
         
         grassGroup.add(terrainMesh);
         
-        // Create simple grass blades using standard geometry and material
-        // Use a cone shape that tapers at the top
-        const bladeGeometry = new THREE.ConeGeometry(0.05, 0.4, 4);
+        // Create CURVED grass blades using custom geometry
+        function createGrassBlade() {
+            const geometry = new THREE.BufferGeometry();
+            
+            // Create a curved blade shape
+            const height = 0.3;
+            const width = 0.05;
+            const curve = 0.1; // Amount of curve
+            
+            // Define vertices for a curved blade
+            const vertices = new Float32Array([
+                // Left side
+                -width/2, 0, 0,                        // Bottom left
+                -width/3, height*0.33, curve*0.3,      // Lower left
+                -width/4, height*0.66, curve*0.7,      // Upper left
+                0, height, curve,                      // Top
+                
+                // Right side
+                width/2, 0, 0,                         // Bottom right
+                width/3, height*0.33, curve*0.3,       // Lower right
+                width/4, height*0.66, curve*0.7        // Upper right
+            ]);
+            
+            // Define triangles
+            const indices = [
+                0, 1, 4,  // Bottom left triangle
+                1, 5, 4,  // Middle left triangle
+                1, 2, 5,  // Middle upper left triangle
+                2, 6, 5,  // Upper middle triangle
+                2, 3, 6   // Top triangle
+            ];
+            
+            // Define UVs
+            const uvs = new Float32Array([
+                0.0, 0.0,  // Bottom left
+                0.0, 0.33, // Lower left
+                0.0, 0.66, // Upper left
+                0.5, 1.0,  // Top
+                
+                1.0, 0.0,  // Bottom right
+                1.0, 0.33, // Lower right
+                1.0, 0.66  // Upper right
+            ]);
+            
+            geometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
+            geometry.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
+            geometry.setIndex(indices);
+            geometry.computeVertexNormals();
+            
+            return geometry;
+        }
         
-        // Move origin to bottom of cone for proper positioning
-        bladeGeometry.translate(0, 0.2, 0);
+        // Create a taller, wider blade variation
+        function createTallGrassBlade() {
+            const geometry = new THREE.BufferGeometry();
+            
+            // Create a taller curved blade
+            const height = 0.45;
+            const width = 0.06;
+            const curve = 0.15; // More curve
+            
+            // Define vertices for a curved blade
+            const vertices = new Float32Array([
+                // Left side
+                -width/2, 0, 0,                        // Bottom left
+                -width/3, height*0.33, curve*0.4,      // Lower left
+                -width/4, height*0.66, curve*0.8,      // Upper left
+                0, height, curve,                      // Top
+                
+                // Right side
+                width/2, 0, 0,                         // Bottom right
+                width/3, height*0.33, curve*0.4,       // Lower right
+                width/4, height*0.66, curve*0.8        // Upper right
+            ]);
+            
+            // Use the same indices and UV structure as the regular blade
+            const indices = [0, 1, 4, 1, 5, 4, 1, 2, 5, 2, 6, 5, 2, 3, 6];
+            
+            const uvs = new Float32Array([
+                0.0, 0.0, 0.0, 0.33, 0.0, 0.66, 0.5, 1.0,
+                1.0, 0.0, 1.0, 0.33, 1.0, 0.66
+            ]);
+            
+            geometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
+            geometry.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
+            geometry.setIndex(indices);
+            geometry.computeVertexNormals();
+            
+            return geometry;
+        }
         
-        // Create grass materials with different shades of green
+        // Create a third variation that's shorter and wider
+        function createShortGrassBlade() {
+            const geometry = new THREE.BufferGeometry();
+            
+            // Create a shorter, wider blade
+            const height = 0.2;
+            const width = 0.07;
+            const curve = 0.05; // Less curve
+            
+            // Define vertices for a curved blade
+            const vertices = new Float32Array([
+                // Left side
+                -width/2, 0, 0,                        // Bottom left
+                -width/3, height*0.33, curve*0.3,      // Lower left
+                -width/4, height*0.66, curve*0.5,      // Upper left
+                0, height, curve*0.7,                  // Top
+                
+                // Right side
+                width/2, 0, 0,                         // Bottom right
+                width/3, height*0.33, curve*0.3,       // Lower right
+                width/4, height*0.66, curve*0.5        // Upper right
+            ]);
+            
+            // Use the same indices and UV structure
+            const indices = [0, 1, 4, 1, 5, 4, 1, 2, 5, 2, 6, 5, 2, 3, 6];
+            
+            const uvs = new Float32Array([
+                0.0, 0.0, 0.0, 0.33, 0.0, 0.66, 0.5, 1.0,
+                1.0, 0.0, 1.0, 0.33, 1.0, 0.66
+            ]);
+            
+            geometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
+            geometry.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
+            geometry.setIndex(indices);
+            geometry.computeVertexNormals();
+            
+            return geometry;
+        }
+        
+        // Create the three blade geometries
+        const regularBlade = createGrassBlade();
+        const tallBlade = createTallGrassBlade();
+        const shortBlade = createShortGrassBlade();
+        
+        // Create materials with different shades of green
         const greenMaterials = [
-            new THREE.MeshLambertMaterial({ color: 0x4CAF50 }), // Medium green
-            new THREE.MeshLambertMaterial({ color: 0x66BB6A }), // Light green
-            new THREE.MeshLambertMaterial({ color: 0x388E3C }), // Darker green
-            new THREE.MeshLambertMaterial({ color: 0x81C784 })  // Lighter green
+            new THREE.MeshLambertMaterial({ 
+                color: 0x4CAF50, 
+                side: THREE.DoubleSide
+            }),
+            new THREE.MeshLambertMaterial({ 
+                color: 0x66BB6A, 
+                side: THREE.DoubleSide
+            }),
+            new THREE.MeshLambertMaterial({ 
+                color: 0x388E3C, 
+                side: THREE.DoubleSide
+            }),
+            new THREE.MeshLambertMaterial({ 
+                color: 0x81C784, 
+                side: THREE.DoubleSide
+            })
         ];
         
-        // Number of grass blades
-        const grassCount = 3000;
+        // Create grass clumps rather than individual blades
+        const clumpCount = 1500; // Fewer clumps, but each will have multiple blades
         
-        // Create each blade individually for maximum reliability
+        // Create clumps on a grid for good coverage
         const halfSize = terrainSize / 2;
-        const gridSize = 0.6;
+        const gridSize = 0.8; // Larger spacing between clumps
         
-        let count = 0;
+        let clumpsCreated = 0;
         
-        for (let x = -halfSize; x < halfSize && count < grassCount; x += gridSize) {
-            for (let z = -halfSize; z < halfSize && count < grassCount; z += gridSize) {
+        for (let x = -halfSize; x < halfSize && clumpsCreated < clumpCount; x += gridSize) {
+            for (let z = -halfSize; z < halfSize && clumpsCreated < clumpCount; z += gridSize) {
                 // Add randomness to positions
                 const posX = x + (Math.random() - 0.5) * (gridSize * 0.8);
                 const posZ = z + (Math.random() - 0.5) * (gridSize * 0.8);
@@ -1372,39 +1512,61 @@ function createReliableGrass() {
                     continue;
                 }
                 
-                // Random skip some positions for natural variation
-                if (Math.random() < 0.2) continue;
+                // Random skip some positions
+                if (Math.random() < 0.1) continue;
                 
                 // Get terrain height
                 const posY = getTerrainHeight(posX, posZ);
                 
-                // Choose random material
-                const material = greenMaterials[Math.floor(Math.random() * greenMaterials.length)];
+                // Create a clump of 3-6 blades
+                const bladeCount = 3 + Math.floor(Math.random() * 4);
                 
-                // Create blade
-                const blade = new THREE.Mesh(bladeGeometry, material);
+                for (let i = 0; i < bladeCount; i++) {
+                    // Choose a random blade type (weighted to use more regular blades)
+                    let bladeGeometry;
+                    const bladeType = Math.random();
+                    
+                    if (bladeType < 0.6) {
+                        bladeGeometry = regularBlade;
+                    } else if (bladeType < 0.8) {
+                        bladeGeometry = tallBlade;
+                    } else {
+                        bladeGeometry = shortBlade;
+                    }
+                    
+                    // Choose random material
+                    const material = greenMaterials[Math.floor(Math.random() * greenMaterials.length)];
+                    
+                    // Create blade
+                    const blade = new THREE.Mesh(bladeGeometry, material);
+                    
+                    // Position within the clump
+                    const offset = 0.04;
+                    const offsetX = (Math.random() - 0.5) * offset;
+                    const offsetZ = (Math.random() - 0.5) * offset;
+                    
+                    blade.position.set(posX + offsetX, posY, posZ + offsetZ);
+                    
+                    // Random rotation around Y
+                    blade.rotation.y = Math.random() * Math.PI * 2;
+                    
+                    // Random slight tilt
+                    blade.rotation.x = (Math.random() - 0.5) * 0.2;
+                    blade.rotation.z = (Math.random() - 0.5) * 0.2;
+                    
+                    // Random scale variation
+                    const scale = 0.8 + Math.random() * 0.4;
+                    blade.scale.set(scale, scale, scale);
+                    
+                    // Add to grass group
+                    grassGroup.add(blade);
+                }
                 
-                // Position blade
-                blade.position.set(posX, posY, posZ);
-                
-                // Random rotation around Y
-                blade.rotation.y = Math.random() * Math.PI * 2;
-                
-                // Random slight tilt
-                blade.rotation.x = (Math.random() - 0.5) * 0.1;
-                blade.rotation.z = (Math.random() - 0.5) * 0.1;
-                
-                // Random scale variation
-                const scale = 0.7 + Math.random() * 0.6;
-                blade.scale.set(scale, scale, scale);
-                
-                // Add to grass group
-                grassGroup.add(blade);
-                count++;
+                clumpsCreated++;
                 
                 // Log progress
-                if (count % 500 === 0) {
-                    console.log(`Created ${count} grass blades...`);
+                if (clumpsCreated % 200 === 0) {
+                    console.log(`Created ${clumpsCreated} grass clumps...`);
                 }
             }
         }
@@ -1430,23 +1592,23 @@ function createReliableGrass() {
         indicator.style.position = 'absolute';
         indicator.style.bottom = '10px';
         indicator.style.right = '10px';
-        indicator.style.background = 'rgba(255, 0, 0, 0.7)'; // Red for this emergency version
+        indicator.style.background = 'rgba(76, 175, 80, 0.7)';
         indicator.style.color = 'white';
         indicator.style.padding = '5px';
         indicator.style.borderRadius = '3px';
         indicator.style.fontSize = '12px';
         indicator.style.fontFamily = 'monospace';
-        indicator.textContent = `Reliable Grass v8.0.0 - ${count} blades`;
+        indicator.textContent = `Natural Grass v9.0.0 - ${clumpsCreated} clumps`;
         document.body.appendChild(indicator);
         
-        console.log(`Created ${count} reliable grass blades`);
+        console.log(`Created ${clumpsCreated} natural grass clumps`);
         
         return grassGroup;
     } catch (e) {
-        console.error("Error creating reliable grass:", e);
+        console.error("Error creating natural grass:", e);
         return null;
     }
 }
 
 // Call the function
-createReliableGrass();
+createNaturalGrass();
