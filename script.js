@@ -2235,7 +2235,7 @@ function applyGrassTextureFromScreenshot() {
         // Base64 encoded image from the provided screenshot
         // Note: In a real implementation, you would host this image file separately
         // For this example, we'll use a placeholder reference
-        const screenshotImageURL = 'https://jjazut1.github.io/whack-a-mole/screenshot-grass.png' // Replace with actual path to your screenshot
+        const screenshotImageURL = 'https://jjazut1.github.io/whack-a-mole/screenshot-grass.jpg' // Replace with actual path to your screenshot
         
         // Find the terrain plane or create a new one
         let terrainPlane = null;
