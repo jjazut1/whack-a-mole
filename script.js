@@ -59,6 +59,123 @@ document.body.appendChild(instructionsElement);
 camera.position.set(0, 10, 12); // Move the camera up
 camera.lookAt(0, 0, 0);
 
+// Create a global variable to store the grass texture
+let grassTexture;
+
+// Function to load grass texture (uses your existing textureLoader)
+function loadGrassTexture() {
+    // Use the existing textureLoader instead of creating a new one
+    window.textureLoader.load(
+        'path/to/grass.png', // Replace with your actual path
+        (texture) => {
+            // Store the loaded texture in the global variable
+            grassTexture = texture;
+            console.log('Grass texture loaded successfully:', texture);
+            
+            // Now that texture is loaded, call the enhance function
+            enhanceGrass();
+        },
+        undefined,
+        (error) => {
+            console.error('Error loading grass texture:', error);
+        }
+    );
+}
+
+// Function to enhance grass appearance
+function enhanceGrass() {
+    // Check if texture is loaded
+    if (!grassTexture) {
+        console.error('Grass texture not loaded yet');
+        return;
+    }
+
+    // Remove existing grass if present
+    scene.children.forEach(child => {
+        if (child.userData && child.userData.isGrass) {
+            scene.remove(child);
+        }
+    });
+    
+    // Create improved grass instances
+    const bladeGeometry = new THREE.PlaneGeometry(0.05, 0.3);
+    const grassMaterial = new THREE.MeshLambertMaterial({
+        map: grassTexture,
+        transparent: true,
+        side: THREE.DoubleSide
+    });
+    
+    // Color variations
+    const grassColors = [
+        new THREE.Color(0x4CAF50), // Medium green
+        new THREE.Color(0x8BC34A), // Light green
+        new THREE.Color(0x33691E)  // Dark green
+    ];
+    
+    // Number of blades
+    const numBlades = 3000;
+    
+    // Create blade groups for better organization
+    const grassGroup = new THREE.Group();
+    grassGroup.userData.isGrass = true;
+    
+    for (let i = 0; i < numBlades; i++) {
+        const blade = new THREE.Mesh(bladeGeometry, grassMaterial.clone());
+        
+        // Random position
+        const x = (Math.random() - 0.5) * 30;
+        const z = (Math.random() - 0.5) * 30;
+        
+        // Calculate height based on terrain equation
+        const A = 0.1; // Amplitude
+        const B = 0.4; // Frequency
+        const terrainHeight = A * Math.sin(B * x) + A * Math.cos(B * z);
+        
+        blade.position.set(x, terrainHeight + 0.01, z);
+        
+        // Random rotation
+        blade.rotation.y = Math.random() * Math.PI;
+        // Slight random tilt
+        blade.rotation.x = Math.PI/2 - Math.random() * 0.2;
+        
+        // Random scale for variety
+        const scale = 0.7 + Math.random() * 0.6;
+        blade.scale.set(scale, scale + Math.random() * 0.5, scale);
+        
+        // Random color variation
+        blade.material.color = grassColors[Math.floor(Math.random() * grassColors.length)];
+        
+        grassGroup.add(blade);
+    }
+    
+    scene.add(grassGroup);
+    
+    // Force render update
+    renderer.render(scene, camera);
+    
+    console.log("Enhanced grass added:", numBlades, "blades");
+}
+
+// Create a version indicator
+function addVersionIndicator() {
+    const versionIndicator = document.createElement('div');
+    versionIndicator.style.position = 'absolute';
+    versionIndicator.style.bottom = '10px';
+    versionIndicator.style.right = '10px';
+    versionIndicator.style.background = 'rgba(0,0,0,0.5)';
+    versionIndicator.style.color = 'white';
+    versionIndicator.style.padding = '5px';
+    versionIndicator.style.borderRadius = '3px';
+    versionIndicator.style.fontSize = '12px';
+    versionIndicator.style.fontFamily = 'monospace';
+    versionIndicator.textContent = 'Grass v2.0.0';
+    document.body.appendChild(versionIndicator);
+}
+
+// Start the process - load texture first
+loadGrassTexture();
+addVersionIndicator();
+
 // First, define a global variable to store the texture
 let grassTexture;
 
@@ -1094,7 +1211,7 @@ function addVersionIndicator() {
     );
     
     console.log(
-        "%c Version: white" + versionNumber + " | Loaded: " + versionTimestamp + " %c",
+        "%c Version: green" + versionNumber + " | Loaded: " + versionTimestamp + " %c",
         "background: #2196F3; color: white; font-size: 14px; padding: 3px; border-radius: 3px;",
         ""
     );
@@ -1131,131 +1248,3 @@ addVersionIndicator();
 
 // You can also add this at the end of your main code
 console.log("Game initialization complete - running latest version");
-
-// Load the grass texture
-const textureLoader = new THREE.TextureLoader();
-textureLoader.load(
-    'https://jjazut1.github.io/whack-a-mole/grassfigma.png',
-    (texture) => {
-        // On successful load
-        console.log('Texture loaded:', texture);
-        applyTexture(texture);
-    },
-    undefined,
-    (error) => {
-        // On error
-        console.error('Error loading texture:', error);
-    }
-);
-
-function applyTexture(grassTexture) {
-    const grassMaterial = new THREE.MeshBasicMaterial({
-        map: grassTexture,
-        transparent: true,
-        side: THREE.DoubleSide,
-        alphaTest: 0.5  // Add this to prevent transparency sorting issues
-    });
-
-    // Create a plane geometry for a single grass blade
-    const bladeGeometry = new THREE.PlaneGeometry(0.1, 0.5);
-
-    // Number of grass blades
-    const numBlades = 1000;
-
-    // Create an InstancedMesh for the grass blades
-    const grassMesh = new THREE.InstancedMesh(bladeGeometry, grassMaterial, numBlades);
-
-    // Set up the instance matrix for each blade
-    const dummy = new THREE.Object3D();
-    for (let i = 0; i < numBlades; i++) {
-        const x = (Math.random() - 0.5) * 30;
-        const z = (Math.random() - 0.5) * 30;
-        const y = 0;
-
-        dummy.position.set(x, y, z);
-        dummy.rotation.y = Math.random() * Math.PI;
-        dummy.scale.setScalar(0.8 + Math.random() * 0.4); // Random size variation
-        dummy.updateMatrix();
-
-        grassMesh.setMatrixAt(i, dummy.matrix);
-    }
-
-    // Add the grass mesh to the scene
-    scene.add(grassMesh);
-}
-
-function enhanceGrass() {
-    // Check if texture is loaded
-    if (!grassTexture) {
-        console.error('Grass texture not loaded yet');
-        return;
-    }
-
-    // Remove existing grass if present
-    scene.children.forEach(child => {
-        if (child.userData && child.userData.isGrass) {
-            scene.remove(child);
-        }
-    });
-    
-    // Create improved grass instances
-    const bladeGeometry = new THREE.PlaneGeometry(0.05, 0.3);
-    const grassMaterial = new THREE.MeshLambertMaterial({
-        map: grassTexture,
-        transparent: true,
-        side: THREE.DoubleSide
-    });
-    
-    // Color variations
-    const grassColors = [
-        new THREE.Color(0x4CAF50), // Medium green
-        new THREE.Color(0x8BC34A), // Light green
-        new THREE.Color(0x33691E)  // Dark green
-    ];
-    
-    // Number of blades
-    const numBlades = 3000;
-    
-    // Create blade groups for better organization
-    const grassGroup = new THREE.Group();
-    grassGroup.userData.isGrass = true;
-    
-    for (let i = 0; i < numBlades; i++) {
-        const blade = new THREE.Mesh(bladeGeometry, grassMaterial.clone());
-        
-        // Random position
-        const x = (Math.random() - 0.5) * 30;
-        const z = (Math.random() - 0.5) * 30;
-        
-        // Calculate height based on terrain equation
-        const A = 0.1; // Amplitude
-        const B = 0.4; // Frequency
-        const terrainHeight = A * Math.sin(B * x) + A * Math.cos(B * z);
-        
-        blade.position.set(x, terrainHeight + 0.01, z);
-        
-        // Random rotation
-        blade.rotation.y = Math.random() * Math.PI;
-        // Slight random tilt
-        blade.rotation.x = Math.PI/2 - Math.random() * 0.2;
-        
-        // Random scale for variety
-        const scale = 0.7 + Math.random() * 0.6;
-        blade.scale.set(scale, scale + Math.random() * 0.5, scale);
-        
-        // Random color variation
-        blade.material.color = grassColors[Math.floor(Math.random() * grassColors.length)];
-        
-        grassGroup.add(blade);
-    }
-    
-    scene.add(grassGroup);
-    
-    // Force render update
-    renderer.render(scene, camera);
-    
-    console.log("Enhanced grass added:", numBlades, "blades");
-}
-
-// Call the function to enhance grass
-enhanceGrass();
