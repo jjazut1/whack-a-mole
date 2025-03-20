@@ -2188,15 +2188,6 @@ function createConsistentGreenGrass() {
 // Call the function
 createConsistentGreenGrass();
 
-/* Add this CSS to hide text and progress bar */
-[data-version-indicator],
-[data-progress-bar],
-[data-instructions],
-.score,
-.time,
-.instructions {
-    display: none !important;
-}
 
 function createDenseGrass() {
     console.log("Creating dense grass with no text...");
