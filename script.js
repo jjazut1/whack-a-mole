@@ -2419,3 +2419,15 @@ function createDenseGrass() {
 
 // Call the function
 createDenseGrass();
+
+function hideTextElements() {
+    const textElements = [scoreElement, timerElement, instructionsElement];
+    textElements.forEach(element => {
+        if (element) {
+            element.style.display = 'none';
+        }
+    });
+}
+
+// Call this function before taking the screenshot
+hideTextElements();
