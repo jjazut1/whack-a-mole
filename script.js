@@ -2431,3 +2431,21 @@ function hideTextElements() {
 
 // Call this function before taking the screenshot
 hideTextElements();
+
+// Function to remove the progress bar and version indicator
+function removeUIElements() {
+    // Remove progress bar if it exists
+    const progressBar = document.querySelector('div[style*="backgroundColor: #4CAF50"]');
+    if (progressBar && progressBar.parentElement) {
+        progressBar.parentElement.remove();
+    }
+
+    // Remove version indicator if it exists
+    const versionIndicator = document.querySelector('[data-version-indicator]');
+    if (versionIndicator) {
+        versionIndicator.remove();
+    }
+}
+
+// Call this function to remove the elements
+removeUIElements();
