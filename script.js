@@ -2187,3 +2187,244 @@ function createConsistentGreenGrass() {
 
 // Call the function
 createConsistentGreenGrass();
+
+/* Add this CSS to hide text and progress bar */
+[data-version-indicator],
+[data-progress-bar],
+[data-instructions],
+.score,
+.time,
+.instructions {
+    display: none !important;
+}
+
+function createDenseGrass() {
+    console.log("Creating dense grass with no text...");
+
+    try {
+        // Remove any existing grass
+        let grassRemoved = 0;
+        scene.traverse(object => {
+            if (object.userData && 
+                (object.userData.isGrass || object.userData.isGrassChunk || object.userData.isGrassBlade)) {
+                if (object.parent) {
+                    object.parent.remove(object);
+                    grassRemoved++;
+                }
+            }
+        });
+
+        console.log(`Removed ${grassRemoved} existing grass objects`);
+
+        // Use existing texture generation logic
+        const textures = createGrassTextures();
+
+        const grassMaterial = new THREE.MeshBasicMaterial({
+            map: textures[0],
+            transparent: true,
+            alphaTest: 0.1,
+            side: THREE.DoubleSide
+        });
+
+        const grassMaterial2 = new THREE.MeshBasicMaterial({
+            map: textures[1],
+            transparent: true,
+            alphaTest: 0.1,
+            side: THREE.DoubleSide
+        });
+
+        // Function to get terrain height
+        function getTerrainHeight(x, z) {
+            const A = 0.1; // Amplitude
+            const B = 0.4; // Frequency
+            return A * Math.sin(B * x) + A * Math.cos(B * z);
+        }
+
+        // Get hole positions to avoid
+        const holePositions = [];
+        scene.children.forEach(child => {
+            if (child.geometry && 
+                child.geometry.type === 'CircleGeometry') {
+                
+                holePositions.push({
+                    x: child.position.x,
+                    z: child.position.z,
+                    radius: 1.5
+                });
+                
+                console.log(`Found hole at: ${child.position.x}, ${child.position.z}`);
+            }
+        });
+
+        // Fallback hole positions if none found
+        if (holePositions.length === 0) {
+            holePositions.push(
+                { x: -2.25, z: -2.25, radius: 1.5 },
+                { x: 3, z: -2.25, radius: 1.5 },
+                { x: -3, z: 2.25, radius: 1.5 },
+                { x: 3, z: 3, radius: 1.5 }
+            );
+            console.log("Using fallback hole positions");
+        }
+
+        // Function to check if position is in a hole
+        function isInsideHole(posX, posZ) {
+            for (let hole of holePositions) {
+                const dx = posX - hole.x;
+                const dz = posZ - hole.z;
+                const distanceSquared = dx * dx + dz * dz;
+                
+                if (distanceSquared < (hole.radius * 1.1) * (hole.radius * 1.1)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        // Create a master container for all grass
+        const grassContainer = new THREE.Group();
+        grassContainer.name = "Dense Grass";
+        grassContainer.userData.isGrass = true;
+
+        // Use instanced meshes for identical grass planes
+        console.log("Creating instanced grass for performance...");
+
+        // Create base geometries for the grass planes
+        const planeGeometry = new THREE.PlaneGeometry(0.5, 0.5);
+
+        // Set up instance counts based on density needs
+        const terrainSize = 30;
+        const halfSize = terrainSize / 2;
+        const gridSize = 0.67; // 1.5 times denser than before
+        const maxInstances = 7500; // 1.5 times the previous 5000
+
+        // Count potential positions first
+        let potentialPositions = 0;
+        for (let x = -halfSize; x < halfSize; x += gridSize) {
+            for (let z = -halfSize; z < halfSize; z += gridSize) {
+                if (!isInsideHole(x, z)) {
+                    potentialPositions++;
+                }
+            }
+        }
+
+        // Cap the count
+        const instanceCount = Math.min(potentialPositions, maxInstances);
+        console.log(`Creating ${instanceCount} grass instances`);
+
+        // Create instanced mesh for vertical planes
+        const instancedMeshV = new THREE.InstancedMesh(
+            planeGeometry, 
+            grassMaterial, 
+            instanceCount
+        );
+        instancedMeshV.name = "Instanced Grass Vertical";
+        instancedMeshV.userData.isGrassChunk = true;
+        instancedMeshV.frustumCulled = false;
+
+        // Create instanced mesh for horizontal planes
+        const instancedMeshH = new THREE.InstancedMesh(
+            planeGeometry, 
+            grassMaterial2, 
+            instanceCount
+        );
+        instancedMeshH.name = "Instanced Grass Horizontal";
+        instancedMeshH.userData.isGrassChunk = true;
+        instancedMeshH.frustumCulled = false;
+
+        // Set up transformation matrices for instances
+        const dummy = new THREE.Object3D();
+        let instanceIndex = 0;
+
+        // Place grass instances systematically with randomization
+        for (let x = -halfSize; x < halfSize; x += gridSize) {
+            for (let z = -halfSize; z < halfSize; z += gridSize) {
+                // Skip if in hole or reached max instances
+                if (isInsideHole(x, z) || instanceIndex >= instanceCount) {
+                    continue;
+                }
+
+                // Add randomization to position
+                const offsetX = (Math.random() - 0.5) * gridSize * 0.8;
+                const offsetZ = (Math.random() - 0.5) * gridSize * 0.8;
+                const posX = x + offsetX;
+                const posZ = z + offsetZ;
+
+                // Get height at position
+                const posY = getTerrainHeight(posX, posZ);
+
+                // Set position and scale (randomized)
+                const scale = 1.0 + Math.random() * 0.5;
+
+                // Set vertical plane
+                dummy.position.set(posX, posY + 0.25 * scale, posZ);
+                dummy.rotation.y = Math.random() * Math.PI;
+                dummy.scale.set(scale, scale, scale);
+                dummy.updateMatrix();
+                instancedMeshV.setMatrixAt(instanceIndex, dummy.matrix);
+
+                // Set horizontal plane (crossed with vertical)
+                dummy.rotation.y += Math.PI / 2; // Rotate 90 degrees
+                dummy.updateMatrix();
+                instancedMeshH.setMatrixAt(instanceIndex, dummy.matrix);
+
+                instanceIndex++;
+            }
+        }
+
+        // Update the instance matrices
+        instancedMeshV.instanceMatrix.needsUpdate = true;
+        instancedMeshH.instanceMatrix.needsUpdate = true;
+
+        // Add to container
+        grassContainer.add(instancedMeshV);
+        grassContainer.add(instancedMeshH);
+
+        // Add the container to the scene
+        scene.add(grassContainer);
+
+        // Make grass static for maximum performance
+        grassContainer.matrixAutoUpdate = false;
+        grassContainer.updateMatrix();
+
+        // Apply additional performance optimizations
+        // Disable frustum culling to prevent popping
+        grassContainer.frustumCulled = false;
+        grassContainer.traverse(child => {
+            if (child.isMesh) {
+                child.frustumCulled = false;
+                
+                // Use MeshBasicMaterial instead of Lambert/Phong for no lighting calculations
+                if (child.material && !(child.material instanceof THREE.MeshBasicMaterial)) {
+                    const color = child.material.color ? child.material.color.clone() : new THREE.Color(0x4CAF50);
+                    child.material = new THREE.MeshBasicMaterial({
+                        color: color,
+                        map: child.material.map,
+                        transparent: true,
+                        alphaTest: 0.1,
+                        side: THREE.DoubleSide
+                    });
+                }
+                
+                // Disable shadow casting/receiving
+                child.castShadow = false;
+                child.receiveShadow = false;
+            }
+        });
+
+        // Force a render update
+        if (typeof renderer !== 'undefined') {
+            renderer.render(scene, camera);
+        }
+
+        console.log("Dense grass generation complete");
+        return grassContainer;
+        
+    } catch (e) {
+        console.error("Error creating dense grass:", e);
+        return null;
+    }
+}
+
+// Call the function
+createDenseGrass();
