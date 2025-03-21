@@ -108,7 +108,19 @@ function improveGrassAppearance() {
         console.error("Error initializing grass improvement:", e);
     }
     
-
+    // Create a version indicator
+    const versionEl = document.createElement('div');
+    versionEl.style.position = 'absolute';
+    versionEl.style.bottom = '10px';
+    versionEl.style.right = '10px';
+    versionEl.style.background = 'rgba(0,0,0,0.5)';
+    versionEl.style.color = 'white';
+    versionEl.style.padding = '5px';
+    versionEl.style.borderRadius = '3px';
+    versionEl.style.fontSize = '12px';
+    versionEl.style.fontFamily = 'monospace';
+    versionEl.textContent = 'Grass v2.0.1';
+    document.body.appendChild(versionEl);
 }
 
 // Function to apply the loaded texture
@@ -1185,6 +1197,12 @@ function improveRendererSettings() {
         console.log("Renderer not available or is not a constant");
     }
 }
+
+// Version indicator that doesn't interfere with constants
+function addVersionIndicator() {
+    // Create a unique version timestamp
+    const versionTimestamp = new Date().toISOString();
+    const versionNumber = "1.0.1"; // Incremented to reflect the fix
     
     // Create a distinctive console message
     console.log(
@@ -1205,8 +1223,25 @@ function improveRendererSettings() {
         timestamp: versionTimestamp,
         cacheStatus: "Fresh Load - Fixed Constant Error"
     };
-
-
+    
+    // Add a visual indicator on the screen
+    const versionIndicator = document.createElement('div');
+    versionIndicator.style.position = 'absolute';
+    versionIndicator.style.bottom = '10px';
+    versionIndicator.style.right = '10px';
+    versionIndicator.style.background = 'rgba(0,0,0,0.5)';
+    versionIndicator.style.color = 'white';
+    versionIndicator.style.padding = '5px';
+    versionIndicator.style.borderRadius = '3px';
+    versionIndicator.style.fontSize = '12px';
+    versionIndicator.style.fontFamily = 'monospace';
+    versionIndicator.textContent = 'v' + versionNumber;
+    document.body.appendChild(versionIndicator);
+    
+    console.log("Version indicator added - running latest version with fixes");
+    
+    return "Version indicator added successfully";
+}
 
 // Call the fixed functions
 improveRendererSettings();
@@ -2415,15 +2450,13 @@ function removeUIElements() {
 // Call this function to remove the elements
 removeUIElements();
 
-function removeVersionIndicator() {
-    // Find the version indicator by its text content
-    const versionIndicators = Array.from(document.querySelectorAll('div')).filter(div => 
-        div.textContent.includes('Grass v1.0.1')
-    );
+function removeAllVersionIndicators() {
+    // Find all elements with a data attribute for version indicators
+    const versionIndicators = document.querySelectorAll('[data-version-indicator]');
 
     // Remove each found version indicator
     versionIndicators.forEach(indicator => indicator.remove());
 }
 
-// Call this function to remove the version indicator
-removeVersionIndicator();
+// Call this function to remove all version indicators from the DOM
+removeAllVersionIndicators();
