@@ -2451,12 +2451,28 @@ function removeUIElements() {
 removeUIElements();
 
 function removeAllVersionIndicators() {
-    // Find all elements with a data attribute for version indicators
-    const versionIndicators = document.querySelectorAll('[data-version-indicator]');
-
-    // Remove each found version indicator
-    versionIndicators.forEach(indicator => indicator.remove());
+    // Remove elements with data-version-indicator attribute
+    document.querySelectorAll('[data-version-indicator]').forEach(el => el.remove());
+    
+    // Remove elements that match the styling of the version indicator created by addVersionIndicator()
+    document.querySelectorAll('div').forEach(div => {
+        if (div.style.position === 'absolute' && 
+            div.style.bottom === '10px' && 
+            div.style.right === '10px' && 
+            div.style.fontFamily === 'monospace') {
+            div.remove();
+        }
+        
+        // Also check for text content containing version info
+        if (div.textContent && (
+            div.textContent.includes('Grass v') || 
+            div.textContent.includes('v1.0.1') ||
+            div.textContent.match(/v\d+\.\d+\.\d+/)
+        )) {
+            div.remove();
+        }
+    });
 }
 
-// Call this function to remove all version indicators from the DOM
+// Call this function to remove all version indicators
 removeAllVersionIndicators();
