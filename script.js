@@ -2449,3 +2449,16 @@ function removeUIElements() {
 
 // Call this function to remove the elements
 removeUIElements();
+
+function removeVersionIndicator() {
+    // Find the version indicator by its text content
+    const versionIndicators = Array.from(document.querySelectorAll('div')).filter(div => 
+        div.textContent.includes('Grass v1.0.1')
+    );
+
+    // Remove each found version indicator
+    versionIndicators.forEach(indicator => indicator.remove());
+}
+
+// Call this function to remove the version indicator
+removeVersionIndicator();
