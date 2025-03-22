@@ -35,7 +35,7 @@
             transform-origin: bottom center; /* Set transform origin to bottom center */
             /* The transform scale can be adjusted to match hole positions */
             transform: scale(1.05); /* Slight scale adjustment to match hole positions */
-            border: 2px solid red; /* Temporary border for debugging - will be visible even if image fails to load */
+            background-color: rgba(76, 175, 80, 0.4); /* Fallback green background if image fails to load */
         }
         
         #grassImage {
@@ -46,6 +46,7 @@
             height: auto; /* Maintain aspect ratio */
             pointer-events: none;
             opacity: 0.9;
+            display: block; /* Ensure image is displayed as block element */
         }
         
         /* Add CSS for canvas positioning to ensure alignment */
@@ -114,12 +115,40 @@
             width: 100%;
             margin-top: 10px;
         }
+        
+        /* Add red marker for debugging */
+        .debug-box {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 20px;
+            height: 20px;
+            background-color: red;
+            z-index: 1000;
+        }
     </style>
 </head>
 <body>
+    <!-- Add canvas container -->
+    <div id="canvasContainer"></div>
+    
     <!-- Add this div for the grass overlay -->
     <div id="grassOverlay">
-        <img id="grassImage" src="https://jjazut1.github.io/image-hosting/grassTexture2d.jpg" alt="Grass Texture" />
+        <img id="grassImage" src="grass-texture.jpg" alt="Grass Texture" />
+        <!-- Add debug marker at bottom center -->
+        <div class="debug-box"></div>
+        <!-- Fallback grass overlay using CSS only -->
+        <div id="fallbackGrass" style="
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 65%;
+            background: linear-gradient(to bottom, #4CAF50, #8BC34A);
+            opacity: 0.7;
+            display: none;
+        "></div>
     </div>
     
     <!-- Adjustment controls - press 'A' key to show/hide -->
@@ -171,6 +200,7 @@
         </div>
         
         <button class="toggle" onclick="tryAlternativeImage()">Try Alternative Image</button>
+        <button class="toggle" onclick="generateGrassPattern()">Generate Grass Pattern</button>
         <button class="toggle" onclick="toggleOverlay()">Toggle Overlay (T)</button>
         <button class="toggle" onclick="toggleMarkers()">Toggle Markers (D)</button>
         <button class="toggle" onclick="saveAdjustments()">Save Settings</button>
@@ -200,37 +230,121 @@
                     console.log("Image loaded successfully!", image.width, "x", image.height);
                 };
                 
-                image.onerror = function() {
-                    console.error("Error loading image!");
+                image.onerror = function(e) {
+                    console.error("Error loading image!", e);
                     tryAlternativeImage();
                 };
                 
-                // Force reload the image
-                const currentSrc = image.src;
-                image.src = '';
-                setTimeout(() => {
-                    image.src = currentSrc;
-                }, 100);
+                // Make sure the renderer is added to the DOM
+                const renderer = document.querySelector("canvas");
+                if (renderer) {
+                    const canvasContainer = document.getElementById("canvasContainer");
+                    if (canvasContainer && renderer.parentNode !== canvasContainer) {
+                        if (renderer.parentNode) {
+                            renderer.parentNode.removeChild(renderer);
+                        }
+                        canvasContainer.appendChild(renderer);
+                    }
+                }
             } else {
                 console.error("Overlay or image element not found!");
             }
         });
         
-        // Try alternative image sources
+        // Function to generate grass pattern if all image sources fail
+        function generateGrassPattern() {
+            console.log("Generating fallback grass pattern using canvas...");
+            
+            const canvas = document.createElement('canvas');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight * 0.65; // Cover bottom 65%
+            
+            const ctx = canvas.getContext('2d');
+            
+            // Create gradient background
+            const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            gradient.addColorStop(0, '#4CAF50'); // Top color
+            gradient.addColorStop(1, '#8BC34A'); // Bottom color
+            
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Add some texture/noise
+            const drawNoise = () => {
+                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                const data = imageData.data;
+                
+                for (let i = 0; i < data.length; i += 4) {
+                    // Random noise value
+                    const noise = Math.random() * 20 - 10;
+                    
+                    // Add noise to RGB channels
+                    data[i] = Math.max(0, Math.min(255, data[i] + noise)); // R
+                    data[i + 1] = Math.max(0, Math.min(255, data[i + 1] + noise)); // G
+                    data[i + 2] = Math.max(0, Math.min(255, data[i + 2] + noise)); // B
+                }
+                
+                ctx.putImageData(imageData, 0, 0);
+            };
+            
+            drawNoise();
+            
+            // Draw some simple grass blades
+            ctx.strokeStyle = '#2E7D32'; // Darker green
+            ctx.lineWidth = 1;
+            
+            for (let i = 0; i < 500; i++) {
+                const x = Math.random() * canvas.width;
+                const height = 10 + Math.random() * 30;
+                const y = canvas.height - height - Math.random() * 50;
+                
+                ctx.beginPath();
+                ctx.moveTo(x, canvas.height - Math.random() * 20);
+                ctx.quadraticCurveTo(
+                    x + (Math.random() * 10 - 5), 
+                    y + height / 2, 
+                    x + (Math.random() * 16 - 8), 
+                    y
+                );
+                ctx.stroke();
+            }
+            
+            // Apply the canvas as background
+            const grassOverlay = document.getElementById('grassOverlay');
+            if (grassOverlay) {
+                grassOverlay.style.backgroundImage = `url(${canvas.toDataURL()})`;
+                grassOverlay.style.backgroundSize = '100% auto';
+                grassOverlay.style.backgroundPosition = 'center bottom';
+                grassOverlay.style.backgroundRepeat = 'no-repeat';
+                
+                // Hide the image and fallback div
+                const image = document.getElementById('grassImage');
+                const fallback = document.getElementById('fallbackGrass');
+                
+                if (image) image.style.display = 'none';
+                if (fallback) fallback.style.display = 'none';
+                
+                console.log("Generated grass pattern applied as background image");
+            }
+        }
+        
+        // Update tryAlternativeImage function to use the generated pattern as a last resort
         function tryAlternativeImage() {
             const image = document.getElementById('grassImage');
+            const fallbackGrass = document.getElementById('fallbackGrass');
+            
             if (image) {
                 // Try a different image source
                 const sources = [
+                    'grass-texture.jpg', // Local file (first priority)
+                    'https://i.imgur.com/wJ9yFLC.jpeg', // Direct link to Imgur
                     'https://jjazut1.github.io/image-hosting/grassTexture2d.jpg',
                     '/grassTexture2d.jpg',
-                    'grassTexture2d.jpg',
-                    'https://raw.githubusercontent.com/jjazut1/image-hosting/main/grassTexture2d.jpg',
-                    'https://i.imgur.com/wJ9yFLC.jpeg' // Default grass image from imgur
+                    'grassTexture2d.jpg'
                 ];
                 
                 // Get the current source index
-                let currentIndex = sources.indexOf(image.src);
+                let currentIndex = sources.indexOf(image.src.split('/').pop());
                 if (currentIndex === -1) currentIndex = 0;
                 
                 // Move to the next source
@@ -238,7 +352,30 @@
                 let nextSource = sources[nextIndex];
                 
                 console.log(`Trying alternative image source (${nextIndex + 1}/${sources.length}): ${nextSource}`);
-                image.src = nextSource;
+                
+                // If we've tried all sources and are back to the first one, use the fallback
+                if (nextIndex === 0 && currentIndex === sources.length - 1) {
+                    console.log("All image sources failed. Using CSS fallback.");
+                    image.style.display = 'none';
+                    
+                    // Try the CSS fallback first
+                    if (fallbackGrass) {
+                        fallbackGrass.style.display = 'block';
+                        
+                        // If we're desperate, generate a pattern after a short delay
+                        setTimeout(() => {
+                            // Ask user if they want to try the generated pattern
+                            if (confirm("Having trouble loading the grass image. Would you like to generate a grass pattern instead?")) {
+                                generateGrassPattern();
+                            }
+                        }, 2000);
+                    } else {
+                        // Go straight to generated pattern
+                        generateGrassPattern();
+                    }
+                } else {
+                    image.src = nextSource;
+                }
             }
         }
         
@@ -425,16 +562,38 @@
         // Import the main game script
         import './script.js';
         
-        // After loading, check grass overlay again
+        // Make sure the canvas is in the right container
         setTimeout(() => {
-            console.log("Checking grass overlay after game loaded...");
-            const overlay = document.getElementById('grassOverlay');
+            const canvas = document.querySelector("canvas");
+            const canvasContainer = document.getElementById("canvasContainer");
+            
+            if (canvas && canvasContainer && canvas.parentNode !== canvasContainer) {
+                if (canvas.parentNode) {
+                    canvas.parentNode.removeChild(canvas);
+                }
+                canvasContainer.appendChild(canvas);
+                console.log("Moved canvas to proper container");
+            }
+            
+            // Check the grass image
             const image = document.getElementById('grassImage');
-            console.log("Overlay visibility:", overlay.style.display);
-            console.log("Image source:", image.src);
-            console.log("Image complete:", image.complete);
-            console.log("Image natural size:", image.naturalWidth, "x", image.naturalHeight);
-        }, 2000);
+            console.log("Image status:", {
+                src: image.src,
+                complete: image.complete,
+                naturalWidth: image.naturalWidth,
+                naturalHeight: image.naturalHeight,
+                isVisible: window.getComputedStyle(image).display !== 'none'
+            });
+            
+            // If the image has failed to load or has zero width/height, try alternatives
+            if (!image.complete || image.naturalWidth === 0 || image.naturalHeight === 0) {
+                console.log("Image failed to load correctly. Trying alternatives...");
+                tryAlternativeImage();
+            }
+            
+            // Force the image to be visible
+            image.style.display = 'block';
+        }, 1000);
     </script>
 </body>
 </html>
