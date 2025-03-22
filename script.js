@@ -14,6 +14,10 @@ renderer.sortObjects = true;
 renderer.setClearColor(0x87CEEB, 1);
 document.body.appendChild(renderer.domElement);
 
+// Set z-index for the renderer's canvas to place it above the grass overlay
+renderer.domElement.style.position = 'absolute';
+renderer.domElement.style.zIndex = '0';  // Higher than grassOverlay (-1) but lower than UI elements
+
 // Initialize arrays and game state
 const moles = [];
 let score = 0;
