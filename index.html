@@ -1,9 +1,8 @@
-<!DOCTYPE html>
 <html>
 <head>
     <title>3D Whack-a-Mole</title>
     <style>
-        /* Hide UI elements as needed */
+        /* Hide UI elements as you already have */
         [data-version-indicator],
         [data-progress-bar],
         [data-instructions],
@@ -16,345 +15,33 @@
             display: none !important;
         }
         
-        /* Game container */
+        /* Grass overlay styles */
         body {
             margin: 0;
             padding: 0;
             overflow: hidden;
             position: relative;
-            font-family: Arial, sans-serif;
         }
         
-        /* Grass overlay styles */
         #grassOverlay {
             position: absolute;
-            bottom: 0; /* Changed from top: 0 to bottom-justify */
+            top: 0;
             left: 0;
             width: 100%;
             height: 100%;
             background-image: url('https://jjazut1.github.io/image-hosting/grassv1nbg.jpg');
             background-size: cover;
-            background-position: bottom center; /* Changed to bottom center */
-            opacity: 0.9;
+            background-position: center;
+            opacity: 0.8; /* Adjust as needed */
             pointer-events: none; /* Let clicks pass through to the game */
             z-index: 10; /* Above the canvas but below UI elements */
-            transform-origin: bottom center; /* Change origin to bottom center */
-            transform: scale(0.95) translate(0px, 0px); /* Changed scale to 0.95 */
-        }
-        
-        /* Overlay adjustment panel */
-        #overlayControls {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background-color: rgba(50, 50, 50, 0.85);
-            color: white;
-            padding: 20px;
-            border-radius: 5px;
-            z-index: 100;
-            width: 600px;
-            box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
-            display: none;
-        }
-        
-        #overlayControls h2 {
-            text-align: center;
-            margin-top: 0;
-            margin-bottom: 20px;
-        }
-        
-        .control-row {
-            display: flex;
-            align-items: center;
-            margin-bottom: 15px;
-        }
-        
-        .control-label {
-            width: 150px;
-            text-align: right;
-            margin-right: 15px;
-            font-size: 18px;
-        }
-        
-        .control-value {
-            width: 100px;
-            text-align: center;
-            font-size: 18px;
-        }
-        
-        .control-buttons {
-            display: flex;
-            flex-grow: 1;
-            justify-content: space-around;
-        }
-        
-        .control-button {
-            width: 40px;
-            height: 40px;
-            background-color: #f0f0f0;
-            border: none;
-            border-radius: 5px;
-            font-size: 18px;
-            font-weight: bold;
-            cursor: pointer;
-        }
-        
-        .control-button:hover {
-            background-color: #e0e0e0;
-        }
-        
-        .action-button {
-            display: block;
-            width: 100%;
-            padding: 10px;
-            margin-bottom: 10px;
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            font-size: 16px;
-            cursor: pointer;
-            text-align: center;
-        }
-        
-        .action-button:hover {
-            background-color: #3e8e41;
-        }
-        
-        #hideControlsText {
-            text-align: center;
-            margin-top: 10px;
-            font-size: 14px;
-        }
-        
-        /* Marker styles for holes */
-        .hole-marker {
-            position: absolute;
-            width: 40px;
-            height: 40px;
-            background-color: red;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: bold;
-            pointer-events: none;
-            z-index: 20;
-            display: none;
         }
     </style>
 </head>
 <body>
-    <!-- Grass overlay div -->
+    <!-- Add this div for the grass overlay -->
     <div id="grassOverlay"></div>
     
-    <!-- Hole markers -->
-    <div class="hole-marker" id="marker1" style="left: 20%; top: 65%;">1</div>
-    <div class="hole-marker" id="marker2" style="left: 50%; top: 40%;">2</div>
-    <div class="hole-marker" id="marker3" style="left: 20%; top: 75%;">3</div>
-    <div class="hole-marker" id="marker4" style="left: 80%; top: 75%;">4</div>
-    
-    <!-- Overlay adjustment controls -->
-    <div id="overlayControls">
-        <h2>Overlay Adjustment</h2>
-        
-        <div class="control-row">
-            <div class="control-label">Scale:</div>
-            <div class="control-value" id="scaleValue">0.95</div>
-            <div class="control-buttons">
-                <button class="control-button" onclick="adjustSetting('scale', -0.01)">-</button>
-                <button class="control-button" onclick="adjustSetting('scale', -0.05)">--</button>
-                <button class="control-button" onclick="adjustSetting('scale', 0.05)">++</button>
-                <button class="control-button" onclick="adjustSetting('scale', 0.01)">+</button>
-            </div>
-        </div>
-        
-        <div class="control-row">
-            <div class="control-label">X Position:</div>
-            <div class="control-value" id="xValue">0</div>
-            <div class="control-buttons">
-                <button class="control-button" onclick="adjustSetting('x', -1)">-</button>
-                <button class="control-button" onclick="adjustSetting('x', -5)">--</button>
-                <button class="control-button" onclick="adjustSetting('x', 5)">++</button>
-                <button class="control-button" onclick="adjustSetting('x', 1)">+</button>
-            </div>
-        </div>
-        
-        <div class="control-row">
-            <div class="control-label">Y Position:</div>
-            <div class="control-value" id="yValue">0</div>
-            <div class="control-buttons">
-                <button class="control-button" onclick="adjustSetting('y', -1)">-</button>
-                <button class="control-button" onclick="adjustSetting('y', -5)">--</button>
-                <button class="control-button" onclick="adjustSetting('y', 5)">++</button>
-                <button class="control-button" onclick="adjustSetting('y', 1)">+</button>
-            </div>
-        </div>
-        
-        <div class="control-row">
-            <div class="control-label">Opacity:</div>
-            <div class="control-value" id="opacityValue">0.9</div>
-            <div class="control-buttons">
-                <button class="control-button" onclick="adjustSetting('opacity', -0.05)">-</button>
-                <button class="control-button" onclick="adjustSetting('opacity', -0.1)">--</button>
-                <button class="control-button" onclick="adjustSetting('opacity', 0.1)">++</button>
-                <button class="control-button" onclick="adjustSetting('opacity', 0.05)">+</button>
-            </div>
-        </div>
-        
-        <button class="action-button" onclick="tryAlternativeImage()">Try Alternative Image</button>
-        <button class="action-button" onclick="toggleOverlay()">Toggle Overlay (T)</button>
-        <button class="action-button" onclick="toggleMarkers()">Toggle Markers (D)</button>
-        <button class="action-button" onclick="saveSettings()">Save Settings</button>
-        
-        <div id="hideControlsText">Press A to hide controls</div>
-    </div>
-    
-    <!-- Main game script -->
     <script type="module" src="script.js"></script>
-    
-    <!-- Overlay controller script -->
-    <script>
-        // Overlay settings
-        let overlaySettings = {
-            scale: 0.95, // Changed to 0.95
-            x: 0,
-            y: 0,
-            opacity: 0.9,
-            visible: true,
-            currentImage: 1,
-            markersVisible: false
-        };
-        
-        // References to DOM elements
-        const grassOverlay = document.getElementById('grassOverlay');
-        const overlayControls = document.getElementById('overlayControls');
-        const markers = document.querySelectorAll('.hole-marker');
-        
-        // Initialize from saved settings if available
-        function initOverlay() {
-            const savedSettings = localStorage.getItem('grassOverlaySettings');
-            if (savedSettings) {
-                try {
-                    const parsed = JSON.parse(savedSettings);
-                    overlaySettings = {...overlaySettings, ...parsed};
-                    updateOverlayDisplay();
-                    updateControlValues();
-                } catch (e) {
-                    console.error('Error loading saved settings:', e);
-                }
-            }
-        }
-        
-        // Apply current settings to the overlay
-        function updateOverlayDisplay() {
-            if (overlaySettings.visible) {
-                grassOverlay.style.display = 'block';
-                grassOverlay.style.opacity = overlaySettings.opacity;
-                grassOverlay.style.transform = `scale(${overlaySettings.scale}) translate(${overlaySettings.x}px, ${overlaySettings.y}px)`;
-            } else {
-                grassOverlay.style.display = 'none';
-            }
-            
-            // Update marker visibility
-            markers.forEach(marker => {
-                marker.style.display = overlaySettings.markersVisible ? 'flex' : 'none';
-            });
-        }
-        
-        // Update the control panel values
-        function updateControlValues() {
-            document.getElementById('scaleValue').textContent = overlaySettings.scale.toFixed(2);
-            document.getElementById('xValue').textContent = overlaySettings.x;
-            document.getElementById('yValue').textContent = overlaySettings.y;
-            document.getElementById('opacityValue').textContent = overlaySettings.opacity.toFixed(1);
-        }
-        
-        // Adjust a setting by the specified amount
-        function adjustSetting(setting, amount) {
-            switch(setting) {
-                case 'scale':
-                    overlaySettings.scale = Math.max(0.1, Math.min(3.0, overlaySettings.scale + amount));
-                    break;
-                case 'x':
-                    overlaySettings.x += amount;
-                    break;
-                case 'y':
-                    overlaySettings.y += amount;
-                    break;
-                case 'opacity':
-                    overlaySettings.opacity = Math.max(0, Math.min(1, overlaySettings.opacity + amount));
-                    break;
-            }
-            
-            updateOverlayDisplay();
-            updateControlValues();
-        }
-        
-        // Toggle overlay visibility
-        function toggleOverlay() {
-            overlaySettings.visible = !overlaySettings.visible;
-            updateOverlayDisplay();
-        }
-        
-        // Toggle markers visibility
-        function toggleMarkers() {
-            overlaySettings.markersVisible = !overlaySettings.markersVisible;
-            updateOverlayDisplay();
-        }
-        
-        // Try alternative image
-        function tryAlternativeImage() {
-            overlaySettings.currentImage = overlaySettings.currentImage === 1 ? 2 : 1;
-            
-            // Switch between images
-            if (overlaySettings.currentImage === 1) {
-                grassOverlay.style.backgroundImage = "url('https://jjazut1.github.io/image-hosting/grassTexture2d.jpg')";
-            } else {
-                // You can replace this with an alternative URL
-                grassOverlay.style.backgroundImage = "url('https://jjazut1.github.io/image-hosting/grassTexture2d-alt.jpg')";
-            }
-        }
-        
-        // Save current settings to localStorage
-        function saveSettings() {
-            try {
-                localStorage.setItem('grassOverlaySettings', JSON.stringify(overlaySettings));
-                alert('Settings saved!');
-            } catch (e) {
-                console.error('Error saving settings:', e);
-                alert('Error saving settings. See console for details.');
-            }
-        }
-        
-        // Toggle controls visibility with 'A' key
-        function toggleControls() {
-            overlayControls.style.display = overlayControls.style.display === 'none' ? 'block' : 'none';
-        }
-        
-        // Keyboard shortcuts
-        document.addEventListener('keydown', (event) => {
-            switch(event.key.toLowerCase()) {
-                case 'a':
-                    toggleControls();
-                    break;
-                case 't':
-                    toggleOverlay();
-                    break;
-                case 'd':
-                    toggleMarkers();
-                    break;
-            }
-        });
-        
-        // Initialize overlay
-        window.addEventListener('DOMContentLoaded', () => {
-            initOverlay();
-            // Show controls by default
-            overlayControls.style.display = 'block';
-        });
-    </script>
 </body>
 </html>
