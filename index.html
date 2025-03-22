@@ -27,17 +27,17 @@
             position: absolute;
             bottom: 0;
             left: 50%;
-            width: 140%; /* Further increase width for better coverage */
-            height: 75%; /* Further reduce height */
+            width: 120%; /* Increase width to ensure full coverage */
+            height: 85%;
             background-image: url('https://jjazut1.github.io/image-hosting/grassv2nbg.png');
             background-size: cover;
             background-position: bottom center;
-            opacity: 0.95; /* Slightly increase opacity for better visibility */
+            opacity: 0.9;
             pointer-events: none; /* Let clicks pass through to the game */
             z-index: 10; /* Ensure it's above the canvas but below UI elements */
             transform-origin: center bottom;
-            /* Significantly increase translateY and scale to close the gap completely */
-            transform: translateX(-50%) translateY(45%) scale(1.35);
+            /* Adjust scale and translateY to better match the terrain */
+            transform: translateX(-50%) translateY(10%) scale(1.15);
         }
     </style>
 </head>
