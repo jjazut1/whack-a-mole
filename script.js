@@ -1245,7 +1245,7 @@ createGrassTextureOverlay();
 
 // Function to reset the scene with 2D grass texture and ensure holes are correctly placed
 function resetSceneWith2DGrass() {
-    console.log("Resetting scene with 2D grass texture...");
+    console.log("Resetting scene with optimized 2D grass texture...");
     
     // Clear existing holes and moles
     while(moles.length > 0) {
@@ -1294,7 +1294,22 @@ function resetSceneWith2DGrass() {
         scene.add(cloud);
     });
     
-    // Now add the 2D grass texture
+    // Now add the terrain base first (a flat green plane)
+    const baseGeometry = new THREE.PlaneGeometry(30, 30);
+    const baseMaterial = new THREE.MeshLambertMaterial({
+        color: 0x90EE90, // Light green
+        side: THREE.DoubleSide
+    });
+    
+    const basePlane = new THREE.Mesh(baseGeometry, baseMaterial);
+    basePlane.rotation.x = Math.PI / 2; // Rotate to lay flat
+    basePlane.position.y = -0.01; // Slightly below the grass
+    basePlane.userData = {
+        isTerrainBase: true
+    };
+    scene.add(basePlane);
+    
+    // Then add the 2D grass texture
     const textureLoader = new THREE.TextureLoader();
     
     textureLoader.load(
@@ -1307,19 +1322,25 @@ function resetSceneWith2DGrass() {
             texture.minFilter = THREE.LinearFilter;
             texture.magFilter = THREE.LinearFilter;
             
-            // Create a plane geometry for the ground
-            const geometry = new THREE.PlaneGeometry(30, 16.875); // 16:9 ratio
+            // Create a plane geometry for the ground - scale to match terrain
+            // Use a wider aspect ratio to better cover the area and position at camera angle
+            const geometry = new THREE.PlaneGeometry(30, 30);
             
             // Create a material with the loaded texture
             const material = new THREE.MeshBasicMaterial({
                 map: texture,
-                side: THREE.DoubleSide
+                side: THREE.DoubleSide,
+                transparent: true,
+                alphaTest: 0.1 // Help with edge artifacts
             });
             
             // Create the grass plane
             const grassPlane = new THREE.Mesh(geometry, material);
+            
+            // Position and rotate to match the 3D viewing angle better
             grassPlane.rotation.x = Math.PI / 2; // Rotate to lay flat
-            grassPlane.position.y = 0; // Base level
+            grassPlane.position.y = 0.01; // Just above the base terrain
+            
             grassPlane.userData = {
                 isGrassTexture: true
             };
@@ -1392,7 +1413,7 @@ function resetSceneWith2DGrass() {
     versionIndicator.style.borderRadius = '3px';
     versionIndicator.style.fontSize = '12px';
     versionIndicator.style.fontFamily = 'monospace';
-    versionIndicator.textContent = '2D Grass Texture v1.0';
+    versionIndicator.textContent = '2D Grass Texture v1.1';
     document.body.appendChild(versionIndicator);
 }
 
@@ -1449,6 +1470,173 @@ resetSceneWith2DGrass();
 // Make sure this is the LAST line in the file to override any other changes
 // Use a small delay to ensure all other code has executed
 setTimeout(() => {
-    console.log("Final scene reset with 2D grass texture...");
-    resetSceneWith2DGrass();
+    console.log("Final scene setup with 3D-enhanced 2D grass texture...");
+    create3DEnhanced2DGrass(); // Use the new enhanced approach
 }, 100);
+
+// Create a more advanced 2D/3D hybrid approach
+function create3DEnhanced2DGrass() {
+    console.log("Creating enhanced 2D/3D hybrid grass...");
+    
+    // Clear existing holes and moles to start fresh
+    while(moles.length > 0) {
+        const mole = moles.pop();
+        scene.remove(mole);
+    }
+    
+    // Clear the scene but keep lights
+    const lightsToKeep = [];
+    scene.children.forEach(child => {
+        if(child instanceof THREE.Light) {
+            lightsToKeep.push(child);
+        }
+    });
+    
+    // Remove everything from the scene except lights
+    scene.children.length = 0;
+    
+    // Add the lights back
+    lightsToKeep.forEach(light => scene.add(light));
+    
+    // If no lights were found, add default lighting
+    if(lightsToKeep.length === 0) {
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+        scene.add(ambientLight);
+        
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 1.0);
+        directionalLight.position.set(5, 10, 5);
+        scene.add(directionalLight);
+    }
+    
+    // Set scene background to match the sky in the texture
+    scene.background = new THREE.Color(0x87CEEB);
+    
+    // Add clouds at appropriate height
+    const cloudPositions = [
+        { x: -5, y: 8, z: -5 },
+        { x: 0, y: 9, z: -4 },
+        { x: 5, y: 8, z: -5 }
+    ];
+    
+    cloudPositions.forEach(pos => {
+        const cloud = createCloud();
+        cloud.position.set(pos.x, pos.y, pos.z);
+        cloud.scale.set(1, 1, 1);
+        scene.add(cloud);
+    });
+    
+    // Create a base terrain with undulation to match the texture
+    const terrainGeometry = new THREE.PlaneGeometry(30, 30, 32, 32);
+    
+    // Add gentle undulation to match the texture's appearance
+    const positionAttribute = terrainGeometry.getAttribute('position');
+    for (let i = 0; i < positionAttribute.count; i++) {
+        const x = positionAttribute.getX(i);
+        const y = positionAttribute.getY(i);
+        
+        // Apply gentle undulation
+        const z = 0.1 * Math.sin(x * 0.4) + 0.1 * Math.cos(y * 0.4);
+        positionAttribute.setZ(i, z);
+    }
+    
+    terrainGeometry.computeVertexNormals();
+    
+    const terrainMaterial = new THREE.MeshLambertMaterial({
+        color: 0x90EE90, // Light green base
+        side: THREE.DoubleSide
+    });
+    
+    const terrain = new THREE.Mesh(terrainGeometry, terrainMaterial);
+    terrain.rotation.x = Math.PI / 2;
+    terrain.position.y = -0.05;
+    terrain.userData = { isTerrain: true };
+    scene.add(terrain);
+    
+    // Now load the 2D grass texture
+    const textureLoader = new THREE.TextureLoader();
+    
+    textureLoader.load(
+        'https://jjazut1.github.io/image-hosting/grassTexture2d.jpg',
+        (texture) => {
+            console.log("✅ Grass texture loaded successfully");
+            
+            // Enhance texture quality
+            texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
+            texture.minFilter = THREE.LinearFilter;
+            texture.magFilter = THREE.LinearFilter;
+            
+            // Create 4 grass planes at different heights for a more 3D effect
+            const planeSize = 30;
+            const planes = [];
+            
+            // Create multiple semi-transparent planes to add depth
+            for (let i = 0; i < 3; i++) {
+                const grassGeometry = new THREE.PlaneGeometry(planeSize, planeSize);
+                const grassMaterial = new THREE.MeshBasicMaterial({
+                    map: texture,
+                    transparent: true,
+                    opacity: i === 0 ? 1.0 : 0.6 - (i * 0.15), // Decrease opacity for higher planes
+                    alphaTest: 0.1,
+                    side: THREE.DoubleSide
+                });
+                
+                const grassPlane = new THREE.Mesh(grassGeometry, grassMaterial);
+                grassPlane.rotation.x = Math.PI / 2;
+                grassPlane.position.y = 0.01 + (i * 0.1); // Stack upward
+                grassPlane.userData = { isGrassLayer: true, layer: i };
+                
+                // Slightly different rotation for each layer for a more dynamic effect
+                if (i > 0) {
+                    grassPlane.rotation.z = (Math.random() - 0.5) * 0.05;
+                }
+                
+                // Static optimizations
+                grassPlane.matrixAutoUpdate = false;
+                grassPlane.frustumCulled = false;
+                grassPlane.updateMatrix();
+                
+                scene.add(grassPlane);
+                planes.push(grassPlane);
+                
+                console.log(`Added grass plane layer ${i}`);
+            }
+            
+            // Now add the holes and moles
+            setupHolesAndMolesFor2D();
+            
+            // Force a render update
+            renderer.render(scene, camera);
+            
+            console.log("3D-enhanced 2D grass completed with", planes.length, "layers");
+            
+            // Override any subsequent modifications
+            window.fixGroundColor = function() {
+                console.log("fixGroundColor called but ignored - using enhanced 2D/3D grass");
+                return;
+            };
+        },
+        (xhr) => {
+            console.log(`Grass texture ${Math.round(xhr.loaded / xhr.total * 100)}% loaded`);
+        },
+        (error) => {
+            console.error("Error loading grass texture:", error);
+            // Fallback to previous method
+            resetSceneWith2DGrass();
+        }
+    );
+    
+    // Add version indicator
+    const versionIndicator = document.createElement('div');
+    versionIndicator.setAttribute('data-version-indicator', 'true');
+    versionIndicator.style.position = 'absolute';
+    versionIndicator.style.bottom = '30px';
+    versionIndicator.style.right = '10px';
+    versionIndicator.style.background = 'rgba(0,0,0,0.5)';
+    versionIndicator.style.color = 'white';
+    versionIndicator.style.padding = '5px';
+    versionIndicator.style.borderRadius = '3px';
+    versionIndicator.style.fontSize = '12px';
+    versionIndicator.style.fontFamily = 'monospace';
+    versionIndicator.textContent = '3D-Enhanced 2D Grass v1.2';
+    document.body.appendChild(versionIndicator);
+}
