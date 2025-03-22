@@ -28,18 +28,18 @@
         /* Grass overlay styles */
         #grassOverlay {
             position: absolute;
-            bottom: 0;
+            bottom: 0; /* Changed from top: 0 to bottom-justify */
             left: 0;
             width: 100%;
             height: 100%;
             background-image: url('https://jjazut1.github.io/image-hosting/Grassv1nbg.jpg');
             background-size: cover;
-            background-position: bottom center;
+            background-position: bottom center; /* Changed to bottom center */
             opacity: 0.9;
             pointer-events: none; /* Let clicks pass through to the game */
             z-index: 10; /* Above the canvas but below UI elements */
-            transform-origin: bottom center;
-            transform: scale(0.95, 0.95) translate(0px, 0px); /* Changed to separate x and y scale */
+            transform-origin: bottom center; /* Change origin to bottom center */
+            transform: scale(0.95) translate(0px, 0px); /* Changed scale to 0.95 */
         }
         
         /* Overlay adjustment panel */
@@ -161,24 +161,13 @@
         <h2>Overlay Adjustment</h2>
         
         <div class="control-row">
-            <div class="control-label">X-Scale:</div>
-            <div class="control-value" id="xScaleValue">0.95</div>
+            <div class="control-label">Scale:</div>
+            <div class="control-value" id="scaleValue">0.95</div>
             <div class="control-buttons">
-                <button class="control-button" onclick="adjustSetting('xScale', -0.01)">-</button>
-                <button class="control-button" onclick="adjustSetting('xScale', -0.05)">--</button>
-                <button class="control-button" onclick="adjustSetting('xScale', 0.05)">++</button>
-                <button class="control-button" onclick="adjustSetting('xScale', 0.01)">+</button>
-            </div>
-        </div>
-        
-        <div class="control-row">
-            <div class="control-label">Y-Scale:</div>
-            <div class="control-value" id="yScaleValue">0.95</div>
-            <div class="control-buttons">
-                <button class="control-button" onclick="adjustSetting('yScale', -0.01)">-</button>
-                <button class="control-button" onclick="adjustSetting('yScale', -0.05)">--</button>
-                <button class="control-button" onclick="adjustSetting('yScale', 0.05)">++</button>
-                <button class="control-button" onclick="adjustSetting('yScale', 0.01)">+</button>
+                <button class="control-button" onclick="adjustSetting('scale', -0.01)">-</button>
+                <button class="control-button" onclick="adjustSetting('scale', -0.05)">--</button>
+                <button class="control-button" onclick="adjustSetting('scale', 0.05)">++</button>
+                <button class="control-button" onclick="adjustSetting('scale', 0.01)">+</button>
             </div>
         </div>
         
@@ -230,8 +219,7 @@
     <script>
         // Overlay settings
         let overlaySettings = {
-            xScale: 0.95,  // Changed from single scale to separate x-scale
-            yScale: 0.95,  // Added y-scale
+            scale: 0.95, // Changed to 0.95
             x: 0,
             y: 0,
             opacity: 0.9,
@@ -251,14 +239,6 @@
             if (savedSettings) {
                 try {
                     const parsed = JSON.parse(savedSettings);
-                    
-                    // Handle migration from old settings format (with single scale) to new format (with xScale/yScale)
-                    if (parsed.scale !== undefined && parsed.xScale === undefined) {
-                        parsed.xScale = parsed.scale;
-                        parsed.yScale = parsed.scale;
-                        delete parsed.scale;
-                    }
-                    
                     overlaySettings = {...overlaySettings, ...parsed};
                     updateOverlayDisplay();
                     updateControlValues();
@@ -273,7 +253,7 @@
             if (overlaySettings.visible) {
                 grassOverlay.style.display = 'block';
                 grassOverlay.style.opacity = overlaySettings.opacity;
-                grassOverlay.style.transform = `scale(${overlaySettings.xScale}, ${overlaySettings.yScale}) translate(${overlaySettings.x}px, ${overlaySettings.y}px)`;
+                grassOverlay.style.transform = `scale(${overlaySettings.scale}) translate(${overlaySettings.x}px, ${overlaySettings.y}px)`;
             } else {
                 grassOverlay.style.display = 'none';
             }
@@ -286,8 +266,7 @@
         
         // Update the control panel values
         function updateControlValues() {
-            document.getElementById('xScaleValue').textContent = overlaySettings.xScale.toFixed(2);
-            document.getElementById('yScaleValue').textContent = overlaySettings.yScale.toFixed(2);
+            document.getElementById('scaleValue').textContent = overlaySettings.scale.toFixed(2);
             document.getElementById('xValue').textContent = overlaySettings.x;
             document.getElementById('yValue').textContent = overlaySettings.y;
             document.getElementById('opacityValue').textContent = overlaySettings.opacity.toFixed(1);
@@ -296,11 +275,8 @@
         // Adjust a setting by the specified amount
         function adjustSetting(setting, amount) {
             switch(setting) {
-                case 'xScale':
-                    overlaySettings.xScale = Math.max(0.1, Math.min(3.0, overlaySettings.xScale + amount));
-                    break;
-                case 'yScale':
-                    overlaySettings.yScale = Math.max(0.1, Math.min(3.0, overlaySettings.yScale + amount));
+                case 'scale':
+                    overlaySettings.scale = Math.max(0.1, Math.min(3.0, overlaySettings.scale + amount));
                     break;
                 case 'x':
                     overlaySettings.x += amount;
