@@ -62,27 +62,8 @@ camera.lookAt(0, 0, 0);
 // Create a global variable to store the grass texture
 let grassTexture;
 
-// Check if the optimized grass overlay flag is defined in the main script
-// If not defined in main script, default to true (use optimized overlay)
-const USE_OPTIMIZED_GRASS_OVERLAY = (typeof window.USE_OPTIMIZED_GRASS_OVERLAY !== 'undefined') 
-    ? window.USE_OPTIMIZED_GRASS_OVERLAY 
-    : true;
-
-console.log("Backup grass script loaded. USE_OPTIMIZED_GRASS_OVERLAY =", USE_OPTIMIZED_GRASS_OVERLAY);
-
-// Function to check if we should create 3D grass
-function shouldCreateGrass() {
-    if (USE_OPTIMIZED_GRASS_OVERLAY) {
-        console.log("Skipping 3D grass creation - using optimized overlay instead");
-        return false;
-    }
-    return true;
-}
-
 // Function to load grass texture (uses your existing textureLoader)
 function loadGrassTexture() {
-    if (!shouldCreateGrass()) return;
-    
     // Use the existing textureLoader instead of creating a new one
     window.textureLoader.load(
         'path/to/grass.png', // Replace with your actual path
@@ -144,8 +125,6 @@ function improveGrassAppearance() {
 
 // Function to apply the loaded texture
 function applyGrassTexture(loadedTexture) {
-    if (!shouldCreateGrass()) return;
-    
     try {
         // Remove existing grass if present
         scene.children.forEach(child => {
@@ -1273,8 +1252,6 @@ console.log("Game initialization complete - running latest version");
 
 // Create super dense integrated grass terrain with consistent coloring
 function createSuperDenseIntegratedGrassTerrain() {
-    if (!shouldCreateGrass()) return;
-    
     console.log("Creating super dense integrated grass terrain with consistent coloring...");
     
     try {
@@ -1735,8 +1712,6 @@ createSuperDenseIntegratedGrassTerrain();
 
 // Create consistently green grass with no white blades
 function createConsistentGreenGrass() {
-    if (!shouldCreateGrass()) return;
-    
     console.log("Creating grass with no white blades...");
     
     try {
@@ -2215,8 +2190,6 @@ createConsistentGreenGrass();
 
 
 function createDenseGrass() {
-    if (!shouldCreateGrass()) return;
-    
     console.log("Creating dense grass with no text...");
 
     try {
@@ -2505,8 +2478,6 @@ function removeAllVersionIndicators() {
 removeAllVersionIndicators();
 
 function enhanceGrassDensity() {
-    if (!shouldCreateGrass()) return;
-    
     console.log("Enhancing grass density and fixing white blades...");
     
     try {
