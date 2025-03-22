@@ -25,6 +25,16 @@
             font-family: Arial, sans-serif;
         }
         
+        /* Game canvas container */
+        #gameContainer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 20; /* Higher z-index to appear above the overlay */
+        }
+        
         /* Grass overlay styles */
         #grassOverlay {
             position: absolute;
@@ -37,9 +47,9 @@
             background-position: bottom center;
             opacity: 0.9;
             pointer-events: none; /* Let clicks pass through to the game */
-            z-index: 10; /* Above the canvas but below UI elements */
+            z-index: 10; /* Below the game canvas */
             transform-origin: bottom center;
-            transform: scale(0.95, 0.95) translate(0px, 0px); /* Changed to separate x and y scale */
+            transform: scale(0.95, 0.95) translate(0px, 0px);
         }
         
         /* Overlay adjustment panel */
@@ -52,7 +62,7 @@
             color: white;
             padding: 20px;
             border-radius: 5px;
-            z-index: 100;
+            z-index: 100; /* Keep the controls on top of everything */
             width: 600px;
             box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
             display: none;
@@ -141,12 +151,15 @@
             color: white;
             font-weight: bold;
             pointer-events: none;
-            z-index: 20;
+            z-index: 30; /* Above the game canvas */
             display: none;
         }
     </style>
 </head>
 <body>
+    <!-- Container for the Three.js canvas -->
+    <div id="gameContainer"></div>
+    
     <!-- Grass overlay div -->
     <div id="grassOverlay"></div>
     
@@ -224,14 +237,23 @@
     </div>
     
     <!-- Main game script -->
-    <script type="module" src="script.js"></script>
+    <script type="module">
+        // Import the main game script
+        import * as game from './script.js';
+        
+        // Redirect the renderer to the container
+        window.addEventListener('DOMContentLoaded', () => {
+            // This will be used in the script.js file
+            window.gameContainer = document.getElementById('gameContainer');
+        });
+    </script>
     
     <!-- Overlay controller script -->
     <script>
         // Overlay settings
         let overlaySettings = {
-            xScale: 0.95,  // Changed from single scale to separate x-scale
-            yScale: 0.95,  // Added y-scale
+            xScale: 0.95,
+            yScale: 0.95,
             x: 0,
             y: 0,
             opacity: 0.9,
