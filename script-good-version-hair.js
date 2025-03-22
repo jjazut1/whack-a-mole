@@ -1,6 +1,23 @@
 // Import Three.js (Make sure you include Three.js in your HTML)
 import * as THREE from 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.module.min.js';
 
+// Check if the optimized grass overlay flag is defined in the main script
+// If not defined in main script, default to true (use optimized overlay)
+const USE_OPTIMIZED_GRASS_OVERLAY = (typeof window.USE_OPTIMIZED_GRASS_OVERLAY !== 'undefined') 
+    ? window.USE_OPTIMIZED_GRASS_OVERLAY 
+    : true;
+
+console.log("Hair script loaded. USE_OPTIMIZED_GRASS_OVERLAY =", USE_OPTIMIZED_GRASS_OVERLAY);
+
+// Function to check if we should create grass
+function shouldCreateGrass() {
+    if (USE_OPTIMIZED_GRASS_OVERLAY) {
+        console.log("Skipping grass creation - using optimized overlay instead");
+        return false;
+    }
+    return true;
+}
+
 // Add this at the beginning of your script to check Three.js version
 console.log("Three.js version:", THREE.REVISION);
 

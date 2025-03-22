@@ -4,6 +4,9 @@ import * as THREE from 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/thr
 // Add this at the beginning of your script to check Three.js version
 console.log("Three.js version:", THREE.REVISION);
 
+// Flag to indicate we're using the optimized 2D grass overlay
+const USE_OPTIMIZED_GRASS_OVERLAY = true;
+
 // Scene setup
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x87CEEB);
@@ -164,7 +167,7 @@ function setupHolesAndMoles() {
         { x: 2, z: 2, rotation: -Math.PI * 0.75 - 0.175, description: "Back Right" }
     ];
 
-    holes.forEach(pos => {
+holes.forEach(pos => {
         console.log(`Creating hole at ${pos.description}`);
 
         // Create hole
@@ -190,9 +193,9 @@ function setupHolesAndMoles() {
         
         mole.userData.isUp = false;
         mole.userData.isMoving = false;
-        scene.add(mole);
-        moles.push(mole);
-    });
+    scene.add(mole);
+    moles.push(mole);
+});
 }
 
 // Initialize scene
@@ -770,7 +773,7 @@ console.log("Scene after fixes:", scene);
 function zoomInCamera() {
     // Move camera closer to the scene
     camera.position.set(0, 5, 6); // Reduced z value to zoom in
-    camera.lookAt(0, 0, 0);
+camera.lookAt(0, 0, 0);
     console.log("Camera zoomed in:", camera.position);
 }
 
@@ -1111,116 +1114,181 @@ addVersionIndicator();
 // You can also add this at the end of your main code
 console.log("Game initialization complete - running latest version");
 
-// Function to use pre-generated grass texture from JPG
-function usePrerenderedGrassBackground() {
-    console.log("Setting up pre-rendered grass background...");
+// Function to apply the pre-rendered grass texture overlay
+function applyGrassTextureOverlay() {
+    // Check if we should use the optimized grass overlay
+    if (!USE_OPTIMIZED_GRASS_OVERLAY) {
+        console.log("Skipping grass texture overlay - flag is disabled");
+        return;
+    }
+    
+    console.log("Applying pre-rendered grass texture overlay...");
     
     try {
-        // Remove existing grass if any
-        scene.children.forEach(child => {
-            if (child.userData && (child.userData.isGrass || child.userData.isGrassChunk)) {
-                scene.remove(child);
+        // First, remove any existing grass objects to improve performance
+        let grassRemoved = 0;
+        scene.traverse(object => {
+            if (object.userData && 
+                (object.userData.isGrass || object.userData.isGrassChunk || object.userData.isGrassBlade)) {
+                if (object.parent) {
+                    object.parent.remove(object);
+                    grassRemoved++;
+                }
             }
         });
+        console.log(`Removed ${grassRemoved} existing grass objects`);
         
-        // Create a textured plane that will serve as our background
+        // Load the pre-rendered grass texture
         const textureLoader = new THREE.TextureLoader();
         textureLoader.load(
             'https://jjazut1.github.io/image-hosting/grassTexture2d.jpg',
-            (texture) => {
-                // Create a plane with the image as texture
-                const aspectRatio = 16/9; // Given ratio 1690 x 1080
-                const planeWidth = 40; // Larger than the terrain to ensure full coverage
-                const planeHeight = planeWidth / aspectRatio;
+            function(texture) {
+                console.log("Grass texture loaded successfully");
                 
-                const planeGeometry = new THREE.PlaneGeometry(planeWidth, planeHeight);
-                const planeMaterial = new THREE.MeshBasicMaterial({
+                // Create a plane geometry that matches the terrain size
+                const planeGeometry = new THREE.PlaneGeometry(30, 30, 1, 1);
+                
+                // Create material with the loaded texture
+                const material = new THREE.MeshBasicMaterial({
                     map: texture,
+                    transparent: false,
                     side: THREE.DoubleSide
                 });
                 
-                const grassPlane = new THREE.Mesh(planeGeometry, planeMaterial);
+                // Create the textured plane
+                const grassPlane = new THREE.Mesh(planeGeometry, material);
                 
-                // Position the plane to cover the ground
-                // We place it slightly below the terrain to avoid z-fighting
-                grassPlane.position.set(0, -0.4, 0);
-                grassPlane.rotation.x = Math.PI / 2; // Rotate to horizontal
+                // Position it just above the terrain
+                grassPlane.rotation.x = Math.PI / 2;
+                grassPlane.position.y = 0.01;
                 
-                // Set custom user data for identification
-                grassPlane.userData.isGrassBackground = true;
+                // Mark it as grass so we can identify it later
+                grassPlane.userData.isGrassOverlay = true;
+                grassPlane.userData.isGrass = true;
+                grassPlane.name = "GrassTextureOverlay";
                 
                 // Add to scene
                 scene.add(grassPlane);
                 
-                // Make this static for maximum performance
-                grassPlane.matrixAutoUpdate = false;
-                grassPlane.updateMatrix();
-                
-                // Disable frustum culling (ensures it's always rendered)
-                grassPlane.frustumCulled = false;
-                
-                console.log("Pre-rendered grass background added successfully");
-                
-                // Force render update
+                // Force a render update
                 if (typeof renderer !== 'undefined') {
                     renderer.render(scene, camera);
                 }
+                
+                console.log("Grass texture overlay applied successfully");
+                
+                // Add a version indicator
+                const versionIndicator = document.createElement('div');
+                versionIndicator.setAttribute('data-version-indicator', 'true');
+                versionIndicator.style.position = 'absolute';
+                versionIndicator.style.bottom = '10px';
+                versionIndicator.style.right = '10px';
+                versionIndicator.style.background = 'rgba(0,0,0,0.5)';
+                versionIndicator.style.color = 'white';
+                versionIndicator.style.padding = '5px';
+                versionIndicator.style.borderRadius = '3px';
+                versionIndicator.style.fontSize = '12px';
+                versionIndicator.style.fontFamily = 'monospace';
+                versionIndicator.textContent = 'Optimized 2D Grass v1.0';
+                document.body.appendChild(versionIndicator);
             },
             undefined, // onProgress callback not needed
-            (error) => {
-                console.error("Error loading grass texture:", error);
-                // Fallback to terrain if texture loading fails
-                const terrain = createCustomTerrain();
-                scene.add(terrain);
+            function(error) {
+                console.error('Error loading grass texture:', error);
             }
         );
-        
-        return true;
     } catch (e) {
-        console.error("Error creating pre-rendered grass background:", e);
-        return false;
+        console.error("Error applying grass texture overlay:", e);
     }
 }
 
-// Function to hide UI elements for clean screenshot
-function hideUIElements() {
-    // Hide score element
-    if (scoreElement) {
-        scoreElement.style.display = 'none';
+// Add a guard function to prevent other grass creation functions from running
+function createGrassIfNeeded(createFunction) {
+    // If using the optimized overlay, don't create 3D grass
+    if (USE_OPTIMIZED_GRASS_OVERLAY) {
+        console.log("Skipping 3D grass creation - using optimized overlay instead");
+        return;
     }
     
-    // Hide timer element
-    if (timerElement) {
-        timerElement.style.display = 'none';
+    // Otherwise, call the original function
+    if (typeof createFunction === 'function') {
+        createFunction();
     }
-    
-    // Hide instructions element
-    if (instructionsElement) {
-        instructionsElement.style.display = 'none';
-    }
-    
-    // Hide version indicators
-    document.querySelectorAll('div').forEach(div => {
-        // Find elements that match patterns of version indicators
-        if ((div.style.position === 'absolute' && 
-             div.style.bottom === '10px' && 
-             div.style.right === '10px') ||
-            (div.textContent && div.textContent.match(/v\d+\.\d+\.\d+/)) ||
-            (div.getAttribute('data-version-indicator'))) {
-            div.style.display = 'none';
-        }
-    });
-    
-    // Remove progress bars if any
-    document.querySelectorAll('div[style*="backgroundColor"]').forEach(div => {
-        if (div.style.position === 'absolute' && div.style.bottom) {
-            div.style.display = 'none';
-        }
-    });
-    
-    console.log("UI elements hidden for clean view");
 }
 
-// Call the functions
-usePrerenderedGrassBackground();
-hideUIElements();
+// Adjust the terrain to be invisible or semi-transparent since the overlay will show the terrain
+function adjustTerrainForOverlay() {
+    // Only adjust if using the optimized overlay
+    if (!USE_OPTIMIZED_GRASS_OVERLAY) {
+        return;
+    }
+    
+    scene.traverse(object => {
+        // Find the main terrain plane (large plane, not the holes)
+        if (object.geometry && 
+            (object.geometry.type === 'PlaneGeometry' || object.geometry.type === 'PlaneBufferGeometry') && 
+            object.geometry.parameters && 
+            object.geometry.parameters.width >= 30 &&
+            object.rotation.x === Math.PI / 2) {
+            
+            console.log("Found terrain object to adjust:", object);
+            
+            // Make the terrain invisible or adjust its color to match the overlay base
+            // Option 1: Make it invisible
+            // object.visible = false;
+            
+            // Option 2: Make it semi-transparent
+            object.material.transparent = true;
+            object.material.opacity = 0.5;
+            
+            // Option 3: Change color to match the overlay base color
+            object.material.color.set(0x90EE90); // Light green
+            
+            console.log("Adjusted terrain for overlay");
+        }
+    });
+}
+
+// Call these functions after scene initialization
+function initializeOptimizedScene() {
+    // Wait a short time to ensure scene is set up
+    setTimeout(() => {
+        // Only apply if the flag is true
+        if (USE_OPTIMIZED_GRASS_OVERLAY) {
+            applyGrassTextureOverlay();
+            adjustTerrainForOverlay();
+        }
+    }, 100);
+}
+
+// Call this after other initialization
+initializeOptimizedScene();
+
+// Override any other grass creation functions from other scripts that might be included
+if (window.createSuperDenseIntegratedGrassTerrain) {
+    const originalFunction = window.createSuperDenseIntegratedGrassTerrain;
+    window.createSuperDenseIntegratedGrassTerrain = function() {
+        createGrassIfNeeded(originalFunction);
+    };
+}
+
+if (window.createConsistentGreenGrass) {
+    const originalFunction = window.createConsistentGreenGrass;
+    window.createConsistentGreenGrass = function() {
+        createGrassIfNeeded(originalFunction);
+    };
+}
+
+if (window.createDenseGrass) {
+    const originalFunction = window.createDenseGrass;
+    window.createDenseGrass = function() {
+        createGrassIfNeeded(originalFunction);
+    };
+}
+
+if (window.enhanceGrassDensity) {
+    const originalFunction = window.enhanceGrassDensity;
+    window.enhanceGrassDensity = function() {
+        createGrassIfNeeded(originalFunction);
+    };
+}
