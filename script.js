@@ -1110,3 +1110,69 @@ addVersionIndicator();
 
 // You can also add this at the end of your main code
 console.log("Game initialization complete - running latest version");
+
+function createGrassTextureOverlay() {
+    console.log("Creating grass texture overlay from pre-generated image...");
+    
+    try {
+        // Remove any existing grass if present
+        scene.children.forEach(child => {
+            if (child.userData && (child.userData.isGrass || child.userData.isGrassChunk)) {
+                scene.remove(child);
+            }
+        });
+        
+        // Create a texture loader
+        const textureLoader = new THREE.TextureLoader();
+        
+        // Load the pre-generated grass texture
+        textureLoader.load(
+            'https://jjazut1.github.io/image-hosting/grassTexture2d.jpg',
+            (texture) => {
+                // Create a plane geometry for the ground
+                const geometry = new THREE.PlaneGeometry(30, 16.875); // 16:9 ratio (30 width * 9/16 = 16.875 height)
+                
+                // Create a material with the loaded texture
+                const material = new THREE.MeshBasicMaterial({
+                    map: texture,
+                    side: THREE.DoubleSide
+                });
+                
+                // Create the grass plane
+                const grassPlane = new THREE.Mesh(geometry, material);
+                grassPlane.rotation.x = Math.PI / 2; // Rotate to lay flat
+                grassPlane.position.y = 0.01; // Slightly above the ground to prevent z-fighting
+                grassPlane.userData.isGrass = true;
+                
+                // Add to scene
+                scene.add(grassPlane);
+                
+                // Force frustum culling off for the plane
+                grassPlane.frustumCulled = false;
+                
+                // Make static (no need to update matrix every frame)
+                grassPlane.matrixAutoUpdate = false;
+                grassPlane.updateMatrix();
+                
+                console.log("Grass texture overlay added successfully");
+                
+                // Force a render update
+                if (typeof renderer !== 'undefined') {
+                    renderer.render(scene, camera);
+                }
+            },
+            undefined, // onProgress callback not needed
+            (error) => {
+                console.error("Error loading grass texture:", error);
+            }
+        );
+        
+        return true;
+    } catch (e) {
+        console.error("Error creating grass overlay:", e);
+        return false;
+    }
+}
+
+// Call the function to replace the 3D grass with the texture overlay
+createGrassTextureOverlay();
