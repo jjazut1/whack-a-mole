@@ -14,9 +14,6 @@ renderer.sortObjects = true;
 renderer.setClearColor(0x87CEEB, 1);
 document.body.appendChild(renderer.domElement);
 
-// Expose camera globally for debugging
-window.gameCamera = camera;
-
 // Initialize arrays and game state
 const moles = [];
 let score = 0;
