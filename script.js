@@ -14,43 +14,6 @@ renderer.sortObjects = true;
 renderer.setClearColor(0x87CEEB, 1);
 document.body.appendChild(renderer.domElement);
 
-// Set z-index for the renderer's canvas to place it above the grass overlay
-renderer.domElement.style.position = 'absolute';
-renderer.domElement.style.zIndex = '2';  // Match the value in CSS - above grass overlay
-renderer.domElement.style.top = '0';
-renderer.domElement.style.left = '0';
-
-// Add this right after the renderer setup
-// Debugging function to check if the grass overlay image is loading
-function checkGrassOverlayImage() {
-    const grassOverlay = document.getElementById('grassOverlay');
-    
-    // Create a test image to check if the URL is accessible
-    const testImg = new Image();
-    testImg.onload = function() {
-        console.log("Grass image loaded successfully!");
-        // Make sure the overlay has the correct image
-        grassOverlay.style.backgroundImage = "url('https://jjazut1.github.io/image-hosting/grassTexture2d.jpg')";
-        grassOverlay.style.display = 'block';
-    };
-    
-    testImg.onerror = function() {
-        console.error("Failed to load grass image!");
-        // Try an alternative image
-        grassOverlay.style.backgroundImage = "url('https://images.pexels.com/photos/413195/pexels-photo-413195.jpeg')";
-        grassOverlay.style.backgroundColor = 'green'; // Fallback color
-    };
-    
-    testImg.src = 'https://jjazut1.github.io/image-hosting/grassTexture2d.jpg';
-    
-    // Log overlay properties
-    console.log("Grass Overlay Element:", grassOverlay);
-    console.log("Computed Style:", window.getComputedStyle(grassOverlay));
-}
-
-// Call the function after a short delay to ensure DOM is ready
-setTimeout(checkGrassOverlayImage, 1000);
-
 // Initialize arrays and game state
 const moles = [];
 let score = 0;
@@ -203,7 +166,7 @@ function setupHolesAndMoles() {
         { x: 2, z: 2.5, rotation: -Math.PI * 0.75 - 0.175, description: "Back Right" }
     ];
 
-    holes.forEach(pos => {
+holes.forEach(pos => {
         console.log(`Creating hole at ${pos.description}`);
 
         // Create hole
@@ -229,9 +192,9 @@ function setupHolesAndMoles() {
         
         mole.userData.isUp = false;
         mole.userData.isMoving = false;
-        scene.add(mole);
-        moles.push(mole);
-    });
+    scene.add(mole);
+    moles.push(mole);
+});
 }
 
 // Initialize scene
