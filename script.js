@@ -12,7 +12,7 @@ const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.sortObjects = true;
 renderer.setClearColor(0x87CEEB, 1);
-document.body.appendChild(renderer.domElement);
+document.getElementById('canvas-container').appendChild(renderer.domElement);
 
 // Initialize arrays and game state
 const moles = [];
