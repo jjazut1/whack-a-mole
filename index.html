@@ -34,15 +34,27 @@
             background-position: bottom center;
             opacity: 0.9;
             pointer-events: none; /* Let clicks pass through to the game */
-            z-index: -1; /* Behind the THREE.js canvas */
+            z-index: 1; /* Behind the THREE.js canvas */
             transform-origin: center bottom;
             transform: translateX(-50%) translateY(5%) scale(1.2);
+            /* Debug styles */
+            border: 3px solid red; /* Add a visible border for debugging */
+        }
+        
+        /* Add a style for the canvas to ensure proper stacking */
+        canvas {
+            position: absolute !important;
+            top: 0 !important;
+            left: 0 !important;
+            z-index: 2 !important; /* Higher value to ensure it's above the grass */
         }
     </style>
 </head>
 <body>
     <!-- Add this div for the grass overlay -->
-    <div id="grassOverlay"></div>
+    <div id="grassOverlay">
+        <div style="color: red; font-size: 24px; font-weight: bold; position: absolute; top: 10px; left: 10px; text-shadow: 1px 1px 1px white;">GRASS OVERLAY DEBUG</div>
+    </div>
     
     <script type="module" src="script.js"></script>
 </body>
