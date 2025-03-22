@@ -1110,3 +1110,117 @@ addVersionIndicator();
 
 // You can also add this at the end of your main code
 console.log("Game initialization complete - running latest version");
+
+// Function to use pre-generated grass texture from JPG
+function usePrerenderedGrassBackground() {
+    console.log("Setting up pre-rendered grass background...");
+    
+    try {
+        // Remove existing grass if any
+        scene.children.forEach(child => {
+            if (child.userData && (child.userData.isGrass || child.userData.isGrassChunk)) {
+                scene.remove(child);
+            }
+        });
+        
+        // Create a textured plane that will serve as our background
+        const textureLoader = new THREE.TextureLoader();
+        textureLoader.load(
+            'https://jjazut1.github.io/image-hosting/grassTexture2d.jpg',
+            (texture) => {
+                // Create a plane with the image as texture
+                const aspectRatio = 16/9; // Given ratio 1690 x 1080
+                const planeWidth = 40; // Larger than the terrain to ensure full coverage
+                const planeHeight = planeWidth / aspectRatio;
+                
+                const planeGeometry = new THREE.PlaneGeometry(planeWidth, planeHeight);
+                const planeMaterial = new THREE.MeshBasicMaterial({
+                    map: texture,
+                    side: THREE.DoubleSide
+                });
+                
+                const grassPlane = new THREE.Mesh(planeGeometry, planeMaterial);
+                
+                // Position the plane to cover the ground
+                // We place it slightly below the terrain to avoid z-fighting
+                grassPlane.position.set(0, -0.4, 0);
+                grassPlane.rotation.x = Math.PI / 2; // Rotate to horizontal
+                
+                // Set custom user data for identification
+                grassPlane.userData.isGrassBackground = true;
+                
+                // Add to scene
+                scene.add(grassPlane);
+                
+                // Make this static for maximum performance
+                grassPlane.matrixAutoUpdate = false;
+                grassPlane.updateMatrix();
+                
+                // Disable frustum culling (ensures it's always rendered)
+                grassPlane.frustumCulled = false;
+                
+                console.log("Pre-rendered grass background added successfully");
+                
+                // Force render update
+                if (typeof renderer !== 'undefined') {
+                    renderer.render(scene, camera);
+                }
+            },
+            undefined, // onProgress callback not needed
+            (error) => {
+                console.error("Error loading grass texture:", error);
+                // Fallback to terrain if texture loading fails
+                const terrain = createCustomTerrain();
+                scene.add(terrain);
+            }
+        );
+        
+        return true;
+    } catch (e) {
+        console.error("Error creating pre-rendered grass background:", e);
+        return false;
+    }
+}
+
+// Function to hide UI elements for clean screenshot
+function hideUIElements() {
+    // Hide score element
+    if (scoreElement) {
+        scoreElement.style.display = 'none';
+    }
+    
+    // Hide timer element
+    if (timerElement) {
+        timerElement.style.display = 'none';
+    }
+    
+    // Hide instructions element
+    if (instructionsElement) {
+        instructionsElement.style.display = 'none';
+    }
+    
+    // Hide version indicators
+    document.querySelectorAll('div').forEach(div => {
+        // Find elements that match patterns of version indicators
+        if ((div.style.position === 'absolute' && 
+             div.style.bottom === '10px' && 
+             div.style.right === '10px') ||
+            (div.textContent && div.textContent.match(/v\d+\.\d+\.\d+/)) ||
+            (div.getAttribute('data-version-indicator'))) {
+            div.style.display = 'none';
+        }
+    });
+    
+    // Remove progress bars if any
+    document.querySelectorAll('div[style*="backgroundColor"]').forEach(div => {
+        if (div.style.position === 'absolute' && div.style.bottom) {
+            div.style.display = 'none';
+        }
+    });
+    
+    console.log("UI elements hidden for clean view");
+}
+
+// Call the functions
+usePrerenderedGrassBackground();
+hideUIElements();
