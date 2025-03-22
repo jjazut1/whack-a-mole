@@ -160,10 +160,10 @@ function setupHolesAndMoles() {
     // Adjust the Z values to move holes more toward the bottom edge of the screen
     // Increasing Z values moves the holes further down/away from the camera
     const holes = [
-        { x: -1.5, z: 0, rotation: Math.PI * 0.25 + 0.175, description: "back Left" },
-        { x: 2, z: 0, rotation: -Math.PI * 0.25 - 0.175, description: "Front Right" },
-        { x: -2, z: 3, rotation: Math.PI * 0.75 + 0.175, description: "front Left" },
-        { x: 2, z: 3.5, rotation: -Math.PI * 0.75 - 0.175, description: "Back Right" }
+        { x: -1.5, z: -1, rotation: Math.PI * 0.25 + 0.175, description: "back Left" },
+        { x: 2, z: -1, rotation: -Math.PI * 0.25 - 0.175, description: "Front Right" },
+        { x: -2, z: 2, rotation: Math.PI * 0.75 + 0.175, description: "front Left" },
+        { x: 2, z: 2.5, rotation: -Math.PI * 0.75 - 0.175, description: "Back Right" }
     ];
 
     holes.forEach(pos => {
