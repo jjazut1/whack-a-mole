@@ -257,10 +257,7 @@ function positionDecorativeOverlay() {
             // Apply offset to center the larger holes under the grass holes
             let posX = pos.x;
             
-            // Move the bottom right hole (index 3) 5px to the left
-            if (index === 3) {
-                posX -= 5;
-            }
+            
             
             const percentX = ((posX - offsetX) / window.innerWidth) * 100;
             const percentY = ((pos.y - offsetY) / window.innerHeight) * 100;
