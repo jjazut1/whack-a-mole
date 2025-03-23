@@ -60,15 +60,15 @@ const wordCategories = {
     },
     ch_words: {
         title: "Words with 'ch'",
-        words: ['such', 'much', 'lunch']
+        words: ['such', 'much', 'lunch','chum','chip','chap','bunch','hunch','munch','punch']
     },
     th_words: {
         title: "Words with 'th'",
-        words: ['that', 'than', 'with', 'them']
+        words: ['that', 'than', 'with', 'them','then','thin','thing','thank','the','this','with','moth','path','math']
     },
     wh_words: {
         title: "Words with 'wh'",
-        words: ['when', 'which']
+        words: ['when', 'which','whiz','whim','whip']
     }
 };
 
