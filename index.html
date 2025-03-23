@@ -65,24 +65,23 @@
             /* Remove debug border */
         }
         
-        /* Add hole markers for alignment */
+        /* Add hole markers for alignment - repurposing as dirt holes */
         .hole-marker {
             position: absolute;
-            width: 50px;
-            height: 50px;
-            background-color: rgba(0, 0, 0, 0.1);
-            border: 2px dashed rgba(0, 0, 0, 0.5);
+            width: 70px; /* Larger size to represent hole */
+            height: 70px; /* Larger size to represent hole */
+            background-color: #3E2723; /* Dark brown color for dirt */
+            border: none; /* Remove the dashed border */
             border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: rgba(0, 0, 0, 0.7);
-            font-size: 18px;
-            font-weight: bold;
-            pointer-events: none;
-            z-index: 4; /* Increased to be above the canvas */
-            /* Hide hole markers */
-            display: none;
+            /* Empty content - no numbers */
+            color: transparent;
+            font-size: 0px; /* Hide text */
+            pointer-events: none; /* Let clicks pass through */
+            z-index: 2; /* Between canvas (3) and grass (1) */
+            /* Make hole markers visible */
+            display: block;
+            /* Add slight shadow for depth */
+            box-shadow: inset 0px 5px 10px rgba(0, 0, 0, 0.5);
         }
         
         /* Add a fallback image element in case background-image doesn't work */
@@ -132,6 +131,9 @@
             } else {
                 console.log('Background image loaded successfully');
             }
+
+            // Position hole markers as dirt holes
+            // This will be called automatically by positionDecorativeOverlay() in script.js
         }, 1000);
     });
     </script>

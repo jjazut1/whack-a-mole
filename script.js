@@ -245,27 +245,6 @@ function positionDecorativeOverlay() {
     
     console.log('Hole screen positions:', holeScreenPositions);
     
-    // Create visual markers for debugging if needed
-    if (false) { // Set to true to see debug markers
-        holeScreenPositions.forEach((pos, index) => {
-            const marker = document.createElement('div');
-            marker.style.position = 'absolute';
-            marker.style.left = pos.x + 'px';
-            marker.style.top = pos.y + 'px';
-            marker.style.width = '20px';
-            marker.style.height = '20px';
-            marker.style.borderRadius = '50%';
-            marker.style.backgroundColor = 'red';
-            marker.style.zIndex = '1000';
-            marker.textContent = index + 1;
-            marker.style.display = 'flex';
-            marker.style.alignItems = 'center';
-            marker.style.justifyContent = 'center';
-            marker.style.color = 'white';
-            document.body.appendChild(marker);
-        });
-    }
-    
     // Position the markers in the overlay to match hole positions
     const markers = document.querySelectorAll('.hole-marker');
     holeScreenPositions.forEach((pos, index) => {
@@ -276,10 +255,31 @@ function positionDecorativeOverlay() {
             
             markers[index].style.left = percentX + '%';
             markers[index].style.top = percentY + '%';
-            markers[index].textContent = (index + 1) + '';
+            
+            // Add subtle color variations to each dirt hole for realism
+            // Create slightly different brown shades for each hole
+            const brownBase = [62, 39, 35]; // #3E2723 in RGB
+            const randomOffset = [
+                Math.floor(Math.random() * 10) - 5,
+                Math.floor(Math.random() * 8) - 4,
+                Math.floor(Math.random() * 6) - 3
+            ];
+            
+            const randomBrown = [
+                Math.max(30, Math.min(80, brownBase[0] + randomOffset[0])),
+                Math.max(20, Math.min(50, brownBase[1] + randomOffset[1])),
+                Math.max(15, Math.min(40, brownBase[2] + randomOffset[2]))
+            ];
+            
+            markers[index].style.backgroundColor = `rgb(${randomBrown[0]}, ${randomBrown[1]}, ${randomBrown[2]})`;
         }
     });
 }
+
+// Call positionDecorativeOverlay on load to ensure dirt holes are visible
+window.addEventListener('load', function() {
+    setTimeout(positionDecorativeOverlay, 500);
+});
 
 // Initialize scene
 setupScene();
