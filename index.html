@@ -16,6 +16,7 @@
             -webkit-user-select: none; /* Prevent text selection on iOS */
             -webkit-touch-callout: none; /* Prevent callout on long press */
             -webkit-tap-highlight-color: transparent; /* Remove tap highlight */
+            font-family: 'Comic Neue', sans-serif;
         }
         
         /* Hide UI elements as you already have */
@@ -122,9 +123,94 @@
             margin: 0 -3px -3px -3px;
             display: none; /* Hidden by default, will show via JS if needed */
         }
+        
+        /* Game selection UI styles */
+        #game-selection {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 90%;
+            max-width: 500px;
+            background-color: rgba(255, 255, 255, 0.9);
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+            z-index: 10;
+            font-family: 'Comic Neue', sans-serif;
+        }
+        
+        #game-selection h1 {
+            text-align: center;
+            color: #4a7c59;
+            margin-top: 0;
+            font-size: 28px;
+        }
+        
+        .game-option {
+            display: block;
+            width: 100%;
+            background-color: #90EE90;
+            border: none;
+            border-radius: 15px;
+            padding: 15px;
+            margin: 10px 0;
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: left;
+            font-family: inherit;
+        }
+        
+        .game-option:hover, .game-option:focus {
+            background-color: #7BC67B;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .game-option:active {
+            transform: translateY(1px);
+        }
+        
+        /* Game title display */
+        #game-title-display {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 28px;
+            font-weight: bold;
+            color: #00008B;
+            text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.7);
+            z-index: 5;
+            text-align: center;
+            font-family: 'Comic Neue', sans-serif;
+            background-color: rgba(255, 255, 255, 0.5);
+            padding: 5px 15px;
+            border-radius: 10px;
+        }
     </style>
 </head>
 <body>
+    <!-- Game selection UI -->
+    <div id="game-selection">
+        <h1>Choose a Word Game</h1>
+        <button class="game-option" data-game="short_a">Short 'a' Words</button>
+        <button class="game-option" data-game="short_e">Short 'e' Words</button>
+        <button class="game-option" data-game="short_i">Short 'i' Words</button>
+        <button class="game-option" data-game="short_o">Short 'o' Words</button>
+        <button class="game-option" data-game="short_u">Short 'u' Words</button>
+        <button class="game-option" data-game="sh_words">Words with 'sh'</button>
+        <button class="game-option" data-game="ch_words">Words with 'ch'</button>
+        <button class="game-option" data-game="th_words">Words with 'th'</button>
+        <button class="game-option" data-game="wh_words">Words with 'wh'</button>
+    </div>
+    
+    <!-- Game title display -->
+    <div id="game-title-display"></div>
+
     <!-- Add hole markers for alignment - these are the dirt holes -->
     <div class="hole-marker" id="marker1">1</div>
     <div class="hole-marker" id="marker2">2</div>

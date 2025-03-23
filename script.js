@@ -32,11 +32,138 @@ let score = 0;
 let gameActive = false;
 let timeRemaining = 30;
 
-// Add word lists
-const shortAWords = ['had', 'ran', 'and', 'man', 'can', 'at', 'am', 'an', 'last', 'past', 'fast', 'ask', 'land', 'hand', 'stand'];
-const otherWords = ['hit', 'hot', 'but', 'set', 'sit', 'let', 'pot', 'put', 'met'];
+// Define all word categories with their word lists
+const wordCategories = {
+    short_a: {
+        title: "Short 'a' Words",
+        words: ['had', 'ran', 'and', 'man', 'can', 'at', 'am', 'an', 'last', 'past', 'fast', 'ask', 'land', 'hand', 'stand']
+    },
+    short_e: {
+        title: "Short 'e' Words",
+        words: ['men', 'set', 'let', 'get', 'red', 'end', 'yet', 'yes', 'met', 'ten', 'bed', 'went', 'send', 'sent', 'left', 'kept', 'help', 'best', 'west']
+    },
+    short_i: {
+        title: "Short 'i' Words",
+        words: ['sit', 'him', 'hid', 'did', 'six', 'fix', 'in', 'if', 'it', 'trip', 'milk']
+    },
+    short_o: {
+        title: "Short 'o' Words",
+        words: ['top', 'got', 'box', 'not', 'on', 'dog', 'lot', 'drop', 'spot', 'hot', 'stop', 'lost', 'soft', 'from']
+    },
+    short_u: {
+        title: "Short 'u' Words",
+        words: ['bug', 'run', 'fun', 'sun', 'cut', 'but', 'up', 'must', 'jump', 'just']
+    },
+    sh_words: {
+        title: "Words with 'sh'",
+        words: ['ship', 'shop', 'shut', 'wish', 'dish', 'fish', 'rush']
+    },
+    ch_words: {
+        title: "Words with 'ch'",
+        words: ['such', 'much', 'lunch']
+    },
+    th_words: {
+        title: "Words with 'th'",
+        words: ['that', 'than', 'with', 'them']
+    },
+    wh_words: {
+        title: "Words with 'wh'",
+        words: ['when', 'which']
+    }
+};
+
+// Variables to track the current game category
+let currentCategory = 'short_a';
+let correctWords = wordCategories.short_a.words;
+let incorrectWords = [];
+let isCorrectWord = false;
 let currentWord = '';
-let isShortAWord = false;
+
+// Generate incorrect words based on the selected category
+function generateIncorrectWords(selectedCategory) {
+    const allWords = [];
+    
+    // Collect words from all other categories
+    Object.keys(wordCategories).forEach(category => {
+        if (category !== selectedCategory) {
+            allWords.push(...wordCategories[category].words);
+        }
+    });
+    
+    // Shuffle and select the same number of words as in the correct category
+    return shuffleArray(allWords).slice(0, correctWords.length);
+}
+
+// Fisher-Yates shuffle algorithm
+function shuffleArray(array) {
+    const newArray = [...array];
+    for (let i = newArray.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+    }
+    return newArray;
+}
+
+// Set up game selection UI
+function initGameSelection() {
+    const gameSelection = document.getElementById('game-selection');
+    const gameOptions = document.querySelectorAll('.game-option');
+    const gameTitleDisplay = document.getElementById('game-title-display');
+    
+    // Initially hide title display and show selection UI
+    gameTitleDisplay.style.display = 'none';
+    gameSelection.style.display = 'block';
+    
+    // Set up event listeners for game options
+    gameOptions.forEach(option => {
+        option.addEventListener('click', function() {
+            const selectedGame = this.getAttribute('data-game');
+            
+            // Set current category
+            currentCategory = selectedGame;
+            correctWords = wordCategories[selectedGame].words;
+            incorrectWords = generateIncorrectWords(selectedGame);
+            
+            // Hide selection UI
+            gameSelection.style.display = 'none';
+            
+            // Set and show the game title
+            gameTitleDisplay.textContent = wordCategories[selectedGame].title;
+            gameTitleDisplay.style.display = 'block';
+            
+            // Start the game
+            startGame();
+        });
+    });
+}
+
+// Call initGameSelection after DOM is loaded
+document.addEventListener('DOMContentLoaded', initGameSelection);
+
+// Modified handleInteraction function to check for game selection screen
+const originalHandleInteraction = window.handleInteraction || function() {};
+window.handleInteraction = function(event) {
+    const gameSelection = document.getElementById('game-selection');
+    
+    // If game selection is visible, don't handle the interaction
+    if (gameSelection && gameSelection.style.display !== 'none') {
+        return;
+    }
+    
+    // If game is not active but selection is hidden, it's either a new game or game over screen
+    if (!gameActive) {
+        const gameSelection = document.getElementById('game-selection');
+        gameSelection.style.display = 'block';
+        
+        if (document.getElementById('instructionsElement')) {
+            document.getElementById('instructionsElement').style.display = 'none';
+        }
+        return;
+    }
+    
+    // Otherwise, proceed with original handler
+    originalHandleInteraction(event);
+};
 
 // UI Setup
 const scoreElement = document.createElement('div');
@@ -464,7 +591,7 @@ function handleInteraction(event) {
         // Mark this mole as being hit to prevent duplicate hits
         hitMole.userData.isMoving = true;
         
-        if (isShortAWord) {
+        if (isCorrectWord) {
             score += 10;
             // Add success indicator at hit position
             createSuccessIndicator(hitMole.position.clone().add(new THREE.Vector3(0, 1, 0)));
@@ -524,7 +651,7 @@ function handleInteraction(event) {
             // Mark this mole as being hit to prevent duplicate hits
             closestMole.userData.isMoving = true;
             
-            if (isShortAWord) {
+            if (isCorrectWord) {
                 score += 10;
                 createSuccessIndicator(closestMole.position.clone().add(new THREE.Vector3(0, 1, 0)));
             } else {
@@ -717,8 +844,8 @@ function createMole() {
 
 // Modify the assignNewWord function
 function assignNewWord(mole) {
-    isShortAWord = Math.random() < 0.7;
-    const wordList = isShortAWord ? shortAWords : otherWords;
+    isCorrectWord = Math.random() < 0.7;
+    const wordList = isCorrectWord ? correctWords : incorrectWords;
     currentWord = wordList[Math.floor(Math.random() * wordList.length)];
     updateMoleText(mole, currentWord);
 }
@@ -833,6 +960,17 @@ function startGame() {
     
     updateUI();
     
+    // Update the instructions to match the current category
+    if (instructionsElement) {
+        instructionsElement.innerHTML = `Hit the mole when you see a word from the "${wordCategories[currentCategory].title}" list!`;
+        instructionsElement.style.display = 'block';
+        
+        // Hide instructions after 3 seconds
+        setTimeout(() => {
+            instructionsElement.style.display = 'none';
+        }, 3000);
+    }
+    
     // Add a small delay before starting the game loop to ensure UI has updated
     setTimeout(() => {
         gameLoop();
@@ -865,8 +1003,12 @@ function startGame() {
             // Reset global interaction state again
             window.lastInteractionId = null;
             
-            instructionsElement.innerHTML = `Game Over! Final Score: ${score}<br>Click anywhere to play again`;
+            // Show game over screen
+            instructionsElement.innerHTML = `Game Over! Final Score: ${score}<br>Click anywhere to choose a new game`;
             instructionsElement.style.display = 'block';
+            
+            // Hide the category title when the game is over
+            document.getElementById('game-title-display').style.display = 'none';
         }
     }, 1000);
 }
@@ -885,6 +1027,13 @@ function updateUI() {
     timerElement.style.fontWeight = 'bold';
     timerElement.style.textShadow = '1px 1px 2px rgba(255, 255, 255, 0.7)';
     timerElement.style.zIndex = '5'; // Maintain higher z-index
+    
+    // Ensure game title is displayed correctly
+    const gameTitleDisplay = document.getElementById('game-title-display');
+    if (gameTitleDisplay && gameActive) {
+        gameTitleDisplay.textContent = wordCategories[currentCategory].title;
+        gameTitleDisplay.style.display = 'block';
+    }
 }
 
 function gameLoop() {
