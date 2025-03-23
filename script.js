@@ -195,6 +195,7 @@ function setupHolesAndMoles() {
         // Create mole
         const mole = createMole();
         mole.position.set(pos.x * 1.5, -1.8, pos.z * 1.5); // Match the "down" position in animateMole
+        mole.visible = false; // Initialize moles as invisible since they're down
         
         // Set mole rotation
         const targetPoint = new THREE.Vector3(0, 0, -3);
@@ -332,8 +333,10 @@ window.addEventListener('click', (event) => {
     const raycaster = new THREE.Raycaster();
     raycaster.setFromCamera(mouse, camera);
     
+    // Only check for intersections with visible moles
+    const visibleMoles = moles.filter(mole => mole.visible);
     const intersects = raycaster.intersectObjects(
-        moles.map(moleGroup => moleGroup.children[0])
+        visibleMoles.map(moleGroup => moleGroup.children[0])
     );
     
     if (intersects.length > 0) {
@@ -542,9 +545,12 @@ function animateMole(mole, goingUp) {
     const startTime = Date.now();
     
     if (goingUp) {
+        // Make mole visible when coming up
+        mole.visible = true;
         assignNewWord(mole);
     } else {
         updateMoleText(mole, '');
+        // We'll hide the mole at the end of the animation when going down
     }
     
     function update() {
@@ -563,6 +569,11 @@ function animateMole(mole, goingUp) {
         } else {
             mole.userData.isMoving = false;
             mole.userData.isUp = goingUp;
+            
+            // Hide the mole completely when fully down
+            if (!goingUp) {
+                mole.visible = false;
+            }
         }
     }
     update();
@@ -573,6 +584,15 @@ function startGame() {
     score = 0;
     timeRemaining = 30;
     gameActive = true;
+    
+    // Make sure all moles are hidden when the game starts
+    moles.forEach(mole => {
+        mole.visible = false;
+        mole.userData.isUp = false;
+        mole.userData.isMoving = false;
+        mole.position.y = -1.8; // Ensure moles are in the down position
+    });
+    
     updateUI();
     gameLoop();
     
@@ -582,6 +602,14 @@ function startGame() {
         if (timeRemaining <= 0) {
             gameActive = false;
             clearInterval(gameTimer);
+            
+            // Hide all moles when game ends
+            moles.forEach(mole => {
+                if (mole.userData.isUp) {
+                    animateMole(mole, false);
+                }
+            });
+            
             instructionsElement.innerHTML = `Game Over! Final Score: ${score}<br>Click anywhere to play again`;
             instructionsElement.style.display = 'block';
         }
