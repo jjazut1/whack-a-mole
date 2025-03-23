@@ -250,7 +250,7 @@ function positionDecorativeOverlay() {
     
     // Different hole sizes
     const standardHoleSize = 300; // Standard size for most holes
-    const largeHoleSize = 420;    // Larger size for bottom right hole
+    const largeHoleSize =380;    // Larger size for bottom right hole
     
     holeScreenPositions.forEach((pos, index) => {
         if (markers[index]) {
@@ -262,8 +262,8 @@ function positionDecorativeOverlay() {
             
             // Special handling for bottom right hole (index 3)
             if (index === 3) {
-                posX += 10; // Shift right to move toward the bottom right corner
-                posY = pos.y + 20; // Shift down to better cover the blue sky
+                posX += 15; // Shift right to move toward the bottom right corner
+                posY = pos.y + 25; // Shift down to better cover the blue sky
                 holeSize = largeHoleSize;
             } else {
                 posY = pos.y;
