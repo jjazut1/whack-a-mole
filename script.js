@@ -40,6 +40,7 @@ scoreElement.style.color = '#00008B'; // Dark blue
 scoreElement.style.fontSize = '24px';
 scoreElement.style.fontWeight = 'bold';
 scoreElement.style.textShadow = '1px 1px 2px rgba(255, 255, 255, 0.7)'; // Add white shadow for better visibility
+scoreElement.style.zIndex = '5'; // Higher z-index to appear in front of clouds and canvas
 document.body.appendChild(scoreElement);
 
 const timerElement = document.createElement('div');
@@ -50,6 +51,7 @@ timerElement.style.color = '#00008B'; // Dark blue
 timerElement.style.fontSize = '24px';
 timerElement.style.fontWeight = 'bold';
 timerElement.style.textShadow = '1px 1px 2px rgba(255, 255, 255, 0.7)'; // Add white shadow for better visibility
+timerElement.style.zIndex = '5'; // Higher z-index to appear in front of clouds and canvas
 document.body.appendChild(timerElement);
 
 // Add instructions element
@@ -61,6 +63,7 @@ instructionsElement.style.transform = 'translateX(-50%)';
 instructionsElement.style.color = 'white';
 instructionsElement.style.fontSize = '24px';
 instructionsElement.style.textAlign = 'center';
+instructionsElement.style.zIndex = '5'; // Higher z-index to appear in front of clouds
 instructionsElement.innerHTML = 'Hit the mole when you see a word with the short "a" sound!<br>Click anywhere to start';
 document.body.appendChild(instructionsElement);
 
@@ -660,10 +663,12 @@ function updateUI() {
     scoreElement.style.color = '#00008B'; // Dark blue
     scoreElement.style.fontWeight = 'bold';
     scoreElement.style.textShadow = '1px 1px 2px rgba(255, 255, 255, 0.7)';
+    scoreElement.style.zIndex = '5'; // Maintain higher z-index
     
     timerElement.style.color = '#00008B'; // Dark blue
     timerElement.style.fontWeight = 'bold';
     timerElement.style.textShadow = '1px 1px 2px rgba(255, 255, 255, 0.7)';
+    timerElement.style.zIndex = '5'; // Maintain higher z-index
 }
 
 function gameLoop() {
@@ -1274,6 +1279,7 @@ function addVersionIndicator() {
     versionIndicator.style.borderRadius = '3px';
     versionIndicator.style.fontSize = '12px';
     versionIndicator.style.fontFamily = 'monospace';
+    versionIndicator.style.zIndex = '5'; // Higher z-index to appear in front of clouds
     versionIndicator.textContent = 'v' + versionNumber;
     document.body.appendChild(versionIndicator);
     
