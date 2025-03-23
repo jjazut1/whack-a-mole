@@ -8,10 +8,15 @@ console.log("Three.js version:", THREE.REVISION);
 const scene = new THREE.Scene();
 scene.background = null; // Make background transparent instead of blue sky
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true }); // Enable alpha
+const renderer = new THREE.WebGLRenderer({ 
+    antialias: true, 
+    alpha: true,
+    premultipliedAlpha: false // Ensure proper alpha blending
+}); 
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.sortObjects = true;
-renderer.setClearColor(0x000000, 0); // Set to transparent (alpha = 0)
+renderer.setClearColor(0x000000, 0); // Set to fully transparent
+renderer.setClearAlpha(0); // Explicitly set alpha to 0
 document.getElementById('canvas-container').appendChild(renderer.domElement);
 
 // Initialize arrays and game state
@@ -663,6 +668,13 @@ function addTerrainAndClouds() {
 
 // Call this function after scene initialization
 addTerrainAndClouds();
+
+// Debug canvas styling
+const canvasElement = renderer.domElement;
+console.log("Canvas element:", canvasElement);
+console.log("Canvas background:", getComputedStyle(canvasElement).backgroundColor);
+// Ensure canvas is transparent
+canvasElement.style.backgroundColor = "transparent";
 
 // Add debug info to check what's in the scene
 console.log("Scene children:", scene.children);
