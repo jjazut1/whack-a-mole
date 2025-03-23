@@ -174,7 +174,7 @@ function setupHolesAndMoles() {
         { x: -1.5, z: -1.5, rotation: Math.PI * 0.25 + 0.175, description: "back Left" },     // Moved up by decreasing Z
         { x: 2.2, z: -1.5, rotation: -Math.PI * 0.25 - 0.175, description: "back Right" },     // Moved up by decreasing Z
         { x: -2.3, z: 1.5, rotation: Math.PI * 0.75 + 0.175, description: "front Left" },       // Moved toward center by decreasing Z
-        { x: 2.2, z: 2.0, rotation: -Math.PI * 0.75 - 0.175, description: "front Right" }        // Moved toward center by decreasing Z
+        { x: 2.8, z: 2.0, rotation: -Math.PI * 0.75 - 0.175, description: "front Right" }        // Moved further right to cover blue sky
     ];
 
     // Store hole positions for reference when positioning the decorative overlay
@@ -247,7 +247,7 @@ function positionDecorativeOverlay() {
     
     // Position the markers in the overlay to match hole positions
     const markers = document.querySelectorAll('.hole-marker');
-    const holeSize = 300; // Large dirt hole size in pixels
+    const holeSize = 300; // Large dirt hole size in pixels - updated to match CSS
     const offsetX = holeSize / 2; // Center offset for X
     const offsetY = holeSize / 2; // Center offset for Y
     
@@ -257,7 +257,10 @@ function positionDecorativeOverlay() {
             // Apply offset to center the larger holes under the grass holes
             let posX = pos.x;
             
-            
+            // Move the bottom right hole (index 3) further to the right to cover the blue sky
+            if (index === 3) {
+                posX += 20; // Add more pixels to the right
+            }
             
             const percentX = ((posX - offsetX) / window.innerWidth) * 100;
             const percentY = ((pos.y - offsetY) / window.innerHeight) * 100;
@@ -267,7 +270,7 @@ function positionDecorativeOverlay() {
             
             // Add subtle color variations to each dirt hole for realism
             // Create slightly different brown shades for each hole
-            const brownBase = [155, 118, 83]; // #9b7653 in RGB
+            const brownBase = [155, 118, 83]; // Lighter brown color - #9b7653 in RGB
             const randomOffset = [
                 Math.floor(Math.random() * 10) - 5,
                 Math.floor(Math.random() * 8) - 4,
@@ -275,9 +278,9 @@ function positionDecorativeOverlay() {
             ];
             
             const randomBrown = [
-                Math.max(30, Math.min(80, brownBase[0] + randomOffset[0])),
-                Math.max(20, Math.min(50, brownBase[1] + randomOffset[1])),
-                Math.max(15, Math.min(40, brownBase[2] + randomOffset[2]))
+                Math.max(140, Math.min(170, brownBase[0] + randomOffset[0])),
+                Math.max(100, Math.min(130, brownBase[1] + randomOffset[1])),
+                Math.max(70, Math.min(100, brownBase[2] + randomOffset[2]))
             ];
             
             markers[index].style.backgroundColor = `rgb(${randomBrown[0]}, ${randomBrown[1]}, ${randomBrown[2]})`;

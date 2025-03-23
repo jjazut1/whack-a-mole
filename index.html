@@ -69,8 +69,8 @@
         /* Add hole markers for alignment - repurposing as dirt holes */
         .hole-marker {
             position: absolute;
-            width: 280px; /* 4x larger (was 70px) */
-            height: 280px; /* 4x larger (was 70px) */
+            width: 300px; /* Increased from 280px for better coverage */
+            height: 300px; /* Increased from 280px for better coverage */
             background-color: #9b7653; /* brown color for dirt */
             border: none; /* Remove the dashed border */
             border-radius: 50%;
@@ -81,8 +81,8 @@
             z-index: 0.5; /* Between body (0) and grass overlay (1) */
             /* Make hole markers visible */
             display: block;
-            /* Add slight shadow for depth */
-            box-shadow: inset 0px 15px 30px rgba(0, 0, 0, 0.6);
+            /* Add slight shadow for depth - reduced intensity */
+            box-shadow: inset 0px 10px 20px rgba(0, 0, 0, 0.3);
         }
         
         /* Add a fallback image element in case background-image doesn't work */
