@@ -247,7 +247,7 @@ function positionDecorativeOverlay() {
     
     // Position the markers in the overlay to match hole positions
     const markers = document.querySelectorAll('.hole-marker');
-    const holeSize = 280; // Large dirt hole size in pixels
+    const holeSize = 300; // Large dirt hole size in pixels
     const offsetX = holeSize / 2; // Center offset for X
     const offsetY = holeSize / 2; // Center offset for Y
     
