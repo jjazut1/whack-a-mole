@@ -23,6 +23,8 @@
             position: relative;
             /* Ensure body creates a stacking context */
             z-index: 0;
+            /* Add a background since Three.js sky is now transparent */
+            background: linear-gradient(to bottom, #87CEEB, #b6e1fc); /* Sky blue gradient */
         }
         
         /* Canvas container to control Three.js canvas position */

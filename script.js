@@ -6,12 +6,12 @@ console.log("Three.js version:", THREE.REVISION);
 
 // Scene setup
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x87CEEB);
+scene.background = null; // Make background transparent instead of blue sky
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-const renderer = new THREE.WebGLRenderer({ antialias: true });
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true }); // Enable alpha
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.sortObjects = true;
-renderer.setClearColor(0x87CEEB, 1);
+renderer.setClearColor(0x000000, 0); // Set to transparent (alpha = 0)
 document.getElementById('canvas-container').appendChild(renderer.domElement);
 
 // Initialize arrays and game state
