@@ -19,6 +19,13 @@ renderer.setClearColor(0x000000, 0); // Set to fully transparent
 renderer.setClearAlpha(0); // Explicitly set alpha to 0
 document.getElementById('canvas-container').appendChild(renderer.domElement);
 
+// Configure canvas for better touch events
+const canvas = renderer.domElement;
+canvas.style.touchAction = 'none'; // Disable browser touch actions
+canvas.addEventListener('touchstart', function(e) {
+    e.preventDefault(); // Prevent default touch behavior
+}, { passive: false });
+
 // Initialize arrays and game state
 const moles = [];
 let score = 0;
@@ -358,13 +365,24 @@ const moleEyeMaterial = new THREE.MeshLambertMaterial({
 
 // Modified click and touch handler
 window.addEventListener('click', handleInteraction);
-window.addEventListener('touchstart', handleInteraction);
+window.addEventListener('touchstart', handleInteraction, { passive: false });
+window.addEventListener('touchend', preventDefaultTouch, { passive: false });
+window.addEventListener('touchmove', preventDefaultTouch, { passive: false });
+
+// Prevent default touch behaviors
+function preventDefaultTouch(event) {
+    event.preventDefault();
+    event.stopPropagation();
+}
 
 // Handle both mouse clicks and touch events
 function handleInteraction(event) {
+    console.log('Interaction detected:', event.type);
+    
     // Prevent default behavior for touch events to avoid scrolling/zooming
     if (event.type === 'touchstart') {
         event.preventDefault();
+        event.stopPropagation();
     }
     
     if (!gameActive) {
@@ -381,6 +399,8 @@ function handleInteraction(event) {
         const touch = event.touches[0];
         clientX = touch.clientX;
         clientY = touch.clientY;
+        
+        console.log('Touch detected at:', clientX, clientY);
     } else {
         // Regular mouse event
         clientX = event.clientX;
@@ -395,24 +415,96 @@ function handleInteraction(event) {
     const raycaster = new THREE.Raycaster();
     raycaster.setFromCamera(mouse, camera);
     
-    // Only check for intersections with visible moles
+    // Use a more comprehensive approach to find intersections
+    // Create a flattened array of all meshes in the mole groups
+    let hitMole = null;
+    
+    // First, try the standard approach - intersecting with visible moles
     const visibleMoles = moles.filter(mole => mole.visible);
-    const intersects = raycaster.intersectObjects(
-        visibleMoles.map(moleGroup => moleGroup.children[0])
-    );
+    const moleObjects = [];
+    
+    // Collect all objects in the mole hierarchy for intersection testing
+    visibleMoles.forEach(moleGroup => {
+        moleGroup.traverse(object => {
+            if (object.isMesh) {
+                object.userData.parentMole = moleGroup; // Store reference to parent
+                moleObjects.push(object);
+            }
+        });
+    });
+    
+    // Check for intersections with all meshes
+    const intersects = raycaster.intersectObjects(moleObjects, false);
     
     if (intersects.length > 0) {
-        const hitMole = intersects[0].object.parent;
-        if (hitMole.userData.isUp && !hitMole.userData.isMoving) {
+        // Find the parent mole of the intersected object
+        hitMole = intersects[0].object.userData.parentMole || 
+                  intersects[0].object.parent;
+                  
+        console.log('Hit detected on:', hitMole);
+    }
+    
+    // If a mole was hit
+    if (hitMole && hitMole.userData && hitMole.userData.isUp && !hitMole.userData.isMoving) {
+        console.log('Processing hit on mole:', hitMole);
+        if (isShortAWord) {
+            score += 10;
+            // Add success indicator at hit position
+            createSuccessIndicator(hitMole.position.clone().add(new THREE.Vector3(0, 1, 0)));
+        } else {
+            score = Math.max(0, score - 5);
+        }
+        updateUI();
+        animateMole(hitMole, false);
+    } else if (event.type === 'touchstart') {
+        // Special handling for iPad touch - if no direct hit was detected
+        // Find the closest visible mole to the touch point
+        console.log('No direct hit - checking proximity for touch events');
+        
+        let closestDistance = Infinity;
+        let closestMole = null;
+        
+        visibleMoles.forEach(mole => {
+            if (mole.userData.isUp && !mole.userData.isMoving) {
+                // Project mole position to screen coordinates
+                const molePos = new THREE.Vector3(
+                    mole.position.x,
+                    mole.position.y,
+                    mole.position.z
+                );
+                molePos.project(camera);
+                
+                // Convert to screen coordinates
+                const moleScreenX = (molePos.x + 1) * window.innerWidth / 2;
+                const moleScreenY = (-molePos.y + 1) * window.innerHeight / 2;
+                
+                // Calculate distance to touch point
+                const distance = Math.sqrt(
+                    Math.pow(moleScreenX - clientX, 2) + 
+                    Math.pow(moleScreenY - clientY, 2)
+                );
+                
+                // Set a reasonable proximity threshold (in pixels)
+                const proximityThreshold = 150; // Larger for iPad
+                
+                if (distance < proximityThreshold && distance < closestDistance) {
+                    closestDistance = distance;
+                    closestMole = mole;
+                }
+            }
+        });
+        
+        // If we found a close mole, register a hit
+        if (closestMole) {
+            console.log('Proximity hit detected - distance:', closestDistance);
             if (isShortAWord) {
                 score += 10;
-                // Add success indicator at hit position
-                createSuccessIndicator(hitMole.position.clone().add(new THREE.Vector3(0, 1, 0)));
+                createSuccessIndicator(closestMole.position.clone().add(new THREE.Vector3(0, 1, 0)));
             } else {
                 score = Math.max(0, score - 5);
             }
             updateUI();
-            animateMole(hitMole, false);
+            animateMole(closestMole, false);
         }
     }
 }

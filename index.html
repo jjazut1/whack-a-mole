@@ -12,6 +12,10 @@
             margin: 0;
             padding: 0;
             overflow: hidden;
+            touch-action: none; /* Disable touch actions at the root level */
+            -webkit-user-select: none; /* Prevent text selection on iOS */
+            -webkit-touch-callout: none; /* Prevent callout on long press */
+            -webkit-tap-highlight-color: transparent; /* Remove tap highlight */
         }
         
         /* Hide UI elements as you already have */
@@ -48,6 +52,13 @@
             transform: translateZ(0);
             background: transparent;
             touch-action: none; /* Prevent browser's default touch actions */
+            cursor: pointer; /* Show pointer cursor to indicate clickable */
+        }
+        
+        #canvas-container canvas {
+            touch-action: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
         }
         
         #grassOverlay {
@@ -149,6 +160,13 @@
             // This will be called automatically by positionDecorativeOverlay() in script.js
         }, 1000);
         
+        // Add debugging for touch events
+        ['touchstart', 'touchend', 'touchmove', 'touchcancel'].forEach(function(eventType) {
+            document.addEventListener(eventType, function(e) {
+                console.log('Touch event detected:', eventType, e.touches ? e.touches.length : 0);
+            }, { passive: true });
+        });
+        
         // Prevent touchmove default behavior to avoid scrolling/zooming
         document.addEventListener('touchmove', function(e) {
             e.preventDefault();
@@ -171,6 +189,38 @@
         
         // Track last touch end time for double-tap detection
         let lastTouchEnd = 0;
+        
+        // Special handling for iPadOS
+        if (navigator.userAgent.match(/iPad/i) || 
+            (navigator.userAgent.match(/Macintosh/i) && navigator.maxTouchPoints > 0)) {
+            console.log('iPad detected - adding special touch handling');
+            
+            // Apply specific iPad touch handling
+            document.body.style.touchAction = 'none';
+            document.getElementById('canvas-container').style.touchAction = 'none';
+            
+            // Force touch events to be captured by the canvas
+            const canvasContainer = document.getElementById('canvas-container');
+            canvasContainer.addEventListener('touchstart', function(e) {
+                e.preventDefault();
+                console.log('Canvas container touch captured');
+                // Manually dispatch to make sure it's handled
+                setTimeout(function() {
+                    const canvas = canvasContainer.querySelector('canvas');
+                    if (canvas) {
+                        const event = new TouchEvent('touchstart', {
+                            bubbles: true,
+                            cancelable: true,
+                            view: window,
+                            touches: e.touches,
+                            targetTouches: e.targetTouches,
+                            changedTouches: e.changedTouches
+                        });
+                        canvas.dispatchEvent(event);
+                    }
+                }, 0);
+            }, { passive: false });
+        }
     });
     </script>
     
