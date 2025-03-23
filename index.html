@@ -4,7 +4,7 @@
     <style>
         /* Set base background color */
         html, body {
-            background-color: black; /* Explicitly use black instead of transparent */
+            background-color: #87CEEB; /* Sky blue instead of black */
             margin: 0;
             padding: 0;
             overflow: hidden;
@@ -61,10 +61,9 @@
             /* Lower z-index to place below the canvas */
             z-index: 1;
             transform-origin: center bottom;
-            /* Adjust scale to match the hole positions and move down 8px */
-            transform: translateX(-50%) translateY(8px) scale(1.1);
-            /* Add debug border to check visibility */
-            border: 1px solid rgba(255, 0, 0, 0.3);
+            /* Adjust scale to match the hole positions and move down 13px */
+            transform: translateX(-50%) translateY(13px) scale(1.1);
+            /* Remove debug border */
         }
         
         /* Add hole markers for alignment */
@@ -83,8 +82,8 @@
             font-weight: bold;
             pointer-events: none;
             z-index: 4; /* Increased to be above the canvas */
-            /* Make hole markers visible by default */
-            display: flex;
+            /* Hide hole markers */
+            display: none;
         }
         
         /* Add a fallback image element in case background-image doesn't work */
@@ -97,8 +96,8 @@
             z-index: 1; /* Same z-index as grassOverlay */
             pointer-events: none;
             opacity: 0.9;
-            transform: translateX(-50%) translateY(8px) scale(1.1);
-            border: 1px solid rgba(0, 0, 255, 0.3);
+            transform: translateX(-50%) translateY(13px) scale(1.1);
+            /* Remove debug border */
             display: none; /* Hidden by default, will show via JS if needed */
         }
     </style>
@@ -134,10 +133,6 @@
             } else {
                 console.log('Background image loaded successfully');
             }
-
-            // For debugging - show hole markers
-            // Show hole markers for alignment with 3D mole holes
-            document.querySelectorAll('.hole-marker').forEach(m => m.style.display = 'flex');
         }, 1000);
     });
     </script>
