@@ -78,6 +78,9 @@ let correctWords = wordCategories.short_a.words;
 let incorrectWords = [];
 let isCorrectWord = false;
 let currentWord = '';
+// Add streak tracking
+let correctStreak = 0;
+let lastStreakBonus = 0; // To prevent multiple bonuses for the same streak
 
 // Generate incorrect words based on the selected category
 function generateIncorrectWords(selectedCategory) {
@@ -593,10 +596,27 @@ function handleInteraction(event) {
         
         if (isCorrectWord) {
             score += 10;
+            
+            // Increase the streak counter for correct hits
+            correctStreak++;
+            console.log(`Current streak: ${correctStreak}`);
+            
+            // Check if player has achieved 3 correct hits in a row
+            if (correctStreak >= 3 && correctStreak % 3 === 0 && lastStreakBonus !== correctStreak) {
+                // Award bonus points
+                score += 10;
+                lastStreakBonus = correctStreak;
+                
+                // Show streak bonus celebration
+                showStreakBonus();
+            }
+            
             // Add success indicator at hit position
             createSuccessIndicator(hitMole.position.clone().add(new THREE.Vector3(0, 1, 0)));
         } else {
             score = Math.max(0, score - 5);
+            // Reset streak on incorrect hit
+            correctStreak = 0;
         }
         updateUI();
         
@@ -653,9 +673,26 @@ function handleInteraction(event) {
             
             if (isCorrectWord) {
                 score += 10;
+                
+                // Increase streak for correct hits
+                correctStreak++;
+                console.log(`Current streak: ${correctStreak}`);
+                
+                // Check if player has achieved 3 correct hits in a row
+                if (correctStreak >= 3 && correctStreak % 3 === 0 && lastStreakBonus !== correctStreak) {
+                    // Award bonus points
+                    score += 10;
+                    lastStreakBonus = correctStreak;
+                    
+                    // Show streak bonus celebration
+                    showStreakBonus();
+                }
+                
                 createSuccessIndicator(closestMole.position.clone().add(new THREE.Vector3(0, 1, 0)));
             } else {
                 score = Math.max(0, score - 5);
+                // Reset streak on incorrect hit
+                correctStreak = 0;
             }
             updateUI();
             
@@ -672,6 +709,90 @@ function handleInteraction(event) {
             window.lastInteractionId = null;
         }
     }, 500);
+}
+
+// Show streak bonus celebration notification
+function showStreakBonus() {
+    // Create a streak bonus notification element
+    const streakBonus = document.createElement('div');
+    streakBonus.className = 'streak-bonus';
+    streakBonus.textContent = '+10 BONUS!';
+    document.body.appendChild(streakBonus);
+    
+    // Trigger animation by adding the active class after a small delay
+    setTimeout(() => {
+        streakBonus.classList.add('active');
+    }, 10);
+    
+    // Create fireworks effect in the scene
+    createFireworks();
+    
+    // Remove the notification after animation completes
+    setTimeout(() => {
+        streakBonus.classList.remove('active');
+        setTimeout(() => {
+            document.body.removeChild(streakBonus);
+        }, 500);
+    }, 2000);
+}
+
+// Create fireworks effect for streak bonus
+function createFireworks() {
+    const particleCount = 50;
+    const particles = [];
+    const colors = [0xFFFF00, 0x00FF00, 0xFF00FF, 0x00FFFF, 0xFF0000, 0x0000FF]; // Colorful particles
+    
+    // Create particles in a circle around the center of the view
+    for (let i = 0; i < particleCount; i++) {
+        const geometry = new THREE.SphereGeometry(0.1, 8, 8);
+        const material = new THREE.MeshBasicMaterial({ 
+            color: colors[Math.floor(Math.random() * colors.length)],
+            transparent: true,
+            opacity: 1
+        });
+        const particle = new THREE.Mesh(geometry, material);
+        
+        // Set starting position in the center of the screen
+        const centerPosition = new THREE.Vector3(0, 5, 0);
+        particle.position.copy(centerPosition);
+        
+        // Generate velocity in all directions
+        const angle = Math.random() * Math.PI * 2;
+        const height = 0.5 + Math.random() * 1.5;
+        particle.velocity = new THREE.Vector3(
+            Math.cos(angle) * (0.5 + Math.random()),
+            height,
+            Math.sin(angle) * (0.5 + Math.random())
+        );
+        
+        scene.add(particle);
+        particles.push(particle);
+    }
+    
+    // Animate particles
+    let elapsed = 0;
+    function animateFireworks() {
+        elapsed += 0.016; // Approximate for 60fps
+        
+        particles.forEach(particle => {
+            particle.position.add(particle.velocity);
+            particle.velocity.y -= 0.05; // Gravity
+            particle.material.opacity = 1 - (elapsed * 0.7);
+            
+            // Add some rotation for sparkle effect
+            particle.rotation.x += 0.1;
+            particle.rotation.y += 0.1;
+        });
+        
+        if (elapsed < 1.5) { // Animation duration
+            requestAnimationFrame(animateFireworks);
+        } else {
+            // Clean up particles
+            particles.forEach(particle => scene.remove(particle));
+        }
+    }
+    
+    animateFireworks();
 }
 
 // Add success indicator function
@@ -932,6 +1053,16 @@ function startGame() {
     timeRemaining = 30;
     gameActive = true;
     
+    // Reset streak counter at start of game
+    correctStreak = 0;
+    lastStreakBonus = 0;
+    
+    // Reset streak counter display
+    const streakCounter = document.getElementById('streak-counter');
+    if (streakCounter) {
+        streakCounter.style.opacity = '0';
+    }
+    
     // Reset any global interaction state
     window.lastInteractionId = null;
     
@@ -1033,6 +1164,29 @@ function updateUI() {
     if (gameTitleDisplay && gameActive) {
         gameTitleDisplay.textContent = wordCategories[currentCategory].title;
         gameTitleDisplay.style.display = 'block';
+    }
+    
+    // Update streak counter display
+    const streakCounter = document.getElementById('streak-counter');
+    if (streakCounter) {
+        if (correctStreak > 0) {
+            streakCounter.textContent = `Streak: ${correctStreak}`;
+            streakCounter.style.opacity = '1';
+            
+            // Change color as streak increases
+            if (correctStreak >= 6) {
+                streakCounter.style.color = '#FF0000'; // Red for 6+
+                streakCounter.style.fontSize = '24px';
+            } else if (correctStreak >= 3) {
+                streakCounter.style.color = '#FF5722'; // Orange for 3-5
+                streakCounter.style.fontSize = '22px';
+            } else {
+                streakCounter.style.color = '#4CAF50'; // Green for 1-2
+                streakCounter.style.fontSize = '20px';
+            }
+        } else {
+            streakCounter.style.opacity = '0';
+        }
     }
 }
 
