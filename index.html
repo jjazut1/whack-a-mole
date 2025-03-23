@@ -69,8 +69,8 @@
         /* Add hole markers for alignment - repurposing as dirt holes */
         .hole-marker {
             position: absolute;
-            width: 350px; /* Increased from 300px for better coverage */
-            height: 350px; /* Increased from 300px for better coverage */
+            width: 300px; /* Reverted to previous size */
+            height: 300px; /* Reverted to previous size */
             background-color: #9b7653; /* brown color for dirt */
             border: none; /* Remove the dashed border */
             border-radius: 50%;
@@ -83,6 +83,12 @@
             display: block;
             /* Add slight shadow for depth - reduced intensity */
             box-shadow: inset 0px 10px 20px rgba(0, 0, 0, 0.3);
+        }
+        
+        /* Special larger size for bottom right hole to cover the blue sky */
+        #marker4 {
+            width: 380px; 
+            height: 380px;
         }
         
         /* Add a fallback image element in case background-image doesn't work */

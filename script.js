@@ -247,20 +247,29 @@ function positionDecorativeOverlay() {
     
     // Position the markers in the overlay to match hole positions
     const markers = document.querySelectorAll('.hole-marker');
-    const holeSize = 350; // Large dirt hole size in pixels - updated to match CSS
-    const offsetX = holeSize / 2; // Center offset for X
-    const offsetY = holeSize / 2; // Center offset for Y
+    
+    // Different hole sizes
+    const standardHoleSize = 300; // Standard size for most holes
+    const largeHoleSize = 380;    // Larger size for bottom right hole
     
     holeScreenPositions.forEach((pos, index) => {
         if (markers[index]) {
             // Convert to percentages for responsive positioning
             // Apply offset to center the larger holes under the grass holes
             let posX = pos.x;
+            let holeSize;
             
-            // Move the bottom right hole (index 3) to cover the blue sky showing through the left side
+            // Special handling for bottom right hole (index 3)
             if (index === 3) {
-                posX -= 30; // Shift left to cover the blue sky on the left side of the hole
+                posX -= 40; // Shift left to cover the blue sky on the left side
+                holeSize = largeHoleSize;
+            } else {
+                holeSize = standardHoleSize;
             }
+            
+            // Calculate offsets based on the specific hole size
+            const offsetX = holeSize / 2;
+            const offsetY = holeSize / 2;
             
             const percentX = ((posX - offsetX) / window.innerWidth) * 100;
             const percentY = ((pos.y - offsetY) / window.innerHeight) * 100;
