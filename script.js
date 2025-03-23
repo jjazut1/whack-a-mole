@@ -36,16 +36,20 @@ const scoreElement = document.createElement('div');
 scoreElement.style.position = 'absolute';
 scoreElement.style.top = '20px';
 scoreElement.style.left = '20px';
-scoreElement.style.color = 'white';
+scoreElement.style.color = '#00008B'; // Dark blue
 scoreElement.style.fontSize = '24px';
+scoreElement.style.fontWeight = 'bold';
+scoreElement.style.textShadow = '1px 1px 2px rgba(255, 255, 255, 0.7)'; // Add white shadow for better visibility
 document.body.appendChild(scoreElement);
 
 const timerElement = document.createElement('div');
 timerElement.style.position = 'absolute';
 timerElement.style.top = '20px';
 timerElement.style.right = '20px';
-timerElement.style.color = 'white';
+timerElement.style.color = '#00008B'; // Dark blue
 timerElement.style.fontSize = '24px';
+timerElement.style.fontWeight = 'bold';
+timerElement.style.textShadow = '1px 1px 2px rgba(255, 255, 255, 0.7)'; // Add white shadow for better visibility
 document.body.appendChild(timerElement);
 
 // Add instructions element
@@ -105,12 +109,14 @@ function createCustomTerrain() {
 function createCloud() {
     const group = new THREE.Group();
     
-    // Create simple white spheres
-    const sphereGeometry = new THREE.SphereGeometry(1, 16, 16);
+    // Create simple white spheres - smaller size (0.8 instead of 1)
+    const sphereGeometry = new THREE.SphereGeometry(0.8, 16, 16);
     const material = new THREE.MeshBasicMaterial({ color: 0xFFFFFF });
     
     // Main sphere
     const mainSphere = new THREE.Mesh(sphereGeometry, material);
+    // Scale down the main sphere slightly
+    mainSphere.scale.set(0.9, 0.9, 0.9);
     group.add(mainSphere);
     
     // Add additional spheres
@@ -123,7 +129,8 @@ function createCloud() {
     positions.forEach(pos => {
         const sphere = new THREE.Mesh(sphereGeometry, material);
         sphere.position.set(pos.x, pos.y, pos.z);
-        sphere.scale.set(0.7, 0.5, 0.7);
+        // Make additional spheres smaller (0.6, 0.4, 0.6 instead of 0.7, 0.5, 0.7)
+        sphere.scale.set(0.6, 0.4, 0.6);
         group.add(sphere);
     });
     
@@ -648,6 +655,15 @@ function startGame() {
 function updateUI() {
     scoreElement.textContent = `Score: ${score}`;
     timerElement.textContent = `Time: ${timeRemaining}s`;
+    
+    // Ensure styling is maintained
+    scoreElement.style.color = '#00008B'; // Dark blue
+    scoreElement.style.fontWeight = 'bold';
+    scoreElement.style.textShadow = '1px 1px 2px rgba(255, 255, 255, 0.7)';
+    
+    timerElement.style.color = '#00008B'; // Dark blue
+    timerElement.style.fontWeight = 'bold';
+    timerElement.style.textShadow = '1px 1px 2px rgba(255, 255, 255, 0.7)';
 }
 
 function gameLoop() {
@@ -685,6 +701,8 @@ function addTerrainAndClouds() {
     cloudPositions.forEach(pos => {
         const cloud = createCloud();
         cloud.position.set(pos.x, pos.y, pos.z);
+        // Scale clouds to be slightly smaller
+        cloud.scale.set(0.8, 0.8, 0.8);
         scene.add(cloud);
         console.log("Cloud added:", cloud);
     });
@@ -708,7 +726,7 @@ const backLight = new THREE.DirectionalLight(0xffffff, 0.3);
 backLight.position.set(-5, 5, -5);
 scene.add(backLight);
 
-// Move clouds higher
+// Move clouds higher and make them smaller
 function adjustCloudPositions() {
     // Find all clouds in the scene
     scene.children.forEach(child => {
@@ -719,6 +737,9 @@ function adjustCloudPositions() {
                 firstChild.material.color.getHexString() === 'ffffff') {
                 // Move cloud up by 2 units
                 child.position.y += 2;
+                
+                // Scale down existing clouds by 20%
+                child.scale.multiplyScalar(0.8);
             }
         }
     });
