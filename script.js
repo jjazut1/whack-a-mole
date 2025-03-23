@@ -363,60 +363,97 @@ const moleEyeMaterial = new THREE.MeshLambertMaterial({
     color: 0x1A1A1A  // Dark gray for eyes
 });
 
-// Modified click and touch handler
-window.addEventListener('click', handleInteraction);
-window.addEventListener('touchstart', handleInteraction, { passive: false });
-window.addEventListener('touchend', preventDefaultTouch, { passive: false });
-window.addEventListener('touchmove', preventDefaultTouch, { passive: false });
+// Modified click and touch handler - completely revamped touch handling
+window.addEventListener('click', function(event) {
+    handleInteraction(event, 'click');
+});
 
-// Prevent default touch behaviors
-function preventDefaultTouch(event) {
+// Replace all touch event handlers with a clean implementation
+window.removeEventListener('touchstart', handleInteraction);
+window.removeEventListener('touchend', preventDefaultTouch);
+window.removeEventListener('touchmove', preventDefaultTouch);
+
+// Clean event attachment with explicit type
+window.addEventListener('touchstart', function(event) {
     event.preventDefault();
-    event.stopPropagation();
-}
+    handleInteraction(event, 'touch');
+}, { passive: false });
 
-// Handle both mouse clicks and touch events
-function handleInteraction(event) {
-    console.log('Interaction detected:', event.type);
-    
-    // Create a unique ID for this interaction to prevent duplicate processing
-    const interactionId = Date.now();
-    
-    // Store the current interaction ID to prevent duplicate processing
-    if (window.lastInteractionId && (interactionId - window.lastInteractionId) < 300) {
-        console.log('Ignoring rapid interaction');
-        return; // Ignore interactions that happen too quickly after another
+// Clean up function that's no longer needed
+// function preventDefaultTouch(event) {
+//     event.preventDefault();
+//     event.stopPropagation();
+// }
+
+// Global touch tracking to prevent phantom clicks
+const touchState = {
+    lastTouchTime: 0,
+    touchLock: false,
+    processingTouch: false,
+    activeMoleIds: new Set(), // Track which moles are currently being interacted with
+    clearTouchState: function() {
+        this.touchLock = false;
+        this.processingTouch = false;
+        this.activeMoleIds.clear();
+        console.log('Touch state cleared');
     }
-    window.lastInteractionId = interactionId;
+};
+
+// Completely revised interaction handler with explicit type handling
+function handleInteraction(event, eventType) {
+    const now = Date.now();
     
-    // Prevent default behavior for touch events to avoid scrolling/zooming
-    if (event.type === 'touchstart') {
-        event.preventDefault();
-        event.stopPropagation();
+    console.log(`${eventType} event detected at time ${now}`);
+    
+    // If we're in the middle of processing a touch, ignore additional events
+    if (touchState.processingTouch) {
+        console.log('Ignoring event during active touch processing');
+        return;
     }
     
+    // Set a hard lock to prevent multiple touch events from stacking
+    if (eventType === 'touch') {
+        // Prevent rapid touches - enforce a minimum interval between touch events
+        if (now - touchState.lastTouchTime < 500) {
+            console.log('Touch too soon after previous touch, ignoring');
+            return;
+        }
+        
+        touchState.lastTouchTime = now;
+        touchState.processingTouch = true;
+        
+        // Schedule touch state cleanup
+        setTimeout(() => {
+            touchState.processingTouch = false;
+        }, 300); // Allow touch processing for 300ms
+    }
+    
+    // Game start handling
     if (!gameActive) {
         startGame();
         instructionsElement.style.display = 'none';
+        
+        // Clear any lingering touch state
+        touchState.clearTouchState();
         return;
     }
     
     // Get the coordinates (handling both mouse and touch)
     let clientX, clientY;
     
-    if (event.type === 'touchstart') {
+    if (eventType === 'touch') {
         // Get the first touch point
         const touch = event.touches[0];
         clientX = touch.clientX;
         clientY = touch.clientY;
-        
-        console.log('Touch detected at:', clientX, clientY);
+        console.log('Touch coordinates:', clientX, clientY);
     } else {
         // Regular mouse event
         clientX = event.clientX;
         clientY = event.clientY;
     }
     
+    // Convert to normalized device coordinates (-1 to +1)
     const mouse = new THREE.Vector2(
         (clientX / window.innerWidth) * 2 - 1,
         -(clientY / window.innerHeight) * 2 + 1
@@ -425,126 +462,367 @@ function handleInteraction(event) {
     const raycaster = new THREE.Raycaster();
     raycaster.setFromCamera(mouse, camera);
     
-    // Use a more comprehensive approach to find intersections
-    // Create a flattened array of all meshes in the mole groups
-    let hitMole = null;
+    // Find the active (visible, up, not moving) moles
+    const activeMoles = moles.filter(mole => 
+        mole.visible && 
+        mole.userData.isUp && 
+        !mole.userData.isMoving && 
+        !touchState.activeMoleIds.has(mole.userData.moleId)
+    );
     
-    // First, try the standard approach - intersecting with visible moles
-    const visibleMoles = moles.filter(mole => mole.visible);
+    if (activeMoles.length === 0) {
+        console.log('No active moles to interact with');
+        return;
+    }
+    
+    console.log(`Found ${activeMoles.length} active moles`);
+    
+    // Create a collection of all meshes in the active moles for raycasting
     const moleObjects = [];
-    
-    // Collect all objects in the mole hierarchy for intersection testing
-    visibleMoles.forEach(moleGroup => {
-        // Only include moles that are up and not already being animated
-        if (moleGroup.userData.isUp && !moleGroup.userData.isMoving) {
-            moleGroup.traverse(object => {
-                if (object.isMesh) {
-                    object.userData.parentMole = moleGroup; // Store reference to parent
-                    moleObjects.push(object);
-                }
-            });
+    activeMoles.forEach(mole => {
+        // Use a unique ID for each mole to track interactions
+        if (!mole.userData.moleId) {
+            mole.userData.moleId = `mole-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
         }
+        
+        mole.traverse(object => {
+            if (object.isMesh) {
+                object.userData.parentMole = mole;
+                moleObjects.push(object);
+            }
+        });
     });
     
-    // Check for intersections with all meshes
+    // Find intersections with mole objects
+    let hitMole = null;
     const intersects = raycaster.intersectObjects(moleObjects, false);
     
     if (intersects.length > 0) {
-        // Find the parent mole of the intersected object
-        hitMole = intersects[0].object.userData.parentMole || 
-                  intersects[0].object.parent;
-                  
-        console.log('Hit detected on:', hitMole);
+        hitMole = intersects[0].object.userData.parentMole;
+        console.log('Direct hit on mole:', hitMole.userData.moleId);
+    } else if (eventType === 'touch') {
+        // For touch events, use proximity detection as a fallback
+        hitMole = findClosestMoleByProximity(activeMoles, clientX, clientY);
+        
+        if (hitMole) {
+            console.log('Proximity hit on mole:', hitMole.userData.moleId);
+        }
     }
     
-    // If a mole was hit
-    if (hitMole && hitMole.userData && hitMole.userData.isUp && !hitMole.userData.isMoving) {
-        console.log('Processing hit on mole:', hitMole);
+    // If we hit a mole, process the hit
+    if (hitMole) {
+        // Add to the set of active mole IDs to prevent double-hits
+        touchState.activeMoleIds.add(hitMole.userData.moleId);
         
-        // Mark this mole as being hit to prevent duplicate hits
+        // Mark as moving to prevent further interaction
         hitMole.userData.isMoving = true;
         
+        // Process score based on whether it's a short "a" word
         if (isShortAWord) {
             score += 10;
-            // Add success indicator at hit position
             createSuccessIndicator(hitMole.position.clone().add(new THREE.Vector3(0, 1, 0)));
         } else {
             score = Math.max(0, score - 5);
         }
+        
         updateUI();
         
-        // Use setTimeout to ensure there's a small delay before the animation starts
-        // This helps prevent event race conditions
+        // Schedule the mole to hide with a slight delay
+        const moleId = hitMole.userData.moleId;
+        console.log(`Scheduling mole ${moleId} to hide`);
+        
         setTimeout(() => {
-            animateMole(hitMole, false);
-        }, 50);
-        
-    } else if (event.type === 'touchstart') {
-        // Special handling for iPad touch - if no direct hit was detected
-        // Find the closest visible mole to the touch point
-        console.log('No direct hit - checking proximity for touch events');
-        
-        let closestDistance = Infinity;
-        let closestMole = null;
-        
-        visibleMoles.forEach(mole => {
-            if (mole.userData.isUp && !mole.userData.isMoving) {
-                // Project mole position to screen coordinates
-                const molePos = new THREE.Vector3(
-                    mole.position.x,
-                    mole.position.y,
-                    mole.position.z
-                );
-                molePos.project(camera);
-                
-                // Convert to screen coordinates
-                const moleScreenX = (molePos.x + 1) * window.innerWidth / 2;
-                const moleScreenY = (-molePos.y + 1) * window.innerHeight / 2;
-                
-                // Calculate distance to touch point
-                const distance = Math.sqrt(
-                    Math.pow(moleScreenX - clientX, 2) + 
-                    Math.pow(moleScreenY - clientY, 2)
-                );
-                
-                // Set a reasonable proximity threshold (in pixels)
-                const proximityThreshold = 150; // Larger for iPad
-                
-                if (distance < proximityThreshold && distance < closestDistance) {
-                    closestDistance = distance;
-                    closestMole = mole;
+            // Make sure this mole still exists and is still up
+            const moleStillExists = moles.some(m => 
+                m.userData.moleId === moleId && 
+                m.userData.isUp && 
+                !m.userData.isHiding
+            );
+            
+            if (moleStillExists) {
+                console.log(`Hiding mole ${moleId} after hit`);
+                const targetMole = moles.find(m => m.userData.moleId === moleId);
+                if (targetMole) {
+                    // Mark this mole as being processed for hiding
+                    targetMole.userData.isHiding = true;
+                    animateMole(targetMole, false);
                 }
             }
-        });
+        }, 100);
+    }
+}
+
+// Helper function to find the closest mole by proximity (for touch events)
+function findClosestMoleByProximity(activeMoles, clientX, clientY) {
+    let closestMole = null;
+    let closestDistance = Infinity;
+    const proximityThreshold = 200; // Larger threshold for iPad
+    
+    activeMoles.forEach(mole => {
+        // Convert mole's 3D position to screen coordinates
+        const molePos = new THREE.Vector3(
+            mole.position.x,
+            mole.position.y,
+            mole.position.z
+        );
+        molePos.project(camera);
         
-        // If we found a close mole, register a hit
-        if (closestMole && !closestMole.userData.isMoving) {
-            console.log('Proximity hit detected - distance:', closestDistance);
-            
-            // Mark this mole as being hit to prevent duplicate hits
-            closestMole.userData.isMoving = true;
-            
-            if (isShortAWord) {
-                score += 10;
-                createSuccessIndicator(closestMole.position.clone().add(new THREE.Vector3(0, 1, 0)));
-            } else {
-                score = Math.max(0, score - 5);
-            }
-            updateUI();
-            
-            // Use setTimeout to ensure there's a small delay before the animation starts
-            setTimeout(() => {
-                animateMole(closestMole, false);
-            }, 50);
+        // Calculate screen position
+        const moleScreenX = (molePos.x + 1) * window.innerWidth / 2;
+        const moleScreenY = (-molePos.y + 1) * window.innerHeight / 2;
+        
+        // Calculate distance to touch point
+        const distance = Math.sqrt(
+            Math.pow(moleScreenX - clientX, 2) + 
+            Math.pow(moleScreenY - clientY, 2)
+        );
+        
+        console.log(`Mole at (${moleScreenX},${moleScreenY}) distance: ${distance}`);
+        
+        if (distance < proximityThreshold && distance < closestDistance) {
+            closestDistance = distance;
+            closestMole = mole;
+        }
+    });
+    
+    return closestMole;
+}
+
+// Completely revised animateMole function to properly handle mole state
+function animateMole(mole, goingUp) {
+    // Skip if already in the target state or already moving
+    if ((goingUp && mole.userData.isUp) || 
+        (!goingUp && !mole.userData.isUp) || 
+        mole.userData.isMoving) {
+        console.log(`Skipping animation for mole - already in target state or moving`);
+        return;
+    }
+    
+    // Ensure we have a unique ID for this mole
+    if (!mole.userData.moleId) {
+        mole.userData.moleId = `mole-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
+    }
+    
+    console.log(`${goingUp ? 'Raising' : 'Lowering'} mole ${mole.userData.moleId}`);
+    
+    // Lock the mole during animation
+    mole.userData.isMoving = true;
+    
+    // Reset hiding flag when starting animation
+    mole.userData.isHiding = false;
+    
+    // Animation parameters
+    const targetY = goingUp ? 0.7 : -1.8;
+    const startY = mole.position.y;
+    const duration = 200; // milliseconds
+    const startTime = Date.now();
+    
+    // Prepare mole for animation
+    if (goingUp) {
+        // Make visible immediately when raising
+        mole.visible = true;
+        // Assign a word for the mole to display
+        assignNewWord(mole);
+    } else {
+        // Clear text when hiding the mole
+        updateMoleText(mole, '');
+        // Remove from active moles set to allow new interactions
+        if (mole.userData.moleId) {
+            touchState.activeMoleIds.delete(mole.userData.moleId);
         }
     }
     
-    // Clear the interaction ID after a delay to prevent issues with holding
-    setTimeout(() => {
-        if (window.lastInteractionId === interactionId) {
-            window.lastInteractionId = null;
+    // Animation function
+    function update() {
+        const elapsed = Date.now() - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        
+        // Easing function for smooth motion
+        const ease = progress < 0.5 
+            ? 2 * progress * progress 
+            : -1 + (4 - 2 * progress) * progress;
+            
+        // Update position
+        mole.position.y = startY + (targetY - startY) * ease;
+        
+        if (progress < 1) {
+            // Continue animation
+            requestAnimationFrame(update);
+        } else {
+            // Animation complete
+            mole.userData.isMoving = false;
+            mole.userData.isUp = goingUp;
+            
+            if (!goingUp) {
+                // Hide completely when down
+                mole.visible = false;
+                
+                // Reset all interaction flags
+                mole.userData.isHiding = false;
+                touchState.activeMoleIds.delete(mole.userData.moleId);
+                
+                console.log(`Mole ${mole.userData.moleId} is now hidden and reset`);
+            } else {
+                console.log(`Mole ${mole.userData.moleId} is now up and ready`);
+            }
         }
-    }, 500);
+    }
+    
+    // Start animation
+    update();
+}
+
+// Completely revised gameLoop function to prevent multiple moles
+function gameLoop() {
+    if (!gameActive) return;
+    
+    // Count how many moles are currently up or moving
+    const activeMoleCount = moles.filter(mole => 
+        mole.userData.isUp || mole.userData.isMoving
+    ).length;
+    
+    console.log(`Game loop: ${activeMoleCount} active moles`);
+    
+    // Only pop up a new mole if there are none active (stricter limit)
+    if (activeMoleCount === 0) {
+        // Get moles that are available (down and not moving)
+        const availableMoles = moles.filter(mole => 
+            !mole.userData.isUp && !mole.userData.isMoving
+        );
+        
+        if (availableMoles.length > 0) {
+            // Pick a random mole
+            const randomMole = availableMoles[Math.floor(Math.random() * availableMoles.length)];
+            
+            // Reset all state for the mole
+            randomMole.userData.isHiding = false;
+            
+            // Generate a new unique ID for this appearance
+            randomMole.userData.moleId = `mole-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
+            
+            // Pop up the mole
+            console.log(`Popping up mole ${randomMole.userData.moleId}`);
+            animateMole(randomMole, true);
+            
+            // Set a timer to automatically hide the mole if not clicked
+            setTimeout(() => {
+                // Check if the mole is still up and hasn't been hit
+                if (randomMole.userData.isUp && 
+                    !randomMole.userData.isMoving && 
+                    !randomMole.userData.isHiding) {
+                    
+                    console.log(`Auto-hiding mole ${randomMole.userData.moleId} after timeout`);
+                    randomMole.userData.isHiding = true;
+                    animateMole(randomMole, false);
+                }
+            }, 1800); // Give a bit more time than before
+        }
+    }
+    
+    // Always clear touch state at each game loop iteration
+    touchState.clearTouchState();
+    
+    // Schedule next iteration with a random delay
+    // More variability than before (1.5-3 seconds)
+    const nextDelay = 1500 + Math.random() * 1500;
+    setTimeout(gameLoop, nextDelay);
+}
+
+// Completely revised startGame function
+function startGame() {
+    score = 0;
+    timeRemaining = 30;
+    gameActive = true;
+    
+    // Reset global touch state
+    touchState.clearTouchState();
+    touchState.lastTouchTime = 0;
+    
+    console.log('=== STARTING NEW GAME ===');
+    
+    // Complete reset of all moles
+    moles.forEach((mole, index) => {
+        // Reset state
+        mole.visible = false;
+        mole.position.y = -1.8;
+        mole.userData.isUp = false;
+        mole.userData.isMoving = false;
+        mole.userData.isHiding = false;
+        
+        // Generate a new unique ID
+        mole.userData.moleId = `mole-init-${index}-${Date.now()}`;
+        
+        // Clear any text
+        if (mole.userData.textContext) {
+            updateMoleText(mole, '');
+        }
+        
+        console.log(`Reset mole ${index} with ID ${mole.userData.moleId}`);
+    });
+    
+    // Update the UI
+    updateUI();
+    
+    // Delay game start slightly
+    setTimeout(() => {
+        gameLoop();
+    }, 800);
+    
+    // Set up game timer
+    const gameTimer = setInterval(() => {
+        timeRemaining--;
+        updateUI();
+        
+        if (timeRemaining <= 0) {
+            // End the game
+            gameActive = false;
+            clearInterval(gameTimer);
+            
+            // Hide all moles
+            moles.forEach(mole => {
+                if (mole.userData.isUp && !mole.userData.isMoving) {
+                    mole.userData.isHiding = true;
+                    animateMole(mole, false);
+                }
+            });
+            
+            // Final cleanup
+            setTimeout(() => {
+                moles.forEach(mole => {
+                    mole.visible = false;
+                    mole.userData.isUp = false;
+                    mole.userData.isMoving = false;
+                    mole.userData.isHiding = false;
+                });
+                
+                // Reset touch state completely
+                touchState.clearTouchState();
+                touchState.lastTouchTime = 0;
+                
+                console.log('=== GAME OVER ===');
+                
+                // Show game over message
+                instructionsElement.innerHTML = `Game Over! Final Score: ${score}<br>Click or touch anywhere to play again`;
+                instructionsElement.style.display = 'block';
+            }, 500);
+        }
+    }, 1000);
+}
+
+function updateUI() {
+    scoreElement.textContent = `Score: ${score}`;
+    timerElement.textContent = `Time: ${timeRemaining}s`;
+    
+    // Ensure styling is maintained
+    scoreElement.style.color = '#00008B'; // Dark blue
+    scoreElement.style.fontWeight = 'bold';
+    scoreElement.style.textShadow = '1px 1px 2px rgba(255, 255, 255, 0.7)';
+    scoreElement.style.zIndex = '5'; // Maintain higher z-index
+    
+    timerElement.style.color = '#00008B'; // Dark blue
+    timerElement.style.fontWeight = 'bold';
+    timerElement.style.textShadow = '1px 1px 2px rgba(255, 255, 255, 0.7)';
+    timerElement.style.zIndex = '5'; // Maintain higher z-index
 }
 
 // Add success indicator function
@@ -723,484 +1001,11 @@ function assignNewWord(mole) {
     updateMoleText(mole, currentWord);
 }
 
-// Modify the animateMole function
-function animateMole(mole, goingUp) {
-    // Ensure we don't double-animate
-    if (mole.userData.isMoving && goingUp) return;
-    
-    console.log(`Animating mole ${goingUp ? 'up' : 'down'} at position:`, mole.position);
-    
-    mole.userData.isMoving = true;
-    
-    // Assign a unique click ID to this mole instance when it comes up
-    // This helps prevent phantom clicks by ensuring each mole up/down cycle has a unique identifier
-    if (goingUp) {
-        mole.userData.clickId = Date.now() + Math.floor(Math.random() * 10000);
-        console.log('Assigned new clickId:', mole.userData.clickId);
-    }
-    
-    // Adjust the rise height for better visibility through the grass overlay
-    // When up, mole should be clearly visible through the grass holes
-    // When down, mole should be completely hidden
-    const targetY = goingUp ? 0.7 : -1.8; // Slightly higher when up, lower when down
-    const startY = mole.position.y;
-    const duration = 200;
-    const startTime = Date.now();
-    
-    if (goingUp) {
-        // Make mole visible when coming up
-        mole.visible = true;
-        // Ensure state is correctly set before assigning word
-        mole.userData.isUp = false; // Will be set to true when animation completes
-        assignNewWord(mole);
-    } else {
-        updateMoleText(mole, '');
-        // Clear any stored interaction state
-        mole.userData.lastClicked = null;
-    }
-    
-    function update() {
-        const elapsed = Date.now() - startTime;
-        const progress = Math.min(elapsed / duration, 1);
-        
-        // Easing function for smooth animation
-        const ease = progress < 0.5 
-            ? 2 * progress * progress 
-            : -1 + (4 - 2 * progress) * progress;
-            
-        mole.position.y = startY + (targetY - startY) * ease;
-        
-        if (progress < 1) {
-            requestAnimationFrame(update);
-        } else {
-            // Animation is complete
-            mole.userData.isMoving = false;
-            mole.userData.isUp = goingUp;
-            
-            // Complete cleanup when going down
-            if (!goingUp) {
-                // Hide the mole completely
-                mole.visible = false;
-                
-                // Reset all interaction state
-                mole.userData.clickId = null;
-                mole.userData.lastClicked = null;
-                
-                // Log that this mole animation cycle is complete
-                console.log('Mole animation complete - mole is down and reset');
-            } else {
-                // Log that mole is now up and ready for interaction
-                console.log('Mole is now up with ID:', mole.userData.clickId);
-            }
-        }
-    }
-    
-    // Start the animation
-    update();
-}
-
-// Game logic
-function startGame() {
-    score = 0;
-    timeRemaining = 30;
-    gameActive = true;
-    
-    // Reset any global interaction state
-    window.lastInteractionId = null;
-    
-    console.log("Starting new game - resetting all mole states");
-    
-    // Make sure all moles are completely reset when the game starts
-    moles.forEach(mole => {
-        // Reset visual state
-        mole.visible = false;
-        mole.position.y = -1.8; // Ensure moles are in the down position
-        
-        // Thoroughly reset all interaction state
-        mole.userData.isUp = false;
-        mole.userData.isMoving = false;
-        mole.userData.clickId = null;
-        mole.userData.lastClicked = null;
-        mole.userData.currentAppearanceId = null;
-        
-        // Clear any text
-        if (mole.userData.textContext) {
-            updateMoleText(mole, '');
-        }
-        
-        console.log("Reset mole at position:", mole.position);
-    });
-    
-    updateUI();
-    
-    // Add a small delay before starting the game loop to ensure UI has updated
-    setTimeout(() => {
-        gameLoop();
-    }, 500);
-    
-    const gameTimer = setInterval(() => {
-        timeRemaining--;
-        updateUI();
-        if (timeRemaining <= 0) {
-            gameActive = false;
-            clearInterval(gameTimer);
-            
-            // Hide all moles when game ends
-            moles.forEach(mole => {
-                if (mole.userData.isUp) {
-                    animateMole(mole, false);
-                }
-                
-                // Extra cleanup to prevent issues when starting a new game
-                setTimeout(() => {
-                    mole.userData.isUp = false;
-                    mole.userData.isMoving = false;
-                    mole.userData.clickId = null;
-                    mole.userData.lastClicked = null;
-                    mole.userData.currentAppearanceId = null;
-                    mole.visible = false;
-                }, 300);
-            });
-            
-            // Reset global interaction state again
-            window.lastInteractionId = null;
-            
-            instructionsElement.innerHTML = `Game Over! Final Score: ${score}<br>Click anywhere to play again`;
-            instructionsElement.style.display = 'block';
-        }
-    }, 1000);
-}
-
-function updateUI() {
-    scoreElement.textContent = `Score: ${score}`;
-    timerElement.textContent = `Time: ${timeRemaining}s`;
-    
-    // Ensure styling is maintained
-    scoreElement.style.color = '#00008B'; // Dark blue
-    scoreElement.style.fontWeight = 'bold';
-    scoreElement.style.textShadow = '1px 1px 2px rgba(255, 255, 255, 0.7)';
-    scoreElement.style.zIndex = '5'; // Maintain higher z-index
-    
-    timerElement.style.color = '#00008B'; // Dark blue
-    timerElement.style.fontWeight = 'bold';
-    timerElement.style.textShadow = '1px 1px 2px rgba(255, 255, 255, 0.7)';
-    timerElement.style.zIndex = '5'; // Maintain higher z-index
-}
-
-function gameLoop() {
-    if (!gameActive) return;
-    
-    // Extra check to ensure all moles are in a consistent state
-    moles.forEach(mole => {
-        if (!mole.visible && mole.userData.isUp) {
-            console.log('Found inconsistent mole state - fixing:', mole);
-            mole.userData.isUp = false;
-            mole.userData.isMoving = false;
-            mole.userData.clickId = null;
-            mole.userData.lastClicked = null;
-        }
-    });
-    
-    const availableMoles = moles.filter(mole => !mole.userData.isUp && !mole.userData.isMoving);
-    if (availableMoles.length > 0) {
-        // Pick a random mole to pop up
-        const randomMole = availableMoles[Math.floor(Math.random() * availableMoles.length)];
-        
-        // Ensure it's in a clean state before animating
-        randomMole.userData.isUp = false;
-        randomMole.userData.lastClicked = null;
-        randomMole.userData.clickId = null;
-        
-        // Start the animation
-        console.log('Game loop popping up a mole at:', randomMole.position);
-        animateMole(randomMole, true);
-        
-        // Create a timer to automatically hide the mole if not clicked
-        const moleId = Date.now(); // Create a unique ID for this mole appearance
-        randomMole.userData.currentAppearanceId = moleId;
-        
-        setTimeout(() => {
-            // Only hide if this is still the same appearance cycle and the mole is still up
-            if (randomMole.userData.currentAppearanceId === moleId && 
-                randomMole.userData.isUp && 
-                !randomMole.userData.isMoving) {
-                
-                console.log('Auto-hiding mole that was not clicked:', randomMole);
-                animateMole(randomMole, false);
-            }
-        }, 1500);
-    }
-    
-    // Schedule the next game loop iteration with a random delay
-    const nextDelay = 1500 + Math.random() * 1000; // Between 1.5 and 2.5 seconds
-    setTimeout(gameLoop, nextDelay);
-}
-
-// Explicitly add terrain and clouds to scene
-function addTerrainAndClouds() {
-    // Add terrain
-    const terrain = createCustomTerrain();
-    scene.add(terrain);
-    console.log("Terrain added:", terrain);
-    
-    // Add clouds
-    const cloudPositions = [
-        { x: -8, y: 7, z: -5 },  // Higher y value
-        { x: 0, y: 8, z: -4 },   // Higher y value
-        { x: 8, y: 7, z: -5 }    // Higher y value
-    ];
-    
-    cloudPositions.forEach(pos => {
-        const cloud = createCloud();
-        cloud.position.set(pos.x, pos.y, pos.z);
-        // Scale clouds to be slightly smaller
-        cloud.scale.set(0.8, 0.8, 0.8);
-        scene.add(cloud);
-        console.log("Cloud added:", cloud);
-    });
-}
-
-// Call this function after scene initialization
-addTerrainAndClouds();
-
-// Debug canvas styling
-const canvasElement = renderer.domElement;
-console.log("Canvas element:", canvasElement);
-console.log("Canvas background:", getComputedStyle(canvasElement).backgroundColor);
-// Ensure canvas is transparent
-canvasElement.style.backgroundColor = "transparent";
-
-// Add debug info to check what's in the scene
-console.log("Scene children:", scene.children);
-
-// Add a second directional light to better show the slopes
-const backLight = new THREE.DirectionalLight(0xffffff, 0.3);
-backLight.position.set(-5, 5, -5);
-scene.add(backLight);
-
-// Move clouds higher and make them smaller
-function adjustCloudPositions() {
-    // Find all clouds in the scene
-    scene.children.forEach(child => {
-        // Identify clouds by checking if they're groups with white material children
-        if (child.isGroup && child.children.length > 0) {
-            const firstChild = child.children[0];
-            if (firstChild.material && firstChild.material.color && 
-                firstChild.material.color.getHexString() === 'ffffff') {
-                // Move cloud up by 2 units
-                child.position.y += 2;
-                
-                // Scale down existing clouds by 20%
-                child.scale.multiplyScalar(0.8);
-            }
-        }
-    });
-}
-
-// Call this function to adjust existing clouds
-adjustCloudPositions();
-
-// Update hole color to be less dark
-function updateHoleColor() {
-    scene.children.forEach(child => {
-        if (child.geometry && child.geometry.type === 'CircleGeometry') {
-            // Make holes fully transparent
-            child.material = new THREE.MeshLambertMaterial({
-                color: 0x505050, // Color doesn't matter since transparent
-                transparent: true,
-                opacity: 0,
-                depthWrite: false
-            });
-            console.log("Updated hole to be transparent");
-        }
-    });
-}
-
-// Improve lighting for better visibility
-function enhanceLighting() {
-    // Remove existing lights
-    scene.children.forEach(child => {
-        if (child instanceof THREE.Light) {
-            scene.remove(child);
-        }
-    });
-    
-    // Add stronger ambient light
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
-    scene.add(ambientLight);
-    
-    // Add directional light from front
-    const frontLight = new THREE.DirectionalLight(0xffffff, 1.0);
-    frontLight.position.set(0, 5, 10);
-    scene.add(frontLight);
-    
-    // Add directional light from above
-    const topLight = new THREE.DirectionalLight(0xffffff, 0.8);
-    topLight.position.set(0, 10, 0);
-    scene.add(topLight);
-}
-
-// Call these functions to update the scene
-updateHoleColor();
-enhanceLighting();
-
-// Make the ground green again
-function updateGroundColor() {
-    scene.children.forEach(child => {
-        if (child.geometry && 
-            (child.geometry.type === 'PlaneGeometry' || child.geometry.type === 'PlaneBufferGeometry') && 
-            child.rotation.x === -Math.PI / 2) {
-            child.material.color.set(0x90EE90); // Light green color
-        }
-    });
-}
-
-// Adjust eye position for better visibility
-function adjustEyePositions() {
-    moles.forEach(mole => {
-        if (mole.userData.facingGroup) {
-            mole.userData.facingGroup.children.forEach(child => {
-                // Identify eyes by their geometry and position
-                if (child.geometry && child.geometry.type === 'CircleGeometry') {
-                    // Make eyes larger
-                    child.scale.set(1.5, 1.5, 1.5);
-                    
-                    // Move eyes higher if they're the eye positions
-                    if (Math.abs(child.position.x) > 0.1) { // This is an eye
-                        child.position.y += 0.1; // Move higher
-                    }
-                }
-            });
-        }
-    });
-}
-
-// Call these functions to update the scene
-// Uncomment if you want the ground to be green again
-// updateGroundColor();
-adjustEyePositions();
-
-// Update mole color to light brown
-function updateMoleColor() {
-    moles.forEach(mole => {
-        // Find the body (first child, which is the sphere)
-        if (mole.children && mole.children.length > 0) {
-            const body = mole.children[0];
-            if (body.material) {
-                body.material.color.set(0xD2B48C); // Light brown (tan) color
-            }
-        }
-    });
-}
-
-// Call this function to ensure good lighting
-enhanceLighting();
-
-// More direct approach to update ground color
-function fixGroundColor() {
-    // Log all scene children to debug
-    console.log("Scene children:", scene.children);
-    
-    // Try multiple approaches to find and update the ground
-    scene.traverse(function(object) {
-        // Look for large plane geometries that are likely to be the ground
-        if (object.geometry && 
-            (object.geometry.type === 'PlaneGeometry' || object.geometry.type === 'PlaneBufferGeometry') && 
-            object.geometry.parameters && 
-            object.geometry.parameters.width > 10) {
-            
-            console.log("Found potential ground:", object);
-            
-            // Force update the material to transparent
-            object.material = new THREE.MeshLambertMaterial({
-                color: 0x4CAF50, // Green (but will be invisible)
-                side: THREE.DoubleSide,
-                transparent: true,
-                opacity: 0,
-                depthWrite: false
-            });
-            
-            console.log("Updated ground to transparent");
-        }
-    });
-}
-
-// More direct approach to update mole color
-function fixMoleColor() {
-    // Log all moles to debug
-    console.log("Moles array:", moles);
-    
-    moles.forEach((mole, index) => {
-        console.log(`Examining mole ${index}:`, mole);
-        
-        // Try to find the body mesh (usually the first child or the object itself)
-        let bodyMesh = null;
-        
-        if (mole.children && mole.children.length > 0) {
-            // Try to find a sphere geometry which is likely the body
-            mole.traverse(function(child) {
-                if (child.geometry && 
-                    (child.geometry.type === 'SphereGeometry' || child.geometry.type === 'SphereBufferGeometry')) {
-                    bodyMesh = child;
-                }
-            });
-            
-            if (!bodyMesh && mole.children[0].isMesh) {
-                bodyMesh = mole.children[0];
-            }
-        }
-        
-        if (bodyMesh) {
-            console.log("Found mole body:", bodyMesh);
-            
-            // Force update the material
-            bodyMesh.material = new THREE.MeshLambertMaterial({
-                color: 0xC19A6B // Warmer, more visible light brown
-            });
-            
-            console.log("Updated mole color");
-        }
-    });
-}
-
-// Ensure proper lighting
-function fixLighting() {
-    // Remove any existing lights
-    const existingLights = [];
-    scene.traverse(function(object) {
-        if (object.isLight) {
-            existingLights.push(object);
-        }
-    });
-    
-    existingLights.forEach(light => scene.remove(light));
-    
-    // Add new lights
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
-    scene.add(ambientLight);
-    
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-    directionalLight.position.set(5, 10, 5);
-    scene.add(directionalLight);
-    
-    const frontLight = new THREE.DirectionalLight(0xffffff, 0.6);
-    frontLight.position.set(0, 5, 10);
-    scene.add(frontLight);
-}
-
-// Call all fix functions
-fixGroundColor();
-fixMoleColor();
-fixLighting();
-
-// Log the scene after fixes
-console.log("Scene after fixes:", scene);
-
 // Zoom in the camera
 function zoomInCamera() {
     // Move camera closer to the scene
     camera.position.set(0, 5, 6); // Reduced z value to zoom in
-camera.lookAt(0, 0, 0);
+    camera.lookAt(0, 0, 0);
     console.log("Camera zoomed in:", camera.position);
 }
 
