@@ -356,17 +356,40 @@ const moleEyeMaterial = new THREE.MeshLambertMaterial({
     color: 0x1A1A1A  // Dark gray for eyes
 });
 
-// Modified click handler
-window.addEventListener('click', (event) => {
+// Modified click and touch handler
+window.addEventListener('click', handleInteraction);
+window.addEventListener('touchstart', handleInteraction);
+
+// Handle both mouse clicks and touch events
+function handleInteraction(event) {
+    // Prevent default behavior for touch events to avoid scrolling/zooming
+    if (event.type === 'touchstart') {
+        event.preventDefault();
+    }
+    
     if (!gameActive) {
         startGame();
         instructionsElement.style.display = 'none';
         return;
     }
     
+    // Get the coordinates (handling both mouse and touch)
+    let clientX, clientY;
+    
+    if (event.type === 'touchstart') {
+        // Get the first touch point
+        const touch = event.touches[0];
+        clientX = touch.clientX;
+        clientY = touch.clientY;
+    } else {
+        // Regular mouse event
+        clientX = event.clientX;
+        clientY = event.clientY;
+    }
+    
     const mouse = new THREE.Vector2(
-        (event.clientX / window.innerWidth) * 2 - 1,
-        -(event.clientY / window.innerHeight) * 2 + 1
+        (clientX / window.innerWidth) * 2 - 1,
+        -(clientY / window.innerHeight) * 2 + 1
     );
     
     const raycaster = new THREE.Raycaster();
@@ -392,7 +415,7 @@ window.addEventListener('click', (event) => {
             animateMole(hitMole, false);
         }
     }
-});
+}
 
 // Add success indicator function
 function createSuccessIndicator(position) {

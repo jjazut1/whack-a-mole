@@ -1,6 +1,10 @@
 <html>
 <head>
     <title>3D Whack-a-Mole</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
     <style>
         /* Set base background color */
         html, body {
@@ -43,6 +47,7 @@
             z-index: 3;
             transform: translateZ(0);
             background: transparent;
+            touch-action: none; /* Prevent browser's default touch actions */
         }
         
         #grassOverlay {
@@ -143,6 +148,29 @@
             // Position hole markers as dirt holes
             // This will be called automatically by positionDecorativeOverlay() in script.js
         }, 1000);
+        
+        // Prevent touchmove default behavior to avoid scrolling/zooming
+        document.addEventListener('touchmove', function(e) {
+            e.preventDefault();
+        }, { passive: false });
+        
+        // Handle iOS specific behaviors
+        document.addEventListener('gesturestart', function(e) {
+            e.preventDefault();
+        }, { passive: false });
+        
+        // Fix for iOS "double-tap to zoom"
+        document.documentElement.addEventListener('touchend', function(e) {
+            const now = Date.now();
+            const DOUBLE_TAP_THRESHOLD = 300;
+            if (now - lastTouchEnd <= DOUBLE_TAP_THRESHOLD) {
+                e.preventDefault();
+            }
+            lastTouchEnd = now;
+        }, false);
+        
+        // Track last touch end time for double-tap detection
+        let lastTouchEnd = 0;
     });
     </script>
     
