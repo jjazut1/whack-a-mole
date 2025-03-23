@@ -64,19 +64,19 @@
             position: absolute;
             width: 50px;
             height: 50px;
-            background-color: transparent;
-            border: 2px dashed rgba(255, 255, 255, 0.5);
+            background-color: rgba(0, 0, 0, 0.1);
+            border: 2px dashed rgba(0, 0, 0, 0.5);
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            color: rgba(255, 255, 255, 0.7);
+            color: rgba(0, 0, 0, 0.7);
             font-size: 18px;
             font-weight: bold;
             pointer-events: none;
             z-index: 3;
-            /* Initially hidden, will be shown for debugging */
-            display: none;
+            /* Make hole markers visible by default */
+            display: flex;
         }
         
         /* Add a fallback image element in case background-image doesn't work */
@@ -128,8 +128,8 @@
             }
 
             // For debugging - show hole markers
-            // Uncomment the line below to see hole markers for alignment
-            // document.querySelectorAll('.hole-marker').forEach(m => m.style.display = 'flex');
+            // Show hole markers for alignment with 3D mole holes
+            document.querySelectorAll('.hole-marker').forEach(m => m.style.display = 'flex');
         }, 1000);
     });
     </script>

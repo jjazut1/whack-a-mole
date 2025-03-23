@@ -83,7 +83,10 @@ function createCustomTerrain() {
     
     const material = new THREE.MeshLambertMaterial({
         color: 0x90EE90, // Light green
-        side: THREE.DoubleSide
+        side: THREE.DoubleSide,
+        transparent: true, // Enable transparency
+        opacity: 0, // Fully transparent
+        depthWrite: false // Prevent z-fighting with other objects
     });
     
     const terrain = new THREE.Mesh(geometry, material);
@@ -154,7 +157,10 @@ function setupScene() {
 function setupHolesAndMoles() {
     const holeGeometry = new THREE.CircleGeometry(1.4, 32);
     const holeMaterial = new THREE.MeshLambertMaterial({ 
-        color: 0x404040  // Dark gray
+        color: 0x404040,  // Dark gray
+        transparent: true, // Enable transparency
+        opacity: 0, // Fully transparent
+        depthWrite: false // Prevent z-fighting with moles
     });
 
     // Adjust the Z values to move holes more toward the bottom edge of the screen
@@ -188,7 +194,7 @@ function setupHolesAndMoles() {
 
         // Create mole
         const mole = createMole();
-        mole.position.set(pos.x * 1.5, -1.5, pos.z * 1.5); // Lower starting position
+        mole.position.set(pos.x * 1.5, -1.8, pos.z * 1.5); // Match the "down" position in animateMole
         
         // Set mole rotation
         const targetPoint = new THREE.Vector3(0, 0, -3);
@@ -527,7 +533,10 @@ function animateMole(mole, goingUp) {
     if (mole.userData.isMoving) return;
     
     mole.userData.isMoving = true;
-    const targetY = goingUp ? 0.5 : -1.5; // Adjust rise height to match overlay holes
+    // Adjust the rise height for better visibility through the grass overlay
+    // When up, mole should be clearly visible through the grass holes
+    // When down, mole should be completely hidden
+    const targetY = goingUp ? 0.7 : -1.8; // Slightly higher when up, lower when down
     const startY = mole.position.y;
     const duration = 200;
     const startTime = Date.now();
@@ -658,7 +667,14 @@ adjustCloudPositions();
 function updateHoleColor() {
     scene.children.forEach(child => {
         if (child.geometry && child.geometry.type === 'CircleGeometry') {
-            child.material.color.set(0x505050); // Lighter gray for holes
+            // Make holes fully transparent
+            child.material = new THREE.MeshLambertMaterial({
+                color: 0x505050, // Color doesn't matter since transparent
+                transparent: true,
+                opacity: 0,
+                depthWrite: false
+            });
+            console.log("Updated hole to be transparent");
         }
     });
 }
@@ -758,13 +774,16 @@ function fixGroundColor() {
             
             console.log("Found potential ground:", object);
             
-            // Force update the material
+            // Force update the material to transparent
             object.material = new THREE.MeshLambertMaterial({
-                color: 0x4CAF50, // Brighter green
-                side: THREE.DoubleSide
+                color: 0x4CAF50, // Green (but will be invisible)
+                side: THREE.DoubleSide,
+                transparent: true,
+                opacity: 0,
+                depthWrite: false
             });
             
-            console.log("Updated ground color");
+            console.log("Updated ground to transparent");
         }
     });
 }
