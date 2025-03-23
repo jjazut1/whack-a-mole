@@ -39,8 +39,8 @@
             left: 0;
             width: 100%;
             height: 100%;
-            /* Make sure this z-index is higher than the body but lower than the grass overlay */
-            z-index: 1;
+            /* Make sure this z-index is higher than both the body and the grass overlay */
+            z-index: 3;
             transform: translateZ(0);
             background: transparent;
         }
@@ -58,8 +58,8 @@
             opacity: 0.9;
             /* Let clicks pass through to the game */
             pointer-events: none; 
-            /* Higher z-index to place above the canvas */
-            z-index: 2;
+            /* Lower z-index to place below the canvas */
+            z-index: 1;
             transform-origin: center bottom;
             /* Adjust scale to match the hole positions */
             transform: translateX(-50%) translateY(0%) scale(1.1);
@@ -82,7 +82,7 @@
             font-size: 18px;
             font-weight: bold;
             pointer-events: none;
-            z-index: 3;
+            z-index: 4; /* Increased to be above the canvas */
             /* Make hole markers visible by default */
             display: flex;
         }
@@ -94,7 +94,7 @@
             left: 50%;
             width: 90%;
             height: 80%;
-            z-index: 1;
+            z-index: 1; /* Same z-index as grassOverlay */
             pointer-events: none;
             opacity: 0.9;
             transform: translateX(-50%) translateY(0%) scale(1.1);
