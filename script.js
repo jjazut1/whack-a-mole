@@ -1057,12 +1057,6 @@ function startGame() {
     correctStreak = 0;
     lastStreakBonus = 0;
     
-    // Reset streak counter display
-    const streakCounter = document.getElementById('streak-counter');
-    if (streakCounter) {
-        streakCounter.style.opacity = '0';
-    }
-    
     // Reset any global interaction state
     window.lastInteractionId = null;
     
@@ -1164,29 +1158,6 @@ function updateUI() {
     if (gameTitleDisplay && gameActive) {
         gameTitleDisplay.textContent = wordCategories[currentCategory].title;
         gameTitleDisplay.style.display = 'block';
-    }
-    
-    // Update streak counter display
-    const streakCounter = document.getElementById('streak-counter');
-    if (streakCounter) {
-        if (correctStreak > 0) {
-            streakCounter.textContent = `Streak: ${correctStreak}`;
-            streakCounter.style.opacity = '1';
-            
-            // Change color as streak increases
-            if (correctStreak >= 6) {
-                streakCounter.style.color = '#FF0000'; // Red for 6+
-                streakCounter.style.fontSize = '24px';
-            } else if (correctStreak >= 3) {
-                streakCounter.style.color = '#FF5722'; // Orange for 3-5
-                streakCounter.style.fontSize = '22px';
-            } else {
-                streakCounter.style.color = '#4CAF50'; // Green for 1-2
-                streakCounter.style.fontSize = '20px';
-            }
-        } else {
-            streakCounter.style.opacity = '0';
-        }
     }
 }
 

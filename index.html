@@ -230,26 +230,6 @@
             0% { transform: translate(-50%, -50%) scale(1); }
             100% { transform: translate(-50%, -50%) scale(1.05); } /* Smaller scale change */
         }
-        
-        /* Streak counter display */
-        #streak-counter {
-            position: absolute;
-            top: 60px;
-            left: 50%;
-            transform: translateX(-50%);
-            font-size: 20px;
-            font-weight: bold;
-            color: #FF5722;
-            text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.7);
-            z-index: 5;
-            text-align: center;
-            font-family: 'Comic Neue', sans-serif;
-            background-color: rgba(255, 255, 255, 0.5);
-            padding: 2px 10px;
-            border-radius: 10px;
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
     </style>
 </head>
 <body>
@@ -270,8 +250,7 @@
     <!-- Game title display -->
     <div id="game-title-display"></div>
     
-    <!-- Streak counter display -->
-    <div id="streak-counter"></div>
+    <!-- Streak counter display has been removed -->
 
     <!-- Add hole markers for alignment - these are the dirt holes -->
     <div class="hole-marker" id="marker1">1</div>
