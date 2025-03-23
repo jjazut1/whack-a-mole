@@ -33,7 +33,7 @@ let gameActive = false;
 let timeRemaining = 30;
 
 // Add word lists
-const shortAWords = ['hat', 'cat', 'bat', 'mad', 'sad', 'bad', 'dad', 'had', 'lap', 'map', 'nap', 'rap'];
+const shortAWords = ['had', 'ran', 'and', 'man', 'can', 'at', 'am', 'an', 'last', 'past', 'fast', 'ask', 'land', 'hand', 'stand'];
 const otherWords = ['hit', 'hot', 'but', 'set', 'sit', 'let', 'pot', 'put', 'met'];
 let currentWord = '';
 let isShortAWord = false;
