@@ -166,7 +166,10 @@ function setupHolesAndMoles() {
         { x: 2, z: 2.5, rotation: -Math.PI * 0.75 - 0.175, description: "Back Right" }
     ];
 
-holes.forEach(pos => {
+    // Store hole positions for reference when positioning the decorative overlay
+    window.holePositions = [];
+
+    holes.forEach(pos => {
         console.log(`Creating hole at ${pos.description}`);
 
         // Create hole
@@ -174,10 +177,18 @@ holes.forEach(pos => {
         hole.rotation.x = -Math.PI / 2;
         hole.position.set(pos.x * 1.5, 0.01, pos.z * 1.5);
         scene.add(hole);
+        
+        // Store hole position for overlay alignment
+        window.holePositions.push({
+            x: pos.x * 1.5,
+            y: 0.01,
+            z: pos.z * 1.5,
+            description: pos.description
+        });
 
         // Create mole
         const mole = createMole();
-        mole.position.set(pos.x * 1.5, -1.0, pos.z * 1.5);
+        mole.position.set(pos.x * 1.5, -1.5, pos.z * 1.5); // Lower starting position
         
         // Set mole rotation
         const targetPoint = new THREE.Vector3(0, 0, -3);
@@ -192,9 +203,70 @@ holes.forEach(pos => {
         
         mole.userData.isUp = false;
         mole.userData.isMoving = false;
-    scene.add(mole);
-    moles.push(mole);
-});
+        mole.userData.holePosition = { x: pos.x * 1.5, y: 0.01, z: pos.z * 1.5 }; // Store hole reference
+        scene.add(mole);
+        moles.push(mole);
+    });
+    
+    // Position the decorative overlay
+    setTimeout(positionDecorativeOverlay, 500);
+}
+
+// Function to position the decorative overlay based on hole positions
+function positionDecorativeOverlay() {
+    if (!window.holePositions || window.holePositions.length === 0) {
+        console.log('No hole positions available');
+        return;
+    }
+    
+    // Get screen coordinates of holes
+    const holeScreenPositions = window.holePositions.map(pos => {
+        const vector = new THREE.Vector3(pos.x, pos.y, pos.z);
+        vector.project(camera);
+        
+        return {
+            x: (vector.x * 0.5 + 0.5) * window.innerWidth,
+            y: -(vector.y * 0.5 - 0.5) * window.innerHeight,
+            description: pos.description
+        };
+    });
+    
+    console.log('Hole screen positions:', holeScreenPositions);
+    
+    // Create visual markers for debugging if needed
+    if (false) { // Set to true to see debug markers
+        holeScreenPositions.forEach((pos, index) => {
+            const marker = document.createElement('div');
+            marker.style.position = 'absolute';
+            marker.style.left = pos.x + 'px';
+            marker.style.top = pos.y + 'px';
+            marker.style.width = '20px';
+            marker.style.height = '20px';
+            marker.style.borderRadius = '50%';
+            marker.style.backgroundColor = 'red';
+            marker.style.zIndex = '1000';
+            marker.textContent = index + 1;
+            marker.style.display = 'flex';
+            marker.style.alignItems = 'center';
+            marker.style.justifyContent = 'center';
+            marker.style.color = 'white';
+            document.body.appendChild(marker);
+        });
+    }
+    
+    // Position the markers in the overlay to match hole positions
+    const markers = document.querySelectorAll('.hole-marker');
+    holeScreenPositions.forEach((pos, index) => {
+        if (markers[index]) {
+            // Convert to percentages for responsive positioning
+            const percentX = (pos.x / window.innerWidth) * 100;
+            const percentY = (pos.y / window.innerHeight) * 100;
+            
+            markers[index].style.left = percentX + '%';
+            markers[index].style.top = percentY + '%';
+            markers[index].textContent = (index + 1) + '';
+        }
+    });
 }
 
 // Initialize scene
@@ -455,7 +527,7 @@ function animateMole(mole, goingUp) {
     if (mole.userData.isMoving) return;
     
     mole.userData.isMoving = true;
-    const targetY = goingUp ? 1.0 : -2.0; // Move below ground when not up
+    const targetY = goingUp ? 0.5 : -1.5; // Adjust rise height to match overlay holes
     const startY = mole.position.y;
     const duration = 200;
     const startTime = Date.now();
@@ -1112,3 +1184,8 @@ addVersionIndicator();
 
 // You can also add this at the end of your main code
 console.log("Game initialization complete - running latest version");
+
+// Handle window resize to reposition overlay markers
+window.addEventListener('resize', function() {
+    positionDecorativeOverlay();
+});
