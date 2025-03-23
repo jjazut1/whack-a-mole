@@ -247,11 +247,16 @@ function positionDecorativeOverlay() {
     
     // Position the markers in the overlay to match hole positions
     const markers = document.querySelectorAll('.hole-marker');
+    const holeSize = 280; // Large dirt hole size in pixels
+    const offsetX = holeSize / 2; // Center offset for X
+    const offsetY = holeSize / 2; // Center offset for Y
+    
     holeScreenPositions.forEach((pos, index) => {
         if (markers[index]) {
             // Convert to percentages for responsive positioning
-            const percentX = (pos.x / window.innerWidth) * 100;
-            const percentY = (pos.y / window.innerHeight) * 100;
+            // Apply offset to center the larger holes under the grass holes
+            const percentX = ((pos.x - offsetX) / window.innerWidth) * 100;
+            const percentY = ((pos.y - offsetY) / window.innerHeight) * 100;
             
             markers[index].style.left = percentX + '%';
             markers[index].style.top = percentY + '%';

@@ -68,8 +68,8 @@
         /* Add hole markers for alignment - repurposing as dirt holes */
         .hole-marker {
             position: absolute;
-            width: 70px; /* Larger size to represent hole */
-            height: 70px; /* Larger size to represent hole */
+            width: 280px; /* 4x larger (was 70px) */
+            height: 280px; /* 4x larger (was 70px) */
             background-color: #3E2723; /* Dark brown color for dirt */
             border: none; /* Remove the dashed border */
             border-radius: 50%;
@@ -77,11 +77,11 @@
             color: transparent;
             font-size: 0px; /* Hide text */
             pointer-events: none; /* Let clicks pass through */
-            z-index: 2; /* Between canvas (3) and grass (1) */
+            z-index: 0.5; /* Between body (0) and grass overlay (1) */
             /* Make hole markers visible */
             display: block;
             /* Add slight shadow for depth */
-            box-shadow: inset 0px 5px 10px rgba(0, 0, 0, 0.5);
+            box-shadow: inset 0px 15px 30px rgba(0, 0, 0, 0.6);
         }
         
         /* Add a fallback image element in case background-image doesn't work */
@@ -101,17 +101,17 @@
     </style>
 </head>
 <body>
+    <!-- Add hole markers for alignment - these are the dirt holes -->
+    <div class="hole-marker" id="marker1">1</div>
+    <div class="hole-marker" id="marker2">2</div>
+    <div class="hole-marker" id="marker3">3</div>
+    <div class="hole-marker" id="marker4">4</div>
+    
     <!-- Add this div for the grass overlay -->
     <div id="grassOverlay"></div>
     
     <!-- Fallback image element -->
     <img id="grassFallback" src="https://jjazut1.github.io/image-hosting/grassv2nbg.png" alt="Grass overlay">
-    
-    <!-- Add hole markers for alignment -->
-    <div class="hole-marker" id="marker1">1</div>
-    <div class="hole-marker" id="marker2">2</div>
-    <div class="hole-marker" id="marker3">3</div>
-    <div class="hole-marker" id="marker4">4</div>
     
     <!-- Add a container for the Three.js canvas -->
     <div id="canvas-container"></div>
