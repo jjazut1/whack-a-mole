@@ -732,21 +732,21 @@ function showStreakBonus() {
         streakBonus.classList.remove('active');
         setTimeout(() => {
             document.body.removeChild(streakBonus);
-        }, 500);
-    }, 2000);
+        }, 200); // Faster removal after animation ends (was 500)
+    }, 800); // Display for shorter time (was 2000)
 }
 
 // Create fireworks effect for streak bonus
 function createFireworks() {
-    const particleCount = 50;
+    const particleCount = 30; // Fewer particles (was 50)
     const particles = [];
-    const colors = [0xFFFF00, 0x00FF00, 0xFF00FF, 0x00FFFF, 0xFF0000, 0x0000FF]; // Colorful particles
+    const colors = [0xFF5722]; // Single color (orange) matching the notification
     
     // Create particles in a circle around the center of the view
     for (let i = 0; i < particleCount; i++) {
-        const geometry = new THREE.SphereGeometry(0.1, 8, 8);
+        const geometry = new THREE.SphereGeometry(0.08, 8, 8); // Smaller particles (was 0.1)
         const material = new THREE.MeshBasicMaterial({ 
-            color: colors[Math.floor(Math.random() * colors.length)],
+            color: colors[0],
             transparent: true,
             opacity: 1
         });
@@ -756,13 +756,13 @@ function createFireworks() {
         const centerPosition = new THREE.Vector3(0, 5, 0);
         particle.position.copy(centerPosition);
         
-        // Generate velocity in all directions
+        // Generate velocity in all directions - slightly faster speed
         const angle = Math.random() * Math.PI * 2;
-        const height = 0.5 + Math.random() * 1.5;
+        const height = 0.7 + Math.random() * 1.2;
         particle.velocity = new THREE.Vector3(
-            Math.cos(angle) * (0.5 + Math.random()),
+            Math.cos(angle) * (0.6 + Math.random()),
             height,
-            Math.sin(angle) * (0.5 + Math.random())
+            Math.sin(angle) * (0.6 + Math.random())
         );
         
         scene.add(particle);
@@ -772,19 +772,19 @@ function createFireworks() {
     // Animate particles
     let elapsed = 0;
     function animateFireworks() {
-        elapsed += 0.016; // Approximate for 60fps
+        elapsed += 0.025; // Faster animation (was 0.016)
         
         particles.forEach(particle => {
             particle.position.add(particle.velocity);
-            particle.velocity.y -= 0.05; // Gravity
-            particle.material.opacity = 1 - (elapsed * 0.7);
+            particle.velocity.y -= 0.08; // Stronger gravity (was 0.05)
+            particle.material.opacity = 1 - (elapsed * 1.2); // Faster fade (was 0.7)
             
             // Add some rotation for sparkle effect
             particle.rotation.x += 0.1;
             particle.rotation.y += 0.1;
         });
         
-        if (elapsed < 1.5) { // Animation duration
+        if (elapsed < 0.8) { // Shorter animation duration (was 1.5)
             requestAnimationFrame(animateFireworks);
         } else {
             // Clean up particles
