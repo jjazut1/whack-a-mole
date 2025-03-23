@@ -49,8 +49,8 @@
             position: absolute;
             bottom: 0;
             left: 50%;
-            width: 90%; /* Increase width to ensure full coverage */
-            height: 80%;
+            width: 93%; /* Slightly increased width to eliminate border */
+            height: 83%; /* Slightly increased height to eliminate border */
             background-image: url('https://jjazut1.github.io/image-hosting/grassv2nbg.png');
             background-size: cover;
             background-position: bottom center;
@@ -62,7 +62,8 @@
             transform-origin: center bottom;
             /* Adjust scale to match the hole positions and move down 13px */
             transform: translateX(-50%) translateY(13px) scale(1.1);
-            /* Remove debug border */
+            /* Ensure no visible borders with extended margin */
+            margin: 0 -3px -3px -3px;
         }
         
         /* Add hole markers for alignment - repurposing as dirt holes */
@@ -89,13 +90,14 @@
             position: absolute;
             bottom: 0;
             left: 50%;
-            width: 90%;
-            height: 80%;
+            width: 93%; /* Match the width of the overlay */
+            height: 83%; /* Match the height of the overlay */
             z-index: 1; /* Same z-index as grassOverlay */
             pointer-events: none;
             opacity: 0.9;
             transform: translateX(-50%) translateY(13px) scale(1.1);
-            /* Remove debug border */
+            /* Ensure no visible borders with extended margin */
+            margin: 0 -3px -3px -3px;
             display: none; /* Hidden by default, will show via JS if needed */
         }
     </style>

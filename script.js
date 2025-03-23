@@ -255,7 +255,14 @@ function positionDecorativeOverlay() {
         if (markers[index]) {
             // Convert to percentages for responsive positioning
             // Apply offset to center the larger holes under the grass holes
-            const percentX = ((pos.x - offsetX) / window.innerWidth) * 100;
+            let posX = pos.x;
+            
+            // Move the bottom right hole (index 3) 5px to the left
+            if (index === 3) {
+                posX -= 5;
+            }
+            
+            const percentX = ((posX - offsetX) / window.innerWidth) * 100;
             const percentY = ((pos.y - offsetY) / window.innerHeight) * 100;
             
             markers[index].style.left = percentX + '%';
