@@ -172,9 +172,9 @@ function setupHolesAndMoles() {
     // Increasing Z values moves the holes further down/away from the camera
     const holes = [
         { x: -1.5, z: -1.5, rotation: Math.PI * 0.25 + 0.175, description: "back Left" },     // Moved up by decreasing Z
-        { x: 2.5, z: -1.5, rotation: -Math.PI * 0.25 - 0.175, description: "Front Right" },     // Moved up by decreasing Z
+        { x: 2.2, z: -1.5, rotation: -Math.PI * 0.25 - 0.175, description: "back Right" },     // Moved up by decreasing Z
         { x: -2.3, z: 1.5, rotation: Math.PI * 0.75 + 0.175, description: "front Left" },       // Moved toward center by decreasing Z
-        { x: 2.6, z: 2.0, rotation: -Math.PI * 0.75 - 0.175, description: "Back Right" }        // Moved toward center by decreasing Z
+        { x: 2.2, z: 2.0, rotation: -Math.PI * 0.75 - 0.175, description: "front Right" }        // Moved toward center by decreasing Z
     ];
 
     // Store hole positions for reference when positioning the decorative overlay
