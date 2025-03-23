@@ -61,8 +61,8 @@
             /* Lower z-index to place below the canvas */
             z-index: 1;
             transform-origin: center bottom;
-            /* Adjust scale to match the hole positions */
-            transform: translateX(-50%) translateY(0%) scale(1.1);
+            /* Adjust scale to match the hole positions and move down 8px */
+            transform: translateX(-50%) translateY(8px) scale(1.1);
             /* Add debug border to check visibility */
             border: 1px solid rgba(255, 0, 0, 0.3);
         }
@@ -97,7 +97,7 @@
             z-index: 1; /* Same z-index as grassOverlay */
             pointer-events: none;
             opacity: 0.9;
-            transform: translateX(-50%) translateY(0%) scale(1.1);
+            transform: translateX(-50%) translateY(8px) scale(1.1);
             border: 1px solid rgba(0, 0, 255, 0.3);
             display: none; /* Hidden by default, will show via JS if needed */
         }
