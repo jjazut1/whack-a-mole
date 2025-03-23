@@ -171,10 +171,10 @@ function setupHolesAndMoles() {
     // Adjust the Z values to move holes more toward the bottom edge of the screen
     // Increasing Z values moves the holes further down/away from the camera
     const holes = [
-        { x: -1.5, z: -1, rotation: Math.PI * 0.25 + 0.175, description: "back Left" },
-        { x: 2, z: -1, rotation: -Math.PI * 0.25 - 0.175, description: "Front Right" },
-        { x: -2, z: 2, rotation: Math.PI * 0.75 + 0.175, description: "front Left" },
-        { x: 2, z: 2.5, rotation: -Math.PI * 0.75 - 0.175, description: "Back Right" }
+        { x: -1.5, z: -1.5, rotation: Math.PI * 0.25 + 0.175, description: "back Left" },     // Moved up by decreasing Z
+        { x: 2, z: -1.5, rotation: -Math.PI * 0.25 - 0.175, description: "Front Right" },     // Moved up by decreasing Z
+        { x: -2, z: 1.5, rotation: Math.PI * 0.75 + 0.175, description: "front Left" },       // Moved toward center by decreasing Z
+        { x: 2, z: 2.0, rotation: -Math.PI * 0.75 - 0.175, description: "Back Right" }        // Moved toward center by decreasing Z
     ];
 
     // Store hole positions for reference when positioning the decorative overlay
@@ -270,7 +270,7 @@ function positionDecorativeOverlay() {
             
             // Add subtle color variations to each dirt hole for realism
             // Create slightly different brown shades for each hole
-            const brownBase = [62, 39, 35]; // #3E2723 in RGB
+            const brownBase = [62, 39, 35]; // #9b7653 in RGB
             const randomOffset = [
                 Math.floor(Math.random() * 10) - 5,
                 Math.floor(Math.random() * 8) - 4,
