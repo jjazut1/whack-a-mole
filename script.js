@@ -174,7 +174,7 @@ function setupHolesAndMoles() {
         { x: -1.5, z: -1.5, rotation: Math.PI * 0.25 + 0.175, description: "back Left" },     // Moved up by decreasing Z
         { x: 2.2, z: -1.5, rotation: -Math.PI * 0.25 - 0.175, description: "back Right" },     // Moved up by decreasing Z
         { x: -2.3, z: 1.5, rotation: Math.PI * 0.75 + 0.175, description: "front Left" },       // Moved toward center by decreasing Z
-        { x: 2.8, z: 2.0, rotation: -Math.PI * 0.75 - 0.175, description: "front Right" }        // Moved further right to cover blue sky
+        { x: 2.2, z: 2.0, rotation: -Math.PI * 0.75 - 0.175, description: "front Right" }        // Moved back to original position
     ];
 
     // Store hole positions for reference when positioning the decorative overlay
@@ -247,7 +247,7 @@ function positionDecorativeOverlay() {
     
     // Position the markers in the overlay to match hole positions
     const markers = document.querySelectorAll('.hole-marker');
-    const holeSize = 300; // Large dirt hole size in pixels - updated to match CSS
+    const holeSize = 350; // Large dirt hole size in pixels - updated to match CSS
     const offsetX = holeSize / 2; // Center offset for X
     const offsetY = holeSize / 2; // Center offset for Y
     
@@ -257,9 +257,9 @@ function positionDecorativeOverlay() {
             // Apply offset to center the larger holes under the grass holes
             let posX = pos.x;
             
-            // Move the bottom right hole (index 3) further to the right to cover the blue sky
+            // Move the bottom right hole (index 3) to cover the blue sky showing through the left side
             if (index === 3) {
-                posX += 20; // Add more pixels to the right
+                posX -= 30; // Shift left to cover the blue sky on the left side of the hole
             }
             
             const percentX = ((posX - offsetX) / window.innerWidth) * 100;
