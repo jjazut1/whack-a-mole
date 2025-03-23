@@ -250,20 +250,23 @@ function positionDecorativeOverlay() {
     
     // Different hole sizes
     const standardHoleSize = 300; // Standard size for most holes
-    const largeHoleSize = 380;    // Larger size for bottom right hole
+    const largeHoleSize = 420;    // Larger size for bottom right hole
     
     holeScreenPositions.forEach((pos, index) => {
         if (markers[index]) {
             // Convert to percentages for responsive positioning
             // Apply offset to center the larger holes under the grass holes
             let posX = pos.x;
+            let posY = pos.y;
             let holeSize;
             
             // Special handling for bottom right hole (index 3)
             if (index === 3) {
-                posX -= 40; // Shift left to cover the blue sky on the left side
+                posX += 10; // Shift right to move toward the bottom right corner
+                posY = pos.y + 20; // Shift down to better cover the blue sky
                 holeSize = largeHoleSize;
             } else {
+                posY = pos.y;
                 holeSize = standardHoleSize;
             }
             
@@ -272,7 +275,7 @@ function positionDecorativeOverlay() {
             const offsetY = holeSize / 2;
             
             const percentX = ((posX - offsetX) / window.innerWidth) * 100;
-            const percentY = ((pos.y - offsetY) / window.innerHeight) * 100;
+            const percentY = ((posY - offsetY) / window.innerHeight) * 100;
             
             markers[index].style.left = percentX + '%';
             markers[index].style.top = percentY + '%';
